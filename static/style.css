@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    background-color: #1d6316;
+    background-color: #0a2e06;
     color: white;
     font-family: 'Poppins', sans-serif;
     text-align: center;
@@ -10,7 +10,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #174f11;
+    background-color: #0d3d08;
     padding: 1rem 2rem;
 }
 
@@ -29,7 +29,7 @@ body {
 .logo {
     font-weight: 800;
     font-size: 1.4rem;
-    color: #a479ff;
+    color: #93e38a;
 }
 
 main {
