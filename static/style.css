@@ -74,3 +74,21 @@ main {
     transform: translateY(2px);
     box-shadow: 0 2px 0 #1b6359;
 }
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #102b33;
+    color: #a8dcd1;
+    text-align: center;
+    font-size: 0.85rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid #184b4a;
+}
+
+footer p {
+    margin: 0;
+    line-height: 1.5;
+}
