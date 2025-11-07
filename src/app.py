@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, session, jsonify
+from flask import Flask, render_template, request, redirect, session, make_response, jsonify
 import os
 import requests
 
@@ -6,7 +6,7 @@ CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REDIRECT_URI = "https://aspectofthe.site/loggedin"
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
 
 @app.route("/")
