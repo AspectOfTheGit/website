@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
 
 @app.route("/")
 def home():
-    return "mc login"
+    return render_template("index.html")
 
 @app.route("/loggedin")
 def loggedin():
