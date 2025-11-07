@@ -18,6 +18,10 @@ AUTH_REQ_URL = (
     f"&response_type=code"
 )
 
+@app.route("/")
+def home():
+    return render_template("index.html")
+
 @app.route("/login")
 def mc_login():
     session_token = request.cookies.get("authorization.sessionToken")
