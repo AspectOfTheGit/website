@@ -12,6 +12,7 @@ body {
     align-items: center;
     background-color: #102b33;
     padding: 1rem 2rem;
+    position: relative;
 }
 
 .nav-links a, .login a {
@@ -20,6 +21,9 @@ body {
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .nav-links a:hover, .login a:hover {
@@ -81,14 +85,14 @@ main {
 }
 
 .site-footer {
-    position: fixed;
+    position: relative;
+    display: flex;
+    align-items: center;
     left: 0;
     bottom: 0;
     width: 100%;
     background-color: #102b33;
     border-top: 1px solid #184b4a;
-    display: flex;
-    align-items: center;
     justify-content: space-between;
     padding: 0.6rem 15rem;
     box-sizing: border-box;
@@ -103,11 +107,14 @@ main {
 
 .site-footer .footer-center {
     flex: 1 1 60%;
-    text-align: center;
     color: #a8dcd1;
     font-size: 0.88rem;
     line-height: 1.45;
     padding: 0 1rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
 }
 
 .site-footer a {
