@@ -75,41 +75,67 @@ main {
     box-shadow: 0 2px 0 #1b6359;
 }
 
-footer {
+main {
+    padding-bottom: 4.5rem;
+}
+
+.site-footer {
     position: fixed;
-    bottom: 0;
     left: 0;
+    bottom: 0;
     width: 100%;
     background-color: #102b33;
-    color: #a8dcd1;
-    font-size: 0.85rem;
-    padding: 0.75rem 1rem;
     border-top: 1px solid #184b4a;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
     box-sizing: border-box;
+    z-index: 50;
 }
 
-.footer-center {
+.site-footer .footer-left,
+.site-footer .footer-right {
+    flex: 0 0 auto;
+    min-width: 6rem;
+}
+
+.site-footer .footer-center {
+    flex: 1 1 60%;
     text-align: center;
-    flex: 1;
+    color: #a8dcd1;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    padding: 0 1rem;
 }
 
-.footer-left a,
-.footer-right a {
+.site-footer a {
     color: #5fe7c1;
     text-decoration: none;
     font-weight: 600;
-    transition: color 0.3s;
+    transition: color 0.18s ease;
 }
 
-.footer-left a:hover,
-.footer-right a:hover {
+.site-footer a:hover {
     color: #3dc9b0;
 }
 
-footer p {
-    margin: 0;
-    line-height: 1.4;
+@media (max-width: 720px) {
+    .site-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.65rem;
+        text-align: center;
+    }
+
+    .site-footer .footer-left,
+    .site-footer .footer-right,
+    .site-footer .footer-center {
+        min-width: auto;
+        flex: none;
+    }
+
+    main {
+        padding-bottom: 8rem;
+    }
 }
