@@ -1,15 +1,27 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, redirect, session, jsonify
+import os
+import requests
+
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+REDIRECT_URI = "https://aspectofthe.site/loggedin"
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
 
-@app.route('/')
+@app.route("/")
 def home():
-    return "test worked i thnk"
+    return "mc login"
 
-@app.route('/api/test', methods=['POST'])
-def test():
-    data = request.json
-    return jsonify({"received": data}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+@app.route("/loggedin")
+def loggedin():
+    code = request.args.get("code")
+    resp = requests.post("https://mc-auth.com/api/token", data={
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": REDIRECT_URI
+    })
+    user_data = resp.json()
+    session["mc_user"] = user_data
+    return f"Logged in as {user_data['username']}"
