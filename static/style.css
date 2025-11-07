@@ -1,5 +1,5 @@
 body {
-    margin: 0;
+    margin: revert;
     background-color: #0b1c22;
     color: #e9f8f2;
     font-family: 'Poppins', sans-serif;
@@ -120,11 +120,11 @@ main {
     color: #3dc9b0;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1440px) {
     .site-footer {
         flex-direction: column;
         gap: 0.5rem;
-        padding: 3rem;
+        padding: 0.65rem;
         text-align: center;
     }
 
