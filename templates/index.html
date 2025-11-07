@@ -1,3 +1,35 @@
-<a href="https://mc-auth.com/oauth?client_id=3760786240715097278&redirect_uri=https://aspectofthe.site/login">
-    Login with Minecraft
-</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspect Bots</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">Aspect Bots</div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Bot status</a>
+            <a href="#">Deploy bot</a>
+        </div>
+        <div class="login">
+            <a href="/login">Log in</a>
+        </div>
+    </nav>
+
+    <main>
+        <h1 class="title">Aspect <span>Bots</span></h1>
+        <p class="subtitle">
+            Deploy bots onto your legitimoose world to test on.
+        </p>
+
+        <div class="buttons">
+            <a href="#" class="button">Deploy bot →</a>
+            <a href="#" class="button">Bot status →</a>
+        </div>
+    </main>
+</body>
+</html>
