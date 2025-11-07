@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    background-color: #0e1021;
+    background-color: #1d6316;
     color: white;
     font-family: 'Poppins', sans-serif;
     text-align: center;
@@ -10,7 +10,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #11132b;
+    background-color: #174f11;
     padding: 1rem 2rem;
 }
 
@@ -39,7 +39,7 @@ main {
 .title {
     font-size: 4rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #1e5e19, #165910, #0f7d05);
+    background: linear-gradient(90deg, #22d911, #25991a, #18750f);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0px 3px 0px rgba(0,0,0,0.4);
@@ -59,13 +59,13 @@ main {
 }
 
 .button {
-    background-color: #a479ff;
+    background-color: #1f9114;
     color: white;
     padding: 0.75rem 2rem;
     border-radius: 8px;
     font-weight: 600;
     text-decoration: none;
-    box-shadow: 0 4px 0 #6e49b8;
+    box-shadow: 0 4px 0 #186b10;
     transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
