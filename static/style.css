@@ -39,7 +39,7 @@ main {
 .title {
     font-size: 4rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #4caf50, #2196f3, #9c27b0);
+    background: linear-gradient(90deg, #1e5e19, #165910, #0f7d05);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0px 3px 0px rgba(0,0,0,0.4);
