@@ -123,8 +123,8 @@ main {
 @media (max-width: 720px) {
     .site-footer {
         flex-direction: column;
-        gap: 3rem;
-        padding: 0.65rem;
+        gap: 0.5rem;
+        padding: 3rem;
         text-align: center;
     }
 
