@@ -44,6 +44,17 @@ def alive():
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": "online"})
 
+def botinfo():
+    global data, timeout
+    bots = ["AspectOfTheBot","AspectOfThePoop"]
+    for bot in bots:
+        if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
+            data["bot"][bot]["status"] = "offline"
+        data["bot"][bot]["world"]["name"] = "World Name Placeholder"
+        data["bot"][bot]["world"]["owner"] = "World Owner Placeholder"
+        with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+
 #######################
 @app.route("/")
 def home():
@@ -51,12 +62,8 @@ def home():
 
 @app.route("/status")
 def status():
-    global data, timeout
-    if data["bot"]["AspectOfTheBot"]["last_ping"] != 0 and time.time() - data["bot"]["AspectOfTheBot"]["last_ping"] > timeout:
-        data["bot"]["AspectOfTheBot"]["status"] = "offline"
-        with open(DATA_FILE, "w") as f:
-            json.dump(data, f, indent=4)
-    return render_template("status.html",value=data["bot"])
+    botinfo()
+    return render_template("status.html",bots=data["bot"])
 
 @app.route("/login")
 def mc_login():
