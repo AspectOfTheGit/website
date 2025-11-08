@@ -3,7 +3,7 @@ import os
 import requests
 import time
 from datetime import datetime
-import threading
+#import threading
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
@@ -36,17 +36,6 @@ def alive():
         f.write(value)
     return jsonify({"success": True, "status": value})
 
-def check_alive():
-    global value, last_ping
-    while True:
-        time.sleep(1)  # check every second
-        if last_ping != 0 and time.time() - last_ping > timeout:
-            value = "offline"
-            with open(DATA_FILE, "w") as f:
-                f.write(value)
-
-threading.Thread(target=check_alive, daemon=True).start()
-
 #######################
 @app.route("/")
 def home():
@@ -54,6 +43,11 @@ def home():
 
 @app.route("/status")
 def status():
+    global value, last_ping
+    if last_ping != 0 and time.time() - last_ping > timeout:
+        value = "offline"
+        with open(DATA_FILE, "w") as f:
+            f.write(value)
     with open(DATA_FILE, "r") as f:
         value=f.read()
     return render_template("status.html",value=value)
