@@ -22,6 +22,10 @@ AUTH_REQ_URL = (
 def home():
     return render_template("index.html")
 
+@app.route("/status")
+def home():
+    return render_template("status.html")
+
 @app.route("/login")
 def mc_login():
     session_token = request.cookies.get("authorization.sessionToken")
