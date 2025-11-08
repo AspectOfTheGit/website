@@ -32,6 +32,11 @@ body {
     color: #d4fff3;
 }
 
+.logo-img {
+    height: 40px;
+    width: auto;
+}
+
 main {
     margin-top: 10vh;
 }
