@@ -148,7 +148,6 @@ main {
 }
 
 .owner a:hover {
-    display: inline-flex;
     color: #83ccb6;
     text-decoration: underline;
 }
