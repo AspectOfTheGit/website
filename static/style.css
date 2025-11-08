@@ -112,6 +112,8 @@ main {
 .owner {
     display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 0.5rem;
     font-size: 0.9rem;
     color: #ccc;
@@ -121,8 +123,8 @@ main {
     display: flex;
     vertical-align: middle;
     gap: 0.5rem;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     border-radius: 4px;
     margin-right: 6px;
 }
