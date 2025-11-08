@@ -107,9 +107,32 @@ main {
 
 .world-info {
     margin-top: 0.5rem;
+    text-decoration: none;
+    font-weight: inherit;
+    cursor: pointer;
+    transition: color 0.2s ease;
 }
 
-.owner {
+.world-name a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.5rem;
+    font-size: 1.3rem;
+    color: #ccc;
+    text-decoration: none;
+    font-weight: inherit;
+    cursor: pointer;
+    transition: color 0.2s ease;   
+}
+
+.world-name a:hover {
+  color: #83ccb6;
+  text-decoration: underline;
+}
+
+.owner a {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -117,6 +140,15 @@ main {
     gap: 0.5rem;
     font-size: 0.9rem;
     color: #ccc;
+    text-decoration: none;
+    font-weight: inherit;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.owner a:hover {
+  color: #83ccb6;
+  text-decoration: underline;
 }
 
 .owner-head {
