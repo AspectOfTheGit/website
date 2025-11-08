@@ -51,8 +51,10 @@ def botinfo():
     for bot in bots:
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = "offline"
-        data["bot"][bot]["world"]["name"] = "World Name Placeholder"
-        data["bot"][bot]["world"]["owner"] = "World Owner Placeholder"
+        else:
+            data["bot"][bot].setdefault("world", {})
+            data["bot"][bot]["world"]["name"] = "World Name Placeholder"
+            data["bot"][bot]["world"]["owner"] = "World Owner Placeholder"
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
