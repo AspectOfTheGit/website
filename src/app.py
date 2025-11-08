@@ -48,12 +48,16 @@ def alive():
 @app.route("/world", methods=["POST"])
 def world():
     global data
-    world_data = get_world_info(request.json.get("value"))
     data["bot"]["AspectOfTheBot"].setdefault("world", {})
-    data["bot"]["AspectOfTheBot"]["world"]["name"] = world_data["name"]
     data["bot"]["AspectOfTheBot"]["world"].setdefault("owner", {})
-    data["bot"]["AspectOfTheBot"]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-    data["bot"]["AspectOfTheBot"]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+    if request.json.get("value") == "lobby":
+        data["bot"]["AspectOfTheBot"]["world"]["name"] = "Lobby"
+    else:
+        world_data = get_world_info(request.json.get("value"))
+        data["bot"]["AspectOfTheBot"].setdefault("world", {})
+        data["bot"]["AspectOfTheBot"]["world"]["name"] = world_data["name"]
+        data["bot"]["AspectOfTheBot"]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+        data["bot"]["AspectOfTheBot"]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
