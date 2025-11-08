@@ -52,7 +52,7 @@ def botinfo():
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = False
         else:
-            data["bot"][bot][uuid] = get_uuid(bot)
+            data["bot"][bot]["uuid"] = get_uuid(bot)
             data["bot"][bot].setdefault("world", {})
             data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             data["bot"][bot]["world"].setdefault("owner", {})
