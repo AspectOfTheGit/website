@@ -43,7 +43,7 @@ def home():
 
 @app.route("/status")
 def status():
-    global value, last_ping
+    global value, last_ping, timeout
     if last_ping != 0 and time.time() - last_ping > timeout:
         value = "offline"
         with open(DATA_FILE, "w") as f:
