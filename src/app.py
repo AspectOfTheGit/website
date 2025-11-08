@@ -28,7 +28,8 @@ try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
 except:
-    data = '{"bot":{"AspectOfTheBot":{}}}'
+    data = '{}'
+    data.setdefault("bot", {})
     data = json.loads(data)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -38,27 +39,35 @@ timeout = 5
 
 @app.route("/ping", methods=["POST"])
 def alive():
+    token = request.headers.get("Authorization")
+    if token != BOT_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     global data
-    data["bot"]["AspectOfTheBot"]["status"] = True  # mark as online
-    data["bot"]["AspectOfTheBot"]["last_ping"] = time.time()
+    data["bot"][request.json.get("account")]["status"] = True  # mark as online
+    data["bot"][request.json.get("account")]["last_ping"] = time.time()
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
 @app.route("/world", methods=["POST"])
 def world():
+    token = request.headers.get("Authorization")
+    if token != BOT_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 403
+    
     global data
-    data["bot"]["AspectOfTheBot"].setdefault("world", {})
-    data["bot"]["AspectOfTheBot"]["world"].setdefault("owner", {})
+    data["bot"][request.json.get("account")].setdefault("world", {})
+    data["bot"][request.json.get("account")]["world"].setdefault("owner", {})
     if request.json.get("value") == "lobby":
-        data["bot"]["AspectOfTheBot"]["world"]["name"] = "Lobby"
+        data["bot"][request.json.get("account")]["world"]["name"] = "Lobby"
     else:
         world_data = get_world_info(request.json.get("value"))
-        data["bot"]["AspectOfTheBot"].setdefault("world", {})
-        data["bot"]["AspectOfTheBot"]["world"]["uuid"] = request.json.get("value")
-        data["bot"]["AspectOfTheBot"]["world"]["name"] = world_data["name"]
-        data["bot"]["AspectOfTheBot"]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-        data["bot"]["AspectOfTheBot"]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+        data["bot"][request.json.get("account")].setdefault("world", {})
+        data["bot"][request.json.get("account")]["world"]["uuid"] = request.json.get("value")
+        data["bot"][request.json.get("account")]["world"]["name"] = world_data["name"]
+        data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+        data["bot"][request.json.get("account")]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
@@ -67,6 +76,7 @@ def botinfo():
     global data, timeout
     bots = ["AspectOfTheBot"]
     for bot in bots:
+        data["bot"].setdefault(bot, {})
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = False
         else:
