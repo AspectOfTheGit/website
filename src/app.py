@@ -45,6 +45,15 @@ def alive():
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
+@app.route("/world", methods=["POST"])
+def world():
+    global data
+    data["bot"][bot].setdefault("world", {})
+    data["bot"]["AspectOfTheBot"]["world"]["name"] = request.json.get("value")
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+    return jsonify({"success": True, "status": True})
+
 def botinfo():
     global data, timeout
     bots = ["AspectOfTheBot"]
@@ -54,8 +63,7 @@ def botinfo():
         else:
             data["bot"][bot]["uuid"] = get_uuid(bot)
             data["bot"][bot].setdefault("world", {})
-            data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
-            data["bot"][bot]["world"]["owner"] = {} # temporary fix to this thing
+            #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             data["bot"][bot]["world"].setdefault("owner", {})
             data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
             data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
