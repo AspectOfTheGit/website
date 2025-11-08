@@ -7,6 +7,7 @@ CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 REDIRECT_URI = "https://aspectofthe.site/login"
+DATA_FILE = "/data/value.txt"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
@@ -25,7 +26,7 @@ def home():
 
 @app.route("/status")
 def status():
-    return render_template("status.html")
+    return render_template("status.html",value=value)
 
 @app.route("/login")
 def mc_login():
@@ -91,6 +92,8 @@ def update_value():
         return jsonify({"error": "Unauthorized"}), 403
 
     value = request.json.get("value")
+    with open(DATA_FILE, "w") as f:
+        f.write(value)
     return jsonify({"success": True, "value": value})
 
 if __name__ == "__main__":
