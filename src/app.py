@@ -55,6 +55,7 @@ def world():
     else:
         world_data = get_world_info(request.json.get("value"))
         data["bot"]["AspectOfTheBot"].setdefault("world", {})
+        data["bot"]["AspectOfTheBot"]["world"]["uuid"] = request.json.get("value")
         data["bot"]["AspectOfTheBot"]["world"]["name"] = world_data["name"]
         data["bot"]["AspectOfTheBot"]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
         data["bot"]["AspectOfTheBot"]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
