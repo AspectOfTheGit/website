@@ -28,6 +28,8 @@ try:
         data = json.load(f)
 except FileNotFoundError:
     data = {}
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # check bot alive or somethi
 timeout = 3
