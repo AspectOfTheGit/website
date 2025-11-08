@@ -60,6 +60,13 @@ def botinfo():
 def home():
     return render_template("index.html")
 
+# temporary to clear the disk data
+@app.route("/clear")
+def clear_data():
+    data = {"bot":{"AspectOfTheBot":{}}}
+    with open(DATA_FILE, "w") as f:
+        f.write(data)
+
 @app.route("/status")
 def status():
     botinfo()
