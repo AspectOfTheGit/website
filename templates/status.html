@@ -56,17 +56,19 @@
 <body>
 
 <div class="dashboard">
-    {% for bot in bots %}
+    {% for bot_name, bot in bots.items() %}
     <div class="bot-card">
         <div class="bot-image">
-            <img src="{{ url_for('static', filename='.png') }}" alt="Bot Head">
+            <img src="{{ url_for('static', filename='icons/placeholder.png') }}" alt="{{ bot_name }} Head">
         </div>
+
         <div class="world-info">
             <h3 class="world-name">{{ bot.world.name }}</h3>
             <p class="owner">
-                <img class="owner-head" src="{{ url_for('static', filename='.png') }}" alt="World Owner">
+                <img class="owner-head" src="{{ url_for('static', filename='icons/placeholder.png') }}" alt="{{ bot.world.owner }} Head">
                 {{ bot.world.owner }}
             </p>
+
             <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
                 {% if bot.status %}Online{% else %}Offline{% endif %}
             </p>
