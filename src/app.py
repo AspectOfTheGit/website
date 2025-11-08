@@ -39,18 +39,18 @@ timeout = 5
 @app.route("/ping", methods=["POST"])
 def alive():
     global data
-    data["bot"]["AspectOfTheBot"]["status"] = "online"  # mark as online
+    data["bot"]["AspectOfTheBot"]["status"] = True  # mark as online
     data["bot"]["AspectOfTheBot"]["last_ping"] = time.time()
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-    return jsonify({"success": True, "status": "online"})
+    return jsonify({"success": True, "status": True})
 
 def botinfo():
     global data, timeout
     bots = ["AspectOfTheBot"]
     for bot in bots:
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
-            data["bot"][bot]["status"] = "offline"
+            data["bot"][bot]["status"] = False
         else:
             data["bot"][bot].setdefault("world", {})
             data["bot"][bot]["world"]["name"] = "World Name Placeholder"
