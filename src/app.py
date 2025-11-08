@@ -27,7 +27,7 @@ def home():
 @app.route("/status")
 def status():
     with open(DATA_FILE, "r") as f:
-        value=f.read(value)
+        value=f.read()
     return render_template("status.html",value=value)
 
 @app.route("/login")
