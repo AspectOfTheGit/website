@@ -119,10 +119,12 @@ main {
 
 .owner-head {
     display: flex;
-    align-items: center;
+    vertical-align: middle;
     gap: 0.5rem;
     width: 16px;
     height: 16px;
+    border-radius: 4px;
+    margin-right: 6px;
 }
 
 .status {
