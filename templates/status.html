@@ -65,11 +65,15 @@
         
         <div class="world-info">
             {% if bot.status %}
+            {% if bot.world.name == "Lobby" %}
             <h3 class="world-name">{{ bot.world.name }}</h3>
-            {% if bot.world.name != "Lobby" %}
+            {% else %}
+            <h3 class="world-name">
+                <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name }}</a>
+            </h3>
             <p class="owner">
                 <img class="owner-head" src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
-                {{ bot.world.owner.name }}
+                <a href="https://legiti.dev/profile/{{ bot.world.owner.uuid }}">{{ bot.world.owner.name }}</a>
             </p>
             {% endif %}
             {% endif %}
