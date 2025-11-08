@@ -26,6 +26,8 @@ def home():
 
 @app.route("/status")
 def status():
+    with open(DATA_FILE, "r") as f:
+        value=f.read(value)
     return render_template("status.html",value=value)
 
 @app.route("/login")
@@ -91,7 +93,7 @@ def update_value():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 403
 
-    value = request.json.get("value")
+    value=request.json.get("value")
     with open(DATA_FILE, "w") as f:
         f.write(value)
     return jsonify({"success": True, "value": value})
