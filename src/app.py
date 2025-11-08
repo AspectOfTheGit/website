@@ -27,7 +27,7 @@ AUTH_REQ_URL = (
 try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-except FileNotFoundError:
+except:
     data = {}
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
