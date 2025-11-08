@@ -52,6 +52,7 @@ def botinfo():
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = False
         else:
+            data["bot"][bot][uuid] = get_uuid(bot)
             data["bot"][bot].setdefault("world", {})
             data["bot"][bot]["world"]["name"] = "World Name Placeholder"
             data["bot"][bot]["world"]["owner"] = "World Owner Placeholder"
@@ -77,6 +78,20 @@ def head_proxy(username):
         # fallback
         return abort(404)
     return Response(r.content, content_type=r.headers.get("Content-Type", "image/png"))
+
+# uh oh here comes mojang api
+
+def get_uuid(username: str) -> str | None:
+    url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("id")  # UUID
+        else:
+            return None
+    except Exception:
+        return None
 
 ######################
 
