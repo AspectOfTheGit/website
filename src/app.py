@@ -28,7 +28,7 @@ try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
 except:
-    data = {"bot":{"AspectOfTheBot":{}}}
+    data = '{"bot":{"AspectOfTheBot":{}}}'
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -63,7 +63,7 @@ def home():
 # temporary to clear the disk data
 @app.route("/clear")
 def clear_data():
-    data = {"bot":{"AspectOfTheBot":{}}}
+    data = '{"bot":{"AspectOfTheBot":{}}}'
     with open(DATA_FILE, "w") as f:
         f.write(data)
 
