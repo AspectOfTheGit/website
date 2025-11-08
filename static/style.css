@@ -27,6 +27,7 @@ body {
 }
 
 .logo {
+    align-items: center;
     font-weight: 800;
     font-size: 1.4rem;
     color: #d4fff3;
@@ -35,6 +36,7 @@ body {
 .logo-img {
     height: 40px;
     width: auto;
+    vertical-align: middle;
 }
 
 main {
