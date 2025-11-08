@@ -5,6 +5,7 @@ from datetime import datetime
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 REDIRECT_URI = "https://aspectofthe.site/login"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
@@ -82,6 +83,15 @@ def mc_login():
     resp.set_cookie("profile.uuid", profile_uuid, path="/", expires=expires_dt)
     
     return resp
+
+@app.route("/test", methods=["POST"])
+def update_value():
+    token = request.headers.get("Authorization")
+    if token != BOT_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    value = request.json.get("value")
+    return jsonify({"success": True, "value": value})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
