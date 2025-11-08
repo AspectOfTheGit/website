@@ -66,10 +66,12 @@
         <div class="world-info">
             {% if bot.status %}
             <h3 class="world-name">{{ bot.world.name }}</h3>
+            {% if bot.world.name != "Lobby" %}
             <p class="owner">
                 <img src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
                 {{ bot.world.owner.name }}
             </p>
+            {% endif %}
             {% endif %}
 
             <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
