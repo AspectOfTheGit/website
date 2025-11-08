@@ -70,11 +70,11 @@ def botinfo():
             data["bot"][bot]["status"] = False
         else:
             data["bot"][bot]["uuid"] = get_uuid(bot)
-            data["bot"][bot].setdefault("world", {})
+            #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
-            data["bot"][bot]["world"].setdefault("owner", {})
+            #data["bot"][bot]["world"].setdefault("owner", {})
             #data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
-            data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
+            #data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
@@ -131,15 +131,18 @@ def get_uuid(username: str) -> str | None:
 def get_username(uuid: str) -> str | None:
     uuid = uuid.replace("-", "")
     url = f"https://api.mojang.com/user/profiles/{uuid}/names"
-    
+
     try:
         r = requests.get(url, timeout=5)
         r.raise_for_status()
-        name_history = r.json()
-        if name_history:
-            return name_history[-1]["name"] # username (last of the list)
-    except requests.RequestException:
-        return None
+        history = r.json()
+        if history:
+            return history[-1]["name"]  # last is the username
+    except requests.RequestException as e:
+        print("Request error:", e)
+    except ValueError:
+        print("Invalid JSON response")
+    return None
 
 ######################
 
