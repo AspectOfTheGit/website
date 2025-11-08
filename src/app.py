@@ -114,6 +114,17 @@ def get_world_info(uuid: str):
         print("Response was not valid JSON")
     return None
 
+def get_username(uuid: str) -> str | None:
+    uuid = uuid.replace("-", "")
+    url = f"https://api.ashcon.app/mojang/v2/user/{uuid}" # wtf is ashcon
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("username") # username is this
+    except requests.RequestException:
+        return None
+
 # uh oh here comes mojang api
 
 def get_uuid(username: str) -> str | None:
@@ -127,22 +138,6 @@ def get_uuid(username: str) -> str | None:
             return None
     except Exception:
         return None
-
-def get_username(uuid: str) -> str | None:
-    uuid = uuid.replace("-", "")
-    url = f"https://api.mojang.com/user/profiles/{uuid}/names"
-
-    try:
-        r = requests.get(url, timeout=5)
-        r.raise_for_status()
-        history = r.json()
-        if history:
-            return history[-1]["name"]  # last is the username
-    except requests.RequestException as e:
-        print("Request error:", e)
-    except ValueError:
-        print("Invalid JSON response")
-    return None
 
 ######################
 
