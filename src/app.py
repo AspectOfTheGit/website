@@ -54,8 +54,10 @@ def botinfo():
         else:
             data["bot"][bot][uuid] = get_uuid(bot)
             data["bot"][bot].setdefault("world", {})
-            data["bot"][bot]["world"]["name"] = "World Name Placeholder"
-            data["bot"][bot]["world"]["owner"] = "World Owner Placeholder"
+            data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
+            data["bot"][bot]["world"].setdefault("owner", {})
+            data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
+            data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
