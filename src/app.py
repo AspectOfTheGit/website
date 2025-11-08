@@ -48,7 +48,7 @@ def alive():
 @app.route("/world", methods=["POST"])
 def world():
     global data
-    data["bot"][bot].setdefault("world", {})
+    data["bot"]["AspectOfTheBot"].setdefault("world", {})
     data["bot"]["AspectOfTheBot"]["world"]["name"] = request.json.get("value")
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
