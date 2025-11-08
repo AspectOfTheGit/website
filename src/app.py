@@ -9,7 +9,7 @@ CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 REDIRECT_URI = "https://aspectofthe.site/login"
-DATA_FILE = "/data/value.txt"
+DATA_FILE = "/data/values.json"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
@@ -21,20 +21,25 @@ AUTH_REQ_URL = (
     f"&scope=profile"
     f"&response_type=code"
 )
+# get the file dictionary stuff
 
-# check bot alive or somethin
-last_ping = 0
+try:
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+except FileNotFoundError:
+    data = {}
+
+# check bot alive or somethi
 timeout = 3
-value = "offline"
 
 @app.route("/ping", methods=["POST"])
 def alive():
-    global last_ping, value
-    last_ping = time.time()
-    value = "online"  # mark as online
+    global data
+    data["text"] = "online"  # mark as online
+    data["last_ping"] = time.time()
     with open(DATA_FILE, "w") as f:
-        f.write(value)
-    return jsonify({"success": True, "status": value})
+        json.dump(data, f, indent=4)
+    return jsonify({"success": True, "status": "online"})
 
 #######################
 @app.route("/")
@@ -43,14 +48,13 @@ def home():
 
 @app.route("/status")
 def status():
-    global value, last_ping, timeout
-    if last_ping != 0 and time.time() - last_ping > timeout:
-        value = "offline"
+    global data, timeout
+    if data["last_ping"] != 0 and time.time() - data["last_ping"] > timeout:
+        data["text"] = "offline"
         with open(DATA_FILE, "w") as f:
-            f.write(value)
-    with open(DATA_FILE, "r") as f:
-        value=f.read()
-    return render_template("status.html",value=(value, str(last_ping), str(time.time()), str(timeout)))
+            json.dump(data, f, indent=4)
+    value = data["text"]
+    return render_template("status.html",value=(value, str(data["last_ping"]), str(time.time()), str(timeout)))
 
 @app.route("/login")
 def mc_login():
@@ -115,10 +119,10 @@ def update_value():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 403
 
-    value=request.json.get("value")
+    data["text"]=request.json.get("value")
     with open(DATA_FILE, "w") as f:
-        f.write(value)
-    return jsonify({"success": True, "value": value})
+        json.dump(data, f, indent=4)
+    return jsonify({"success": True, "value": data["text"]})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
