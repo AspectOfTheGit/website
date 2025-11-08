@@ -50,7 +50,7 @@ def status():
             f.write(value)
     with open(DATA_FILE, "r") as f:
         value=f.read()
-    return render_template("status.html",value=value)
+    return render_template("status.html",value=(value, str(last_ping), str(time.time()), str(timeout)))
 
 @app.route("/login")
 def mc_login():
