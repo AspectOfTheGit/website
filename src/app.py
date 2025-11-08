@@ -58,6 +58,36 @@ def botinfo():
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
+# get head of player
+@app.route("/head/<username>")
+def head_proxy(username):
+    username = username.strip()
+    if not username:
+        return abort(400)
+    size = request.args.get("size", "100")
+    try:
+        int(size)
+    except Exception:
+        size = "100"
+
+    minotar_url = f"https://minotar.net/avatar/{username}/{size}.png"
+
+    r = requests.get(minotar_url, stream=True, timeout=8)
+    if r.status_code != 200:
+        # fallback
+        return abort(404)
+    return Response(r.content, content_type=r.headers.get("Content-Type", "image/png"))
+
+######################
+
+
+
+
+#help
+
+
+
+
 #######################
 @app.route("/")
 def home():
