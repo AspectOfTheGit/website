@@ -48,8 +48,12 @@ def alive():
 @app.route("/world", methods=["POST"])
 def world():
     global data
+    world_data = get_world_info(request.json.get("value"))
     data["bot"]["AspectOfTheBot"].setdefault("world", {})
-    data["bot"]["AspectOfTheBot"]["world"]["name"] = request.json.get("value")
+    data["bot"]["AspectOfTheBot"]["world"]["name"] = world_data["name"]
+    data["bot"]["AspectOfTheBot"]["world"].setdefault("owner", {})
+    data["bot"]["AspectOfTheBot"]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+    data["bot"]["AspectOfTheBot"]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
@@ -65,7 +69,7 @@ def botinfo():
             data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             data["bot"][bot]["world"].setdefault("owner", {})
-            data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
+            #data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
             data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
@@ -90,6 +94,22 @@ def head_proxy(username):
         return abort(404)
     return Response(r.content, content_type=r.headers.get("Content-Type", "image/png"))
 
+# uses legitidevs to get world info
+def get_world_info(uuid: str):
+    url = f"https://api.legiti.dev/world/{uuid}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err} — Status code: {response.status_code}")
+    except requests.RequestException as err:
+        print(f"Request error occurred: {err}")
+    except ValueError:
+        print("Response was not valid JSON")
+    return None
+
 # uh oh here comes mojang api
 
 def get_uuid(username: str) -> str | None:
@@ -102,6 +122,19 @@ def get_uuid(username: str) -> str | None:
         else:
             return None
     except Exception:
+        return None
+
+def get_username(uuid: str) -> str | None:
+    uuid = uuid.replace("-", "")
+    url = f"https://api.mojang.com/user/profiles/{uuid}/names"
+    
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        name_history = r.json()
+        if name_history:
+            return name_history[-1]["name"] # username (last of the list)
+    except requests.RequestException:
         return None
 
 ######################
