@@ -47,7 +47,7 @@ def alive():
 
 def botinfo():
     global data, timeout
-    bots = ["AspectOfTheBot","AspectOfThePoop"]
+    bots = ["AspectOfTheBot"]
     for bot in bots:
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = "offline"
