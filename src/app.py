@@ -33,13 +33,13 @@ except:
         json.dump(data, f, indent=4)
 
 # check bot alive or somethi
-timeout = 3
+timeout = 5
 
 @app.route("/ping", methods=["POST"])
 def alive():
     global data
-    data["text"] = "online"  # mark as online
-    data["last_ping"] = time.time()
+    data["bot"]["AspectOfTheBot"]["status"] = "online"  # mark as online
+    data["bot"]["AspectOfTheBot"]["last_ping"] = time.time()
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": "online"})
@@ -52,12 +52,11 @@ def home():
 @app.route("/status")
 def status():
     global data, timeout
-    if data["last_ping"] != 0 and time.time() - data["last_ping"] > timeout:
-        data["text"] = "offline"
+    if data["bot"]["AspectOfTheBot"]["last_ping"] != 0 and time.time() - data["bot"]["AspectOfTheBot"]["last_ping"] > timeout:
+        data["bot"]["AspectOfTheBot"]["status"] = "offline"
         with open(DATA_FILE, "w") as f:
             json.dump(data, f, indent=4)
-    value = data["text"]
-    return render_template("status.html",value=(value, str(data["last_ping"]), str(time.time()), str(timeout)))
+    return render_template("status.html",value=data["bot"])
 
 @app.route("/login")
 def mc_login():
@@ -122,10 +121,10 @@ def update_value():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 403
 
-    data["text"]=request.json.get("value")
+    data["motd"]=request.json.get("value")
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-    return jsonify({"success": True, "value": data["text"]})
+    return jsonify({"success": True, "value": data["motd"]})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
