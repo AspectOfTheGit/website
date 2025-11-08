@@ -23,7 +23,7 @@ def home():
     return render_template("index.html")
 
 @app.route("/status")
-def home():
+def status():
     return render_template("status.html")
 
 @app.route("/login")
