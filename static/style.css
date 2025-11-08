@@ -184,6 +184,11 @@ main {
     padding-bottom: 4.5rem;
 }
 
+body {
+  margin: 0;
+  padding-bottom: 100px;
+}
+
 .site-footer {
     position: fixed;
     left: 0;
