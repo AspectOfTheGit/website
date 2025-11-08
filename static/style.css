@@ -115,6 +115,12 @@ main {
     gap: 0.5rem;
     font-size: 0.9rem;
     color: #ccc;
+}
+
+.owner-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     width: 16px;
     height: 16px;
 }
