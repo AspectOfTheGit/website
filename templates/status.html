@@ -61,13 +61,15 @@
         <div class="bot-image">
             <img src="{{ url_for('static', filename='icons/placeholder.png') }}" alt="{{ bot_name }} Head">
         </div>
-
+        
         <div class="world-info">
+            {% if bot.status %}
             <h3 class="world-name">{{ bot.world.name }}</h3>
             <p class="owner">
                 <img class="owner-head" src="{{ url_for('static', filename='icons/placeholder.png') }}" alt="{{ bot.world.owner }} Head">
                 {{ bot.world.owner }}
             </p>
+            {% endif %}
 
             <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
                 {% if bot.status %}Online{% else %}Offline{% endif %}
