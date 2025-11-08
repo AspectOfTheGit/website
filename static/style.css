@@ -115,12 +115,8 @@ main {
     gap: 0.5rem;
     font-size: 0.9rem;
     color: #ccc;
-}
-
-.owner-head {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+    width: 16px;
+    height: 16px;
 }
 
 .status {
