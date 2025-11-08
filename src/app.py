@@ -24,7 +24,7 @@ AUTH_REQ_URL = (
 
 # check bot alive or somethin
 last_ping = 0
-timeout = 20
+timeout = 3
 value = "offline"
 
 @app.route("/ping", methods=["POST"])
@@ -32,6 +32,8 @@ def alive():
     global last_ping, value
     last_ping = time.time()
     value = "online"  # mark as online
+    with open(DATA_FILE, "w") as f:
+        f.write(value)
     return jsonify({"success": True, "status": value})
 
 def check_alive():
@@ -39,7 +41,9 @@ def check_alive():
     while True:
         time.sleep(1)  # check every second
         if last_ping != 0 and time.time() - last_ping > timeout:
-            status_value = "offline"
+            value = "offline"
+            with open(DATA_FILE, "w") as f:
+                f.write(value)
 
 threading.Thread(target=check_alive, daemon=True).start()
 
