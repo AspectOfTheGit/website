@@ -59,14 +59,14 @@
     {% for bot_name, bot in bots.items() %}
     <div class="bot-card">
         <div class="bot-image">
-            <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
+            <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=96&overlay" alt="?">
         </div>
         
         <div class="world-info">
             {% if bot.status %}
             <h3 class="world-name">{{ bot.world.name }}</h3>
             <p class="owner">
-                <img src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
+                <img src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=16&overlay" alt="?">
                 {{ bot.world.owner.name }}
             </p>
             {% endif %}
