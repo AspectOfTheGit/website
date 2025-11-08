@@ -29,6 +29,7 @@ try:
         data = json.load(f)
 except:
     data = '{"bot":{"AspectOfTheBot":{}}}'
+    data = json.loads(data)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -64,8 +65,10 @@ def home():
 @app.route("/clear")
 def clear_data():
     data = '{"bot":{"AspectOfTheBot":{}}}'
+    data = json.loads(data)
+    open(DATA_FILE, "w").close()
     with open(DATA_FILE, "w") as f:
-        f.write(data)
+        json.dump(data, f, indent=4)
 
 @app.route("/status")
 def status():
