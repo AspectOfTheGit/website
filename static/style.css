@@ -32,6 +32,7 @@ body {
     font-weight: 800;
     font-size: 1.4rem;
     color: #d4fff3;
+    gap: 0.5rem;
 }
 
 .logo-img {
