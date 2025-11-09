@@ -4,6 +4,7 @@ import requests
 import time
 from datetime import datetime
 import json
+import re
 from markupsafe import Markup
 #import threading
 
@@ -43,6 +44,7 @@ COLOURS = {
     "yellow": "#FFFF55",
     "white": "#FFFFFF"
 }
+HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 
 # get the file dictionary stuff
 
@@ -160,31 +162,58 @@ def get_username(uuid: str) -> str | None:
 
 # get html from the raw json
 def raw_to_html(component):
-    if isinstance(component, str): # make it json if it aint
+    if isinstance(component, str):
         try:
             component = json.loads(component)
         except json.JSONDecodeError:
             return Markup(component)
-    
-    text = component.get("text", "")
-    color = component.get("color")
-    italic = component.get("italic", False)
 
-    # gimme dat html
-    style = []
-    if color and color in COLOURS:
-        style.append(f"color: {COLOURS[color]}")
-    if italic:
-        style.append("font-style: italic")
+    def to_html(c, inherited=None):
+        if inherited is None:
+            inherited = {}
 
-    htmltext = f"<span style='{'; '.join(style)}'>{text}</span>" if style else text
+        text = c.get("text", "")
+        color = c.get("color", inherited.get("color"))
+        italic = c.get("italic", inherited.get("italic", False))
+        bold = c.get("bold", inherited.get("bold", False))
+        underlined = c.get("underlined", inherited.get("underlined", False))
+        strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
 
-    # do othercomponents too
-    extras = component.get("extra", [])
-    for e in extras:
-        htmltext += raw_to_html(e)
+        # get de color
+        resolved_color = None
+        if color:
+            if color in COLOURS:
+                resolved_color = COLOURS[color]
+            elif HEX_COLOUR.match(color):
+                # Normalize to single '#' prefix
+                resolved_color = color if color.startswith("#") else f"#{color}"
 
-    return htmltext
+        style = []
+        if resolved_color:
+            style.append(f"color: {resolved_color}")
+        if italic:
+            style.append("font-style: italic")
+        if bold:
+            style.append("font-weight: bold")
+        if underlined:
+            style.append("text-decoration: underline")
+        if strikethrough:
+            style.append("text-decoration: line-through")
+
+        html = f"<span style='{'; '.join(style)}'>{text}</span>" if style else text
+
+        for e in c.get("extra", []):
+            html += to_html(e, {
+                "color": resolved_color or color,
+                "italic": italic,
+                "bold": bold,
+                "underlined": underlined,
+                "strikethrough": strikethrough
+            })
+
+        return html
+
+    return Markup(to_html(component))
 
 
 # uh oh here comes mojang api
