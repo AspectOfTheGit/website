@@ -115,7 +115,7 @@ main {
 .world-name a {
     display: inline-flex;
     align-items: center;
-    letter-spacing: 0;
+    letter-spacing: normal;
     justify-content: center;
     text-align: center;
     gap: 0rem;
@@ -129,7 +129,7 @@ main {
 
 .world-name a:hover {
     display: inline-flex;
-    letter-spacing: 0;
+    letter-spacing: normal;
     color: #83ccb6;
     text-decoration: underline;
 }
