@@ -22,6 +22,27 @@ AUTH_REQ_URL = (
     f"&scope=profile"
     f"&response_type=code"
 )
+
+# for raw to html
+COLOURS = {
+    "black": "#000000",
+    "dark_blue": "#0000AA",
+    "dark_green": "#00AA00",
+    "dark_aqua": "#00AAAA",
+    "dark_red": "#AA0000",
+    "dark_purple": "#AA00AA",
+    "gold": "#FFAA00",
+    "gray": "#AAAAAA",
+    "dark_gray": "#555555",
+    "blue": "#5555FF",
+    "green": "#55FF55",
+    "aqua": "#55FFFF",
+    "red": "#FF5555",
+    "light_purple": "#FF55FF",
+    "yellow": "#FFFF55",
+    "white": "#FFFFFF"
+}
+
 # get the file dictionary stuff
 
 try:
@@ -65,7 +86,7 @@ def world():
         world_data = get_world_info(request.json.get("value"))
         data["bot"][request.json.get("account")].setdefault("world", {})
         data["bot"][request.json.get("account")]["world"]["uuid"] = request.json.get("value")
-        data["bot"][request.json.get("account")]["world"]["name"] = world_data["name"]
+        data["bot"][request.json.get("account")]["world"]["name"] = raw_to_html(world_data["raw_name"])
         data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
         data["bot"][request.json.get("account")]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
     with open(DATA_FILE, "w") as f:
@@ -135,6 +156,29 @@ def get_username(uuid: str) -> str | None:
         return data.get("username") # username is this
     except requests.RequestException:
         return None
+
+# get html from the raw json
+def raw_to_html()
+    text = component.get("text", "")
+    color = component.get("color")
+    italic = component.get("italic", False)
+
+    # gimme dat html
+    style = []
+    if color and color in COLOURS:
+        style.append(f"color: {COLOURS[color]}")
+    if italic:
+        style.append("font-style: italic")
+
+    htmltext = f"<span style='{'; '.join(style)}'>{text}</span>" if style else text
+
+    # do othercomponents too
+    extras = component.get("extra", [])
+    for e in extras:
+        htmltext += to_html(e)
+
+    return htmltext
+
 
 # uh oh here comes mojang api
 
