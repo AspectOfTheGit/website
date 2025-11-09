@@ -364,6 +364,18 @@ def update_log():
 
     return jsonify({"success": True, "value": value})
 
+# socketio
+#
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected') # temp
+
+@socketio.on('join')
+def handle_join(bot_name):
+    join_room(bot_name)
+    print(f'Client joined room: {bot_name}')
+
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
     socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
