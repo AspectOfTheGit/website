@@ -118,7 +118,7 @@ main {
     letter-spacing: normal;
     justify-content: center;
     text-align: center;
-    gap: 0rem;
+    gap: 0.5rem;
     font-size: 1.3rem;
     color: #ccc;
     text-decoration: none;
@@ -132,6 +132,10 @@ main {
     letter-spacing: normal;
     color: #83ccb6;
     text-decoration: underline;
+}
+
+world-name a span:last-child {
+  margin-right: 0;
 }
 
 .owner a {
