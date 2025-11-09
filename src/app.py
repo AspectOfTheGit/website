@@ -161,7 +161,7 @@ def get_username(uuid: str) -> str | None:
         return None
 
 # get html from the raw json
-def mc_to_html(component):
+def raw_to_html(component):
     # allow both dict and JSON string inputs
     if isinstance(component, str):
         try:
