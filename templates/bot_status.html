@@ -53,13 +53,11 @@
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
-        const socket = io();
-        const logContainer = document.getElementById('log-container');
-    
-        socket.on('connect', () => console.log('Connected to Socket.IO'));
-        socket.on('disconnect', () => console.log('Disconnected from Socket.IO'));
-    
-        socket.on('log', function(msg) {
+        const socket = io({
+            transports: ["websocket"],
+        });
+        const logContainer = document.getElementById("log-container");
+        socket.on("log", (msg) => {
             logContainer.innerText += msg + "\n";
             logContainer.scrollTop = logContainer.scrollHeight;
         });
