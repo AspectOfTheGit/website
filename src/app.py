@@ -19,6 +19,13 @@ app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+def send_logs():
+    while True:
+        socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
+        socketio.sleep(1)
+
+threading.Thread(target=send_logs, daemon=True).start()
+
 AUTH_REQ_URL = (
     f"https://mc-auth.com/oAuth2/authorize"
     f"?client_id={CLIENT_ID}"
@@ -279,13 +286,6 @@ def status():
     return render_template("status.html",bots=data["bot"])
 
 # testing ts
-def send_logs():
-    while True:
-        socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
-        socketio.sleep(1)
-
-threading.Thread(target=send_logs, daemon=True).start()
-
 @app.route("/status/<bot>")
 def bot_status(bot):
     bot = bot.strip()
@@ -362,4 +362,5 @@ def update_value():
     return jsonify({"success": True, "value": data["motd"]})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    socketio.run(app, host='0.0.0.0', port=10000)
