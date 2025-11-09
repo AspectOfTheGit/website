@@ -158,7 +158,7 @@ def get_username(uuid: str) -> str | None:
         return None
 
 # get html from the raw json
-def raw_to_html()
+def raw_to_html(component):
     text = component.get("text", "")
     color = component.get("color")
     italic = component.get("italic", False)
