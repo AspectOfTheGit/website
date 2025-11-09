@@ -49,7 +49,15 @@
     </nav>
 
 
-
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+        <script>
+            const socket = io();
+            const logContainer = document.getElementById('log-container');
+            socket.on('log', function(msg) {
+                logContainer.innerText += msg + "\n";
+                logContainer.scrollTop = logContainer.scrollHeight;
+            });
+    </script>
 
   
 </body>
