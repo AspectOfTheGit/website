@@ -100,9 +100,15 @@ def world():
         world_data = get_world_info(request.json.get("value"))
         data["bot"][request.json.get("account")].setdefault("world", {})
         data["bot"][request.json.get("account")]["world"]["uuid"] = request.json.get("value")
-        data["bot"][request.json.get("account")]["world"]["name"] = raw_to_html(world_data["raw_name"])
-        data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-        data["bot"][request.json.get("account")]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+        try:
+            data["bot"][request.json.get("account")]["world"]["name"] = raw_to_html(world_data["raw_name"])
+            data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+            data["bot"][request.json.get("account")]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+        except:
+            data["bot"][request.json.get("account")]["world"]["name"] = "Error fetching world data"
+            data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = "?"
+            data["bot"][request.json.get("account")]["world"]["owner"]["name"] = "Error fetching world data"
+        
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
