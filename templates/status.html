@@ -69,7 +69,7 @@
             <h3 class="world-name">{{ bot.world.name }}</h3>
             {% else %}
             <h3 class="world-name">
-                <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name }}</a>
+                <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name | safe }}</a>
             </h3>
             <p class="owner">
                 <img class="owner-head" src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
