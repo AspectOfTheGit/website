@@ -59,7 +59,9 @@
     {% for bot_name, bot in bots.items() %}
     <div class="bot-card">
         <div class="bot-image">
-            <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
+            <a href="https://aspectofthe.site/status/{{ bot_name }}">
+                <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
+            </a>
             <h2 class="bot-name">{{ bot_name }}</h2>
         </div>
         
