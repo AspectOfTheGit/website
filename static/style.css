@@ -113,9 +113,8 @@ main {
 }
 
 .world-name a {
-    display: inline-flex;
+    display: inline;
     align-items: center;
-    letter-spacing: normal;
     justify-content: center;
     text-align: center;
     gap: 0.5rem;
@@ -128,14 +127,9 @@ main {
 }
 
 .world-name a:hover {
-    display: inline-flex;
-    letter-spacing: normal;
+    display: inline;
     color: #83ccb6;
     text-decoration: underline;
-}
-
-.world-name a:last-child {
-  margin-right: 0;
 }
 
 .owner a {
