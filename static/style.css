@@ -134,7 +134,7 @@ main {
     text-decoration: underline;
 }
 
-world-name a span:last-child {
+.world-name a:last-child {
   margin-right: 0;
 }
 
