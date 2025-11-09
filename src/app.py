@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, make_response, jsonify, Response, send_file, abort
+from flask_socketio import SocketIO, emit
 import os
 import requests
 import time
@@ -6,7 +7,7 @@ from datetime import datetime
 import json
 import re
 from markupsafe import Markup
-#import threading
+import threading
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
@@ -16,6 +17,7 @@ DATA_FILE = "/data/values.json"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 AUTH_REQ_URL = (
     f"https://mc-auth.com/oAuth2/authorize"
@@ -276,16 +278,20 @@ def status():
     botinfo()
     return render_template("status.html",bots=data["bot"])
 
-# get status of specific bot
+# testing ts
+def send_logs():
+    while True:
+        socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
+        socketio.sleep(1)
+
+threading.Thread(target=send_logs, daemon=True).start()
+
 @app.route("/status/<bot>")
 def bot_status(bot):
     bot = bot.strip()
-    if not bot:
+    if bot not in data["bot"]:
         return abort(400)
-
-    return render_template("bot_status.html",bot=data["bot"][bot])
-
-
+    return render_template("bot_status.html", bot=data["bot"][bot])
 
 @app.route("/login")
 def mc_login():
