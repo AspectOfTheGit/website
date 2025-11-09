@@ -47,8 +47,7 @@
             <a href="/login">Log in</a>
         </div>
     </nav>
-
-
+    
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
         <script>
             const socket = io();
@@ -58,7 +57,9 @@
                 logContainer.scrollTop = logContainer.scrollHeight;
             });
     </script>
-
+    
+    <h2>Live Bot Log</h2>
+    <div id="log-container"></div>
   
 </body>
 </html>
