@@ -53,15 +53,17 @@
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
-        const socket = io({
-            transports: ["websocket"],
-        });
-        const logContainer = document.getElementById("log-container");
-        socket.emit('join', {{ bot_name|tojson }});
-        
-        socket.on("log", (msg) => {
-            logContainer.innerText += msg + "\n";
-            logContainer.scrollTop = logContainer.scrollHeight;
+        document.addEventListener("DOMContentLoaded", () => {
+            const socket = io({ transports: ["websocket"] });
+            const logContainer = document.getElementById("log-container");
+            const botName = {{ bot_name|tojson }};
+
+            socket.emit('join', botName);
+    
+            socket.on("log", (msg) => {
+                logContainer.innerText += msg + "\n";
+                logContainer.scrollTop = logContainer.scrollHeight;
+            });
         });
     </script>
   
