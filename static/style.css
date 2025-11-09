@@ -8,7 +8,7 @@
     font-family: 'MinecraftDefault';
     src: url('/static/fonts/MinecraftDefault-Bold.ttf') format('truetype');
     font-weight: 700;
-    font-style: normal;
+    font-style: bold;
 }
 @font-face {
     font-family: 'MinecraftDefault';
