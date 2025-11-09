@@ -161,17 +161,22 @@ def get_username(uuid: str) -> str | None:
         return None
 
 # get html from the raw json
-def raw_to_html(component):
+def mc_to_html(component):
+    # allow both dict and JSON string inputs
     if isinstance(component, str):
         try:
             component = json.loads(component)
         except json.JSONDecodeError:
             return Markup(component)
 
-    def to_html(c, inherited=None):
+    segments = []
+
+    def collect(c, inherited=None):
+        # collect is a nice word
         if isinstance(c, str):
-            # plain text fallback
-            return c
+            style_str = inherited.get("_style_str", "") if inherited else ""
+            segments.append((c, style_str))
+            return
 
         if inherited is None:
             inherited = {}
@@ -191,34 +196,70 @@ def raw_to_html(component):
             elif HEX_COLOUR.match(color):
                 resolved_color = color if color.startswith("#") else f"#{color}"
 
-        # dem styles
-        style = []
+        # build dem parts ig
+        style_parts = []
         if resolved_color:
-            style.append(f"color: {resolved_color}")
+            style_parts.append(f"color:{resolved_color}")
         if italic:
-            style.append("font-style: italic")
+            style_parts.append("font-style:italic")
         if bold:
-            style.append("font-weight: bold")
+            style_parts.append("font-weight:bold")
+        # combine the styles properly
+        decorations = []
         if underlined:
-            style.append("text-decoration: underline")
+            decorations.append("underline")
         if strikethrough:
-            style.append("text-decoration: line-through")
-            
-        style_str = ";".join(style + ["white-space:pre"])
-        html = f"<span style='{'; '.join(style)}'>{text}</span>" if style else text
-        
+            decorations.append("line-through")
+        if decorations:
+            style_parts.append("text-decoration:" + " ".join(decorations))
+
+        style_str = ";".join(style_parts)  # may be empty string womp
+
+        new_inherited = dict(inherited)
+        new_inherited.update({
+            "color": resolved_color or color,
+            "italic": italic,
+            "bold": bold,
+            "underlined": underlined,
+            "strikethrough": strikethrough,
+            "_style_str": style_str
+        })
+
+        # append this (could be empty)
+        if text:
+            segments.append((text, style_str))
+
+        # AGAIN
         for e in c.get("extra", []):
-            html += to_html(e, {
-                "color": resolved_color or color,
-                "italic": italic,
-                "bold": bold,
-                "underlined": underlined,
-                "strikethrough": strikethrough
-            })
+            collect(e, new_inherited)
 
-        return html
+    collect(component)
 
-    return Markup(to_html(component))
+    # merge pls
+    if not segments:
+        return Markup("")
+
+    merged = []
+    cur_text, cur_style = segments[0]
+    for t, s in segments[1:]:
+        if s == cur_style:
+            cur_text += t
+        else:
+            merged.append((cur_text, cur_style))
+            cur_text, cur_style = t, s
+    merged.append((cur_text, cur_style))
+
+    # build HTML yes
+    out = []
+    for text, style in merged:
+        if style:
+            # escape text
+            escaped = Markup.escape(text)
+            out.append(f"<span style='{style}'>{escaped}</span>")
+        else:
+            out.append(Markup.escape(text))
+
+    return Markup("".join(out))
 
 
 # uh oh here comes mojang api
