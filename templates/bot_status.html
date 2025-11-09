@@ -57,6 +57,8 @@
             transports: ["websocket"],
         });
         const logContainer = document.getElementById("log-container");
+        socket.emit('join', {{ bot_name|tojson }});
+        
         socket.on("log", (msg) => {
             logContainer.innerText += msg + "\n";
             logContainer.scrollTop = logContainer.scrollHeight;
