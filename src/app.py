@@ -204,8 +204,8 @@ def raw_to_html(component):
         if strikethrough:
             style.append("text-decoration: line-through")
             
-        style_str = ";".join(styles + ["white-space:pre"])
-        html = f"<span style='{'; '.join(styles)}'>{text}</span>" if style else text
+        style_str = ";".join(style + ["white-space:pre"])
+        html = f"<span style='{'; '.join(style)}'>{text}</span>" if style else text
         
         for e in c.get("extra", []):
             html += to_html(e, {
