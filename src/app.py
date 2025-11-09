@@ -181,7 +181,7 @@ def raw_to_html(component):
     # do othercomponents too
     extras = component.get("extra", [])
     for e in extras:
-        htmltext += to_html(e)
+        htmltext += raw_to_html(e)
 
     return htmltext
 
