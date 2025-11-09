@@ -17,7 +17,7 @@ DATA_FILE = "/data/values.json"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 def send_logs():
     while True:
