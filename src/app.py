@@ -113,26 +113,6 @@ def botinfo():
         with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
-# get head of player
-@app.route("/head/<username>")
-def head_proxy(username):
-    username = username.strip()
-    if not username:
-        return abort(400)
-    size = request.args.get("size", "100")
-    try:
-        int(size)
-    except Exception:
-        size = "100"
-
-    minotar_url = f"https://minotar.net/avatar/{username}/{size}.png"
-
-    r = requests.get(minotar_url, stream=True, timeout=8)
-    if r.status_code != 200:
-        # fallback
-        return abort(404)
-    return Response(r.content, content_type=r.headers.get("Content-Type", "image/png"))
-
 # uses legitidevs to get world info
 def get_world_info(uuid: str):
     url = f"https://api.legiti.dev/world/{uuid}"
@@ -291,19 +271,21 @@ def get_uuid(username: str) -> str | None:
 def home():
     return render_template("index.html")
 
-# temporary to clear the disk data
-@app.route("/clear")
-def clear_data():
-    data = '{"bot":{"AspectOfTheBot":{}}}'
-    data = json.loads(data)
-    open(DATA_FILE, "w").close()
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
 @app.route("/status")
 def status():
     botinfo()
     return render_template("status.html",bots=data["bot"])
+
+# get status of specific bot
+@app.route("/status/<bot>")
+def bot_status(bot):
+    bot = bot.strip()
+    if not bot:
+        return abort(400)
+
+    return render_template("bot_status.html",bot=data["bot"][bot])
+
+
 
 @app.route("/login")
 def mc_login():
