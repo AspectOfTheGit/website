@@ -19,12 +19,12 @@ app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-def send_logs():
-    while True:
-        socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
-        socketio.sleep(1)
+#def send_logs():
+#    while True:
+#        socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
+#        socketio.sleep(1)
 
-socketio.start_background_task(send_logs)
+#socketio.start_background_task(send_logs)
 
 AUTH_REQ_URL = (
     f"https://mc-auth.com/oAuth2/authorize"
@@ -285,13 +285,12 @@ def status():
     botinfo()
     return render_template("status.html",bots=data["bot"])
 
-# testing ts
 @app.route("/status/<bot>")
 def bot_status(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
-    return render_template("bot_status.html", bot=data["bot"][bot])
+    return render_template("bot_status.html",bot=data["bot"][bot],bot_name=bot)
 
 @app.route("/login")
 def mc_login():
@@ -350,16 +349,15 @@ def mc_login():
     
     return resp
 
-@app.route("/test", methods=["POST"])
-def update_value():
+@app.route("/log", methods=["POST"])
+def update_log():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 403
 
-    data["motd"]=request.json.get("value")
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-    return jsonify({"success": True, "value": data["motd"]})
+    socketio.emit('log', f"[{time.strftime('%H:%M:%S')}] {request.json.get("value")}", room=request.json.get("account"))
+
+    return jsonify({"success": True, "value": request.json.get("value")})
 
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
