@@ -169,6 +169,10 @@ def raw_to_html(component):
             return Markup(component)
 
     def to_html(c, inherited=None):
+        if isinstance(c, str):
+            # plain text fallback
+            return c
+
         if inherited is None:
             inherited = {}
 
@@ -179,18 +183,18 @@ def raw_to_html(component):
         underlined = c.get("underlined", inherited.get("underlined", False))
         strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
 
-        # get de color
-        resolved_color = None
-        if color:
-            if color in COLOURS:
-                resolved_color = COLOURS[color]
-            elif HEX_COLOUR.match(color):
-                # Normalize to single '#' prefix
-                resolved_color = color if color.startswith("#") else f"#{color}"
+        # gimme colour
+        resolved_colour = None
+        if colour:
+            if colour in COLOURS:
+                resolved_colour = COLOURS[colour]
+            elif HEX_COLOUR.match(colour):
+                resolved_colour = colour if color.startswith("#") else f"#{colour}"
 
+        # dem styles
         style = []
-        if resolved_color:
-            style.append(f"color: {resolved_color}")
+        if resolved_colour:
+            style.append(f"color: {resolved_colour}")
         if italic:
             style.append("font-style: italic")
         if bold:
@@ -204,7 +208,7 @@ def raw_to_html(component):
 
         for e in c.get("extra", []):
             html += to_html(e, {
-                "color": resolved_color or color,
+                "color": resolved_colour or colour,
                 "italic": italic,
                 "bold": bold,
                 "underlined": underlined,
