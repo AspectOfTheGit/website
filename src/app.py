@@ -24,7 +24,7 @@ def send_logs():
         socketio.emit('log', f"Server time: {time.strftime('%H:%M:%S')}")
         socketio.sleep(1)
 
-threading.Thread(target=send_logs, daemon=True).start()
+socketio.start_background_task(send_logs)
 
 AUTH_REQ_URL = (
     f"https://mc-auth.com/oAuth2/authorize"
