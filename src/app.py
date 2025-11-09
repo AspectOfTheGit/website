@@ -184,17 +184,17 @@ def raw_to_html(component):
         strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
 
         # gimme colour
-        resolved_colour = None
-        if colour:
-            if colour in COLOURS:
-                resolved_colour = COLOURS[colour]
-            elif HEX_COLOUR.match(colour):
-                resolved_colour = colour if color.startswith("#") else f"#{colour}"
+        resolved_color = None
+        if color:
+            if color in COLOURS:
+                resolved_color = COLOURS[color]
+            elif HEX_COLOUR.match(color):
+                resolved_color = color if color.startswith("#") else f"#{color}"
 
         # dem styles
         style = []
-        if resolved_colour:
-            style.append(f"color: {resolved_colour}")
+        if resolved_color:
+            style.append(f"color: {resolved_color}")
         if italic:
             style.append("font-style: italic")
         if bold:
@@ -208,7 +208,7 @@ def raw_to_html(component):
 
         for e in c.get("extra", []):
             html += to_html(e, {
-                "color": resolved_colour or colour,
+                "color": resolved_color or color,
                 "italic": italic,
                 "bold": bold,
                 "underlined": underlined,
