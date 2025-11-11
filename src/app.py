@@ -10,9 +10,6 @@ import json
 import re
 from markupsafe import Markup
 import threading
-import logging
-
-logging.getLogger('eventlet.wsgi.server').setLevel(logging.ERROR)
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
@@ -22,13 +19,7 @@ DATA_FILE = "/data/values.json"
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-secret")
-socketio = SocketIO(
-    app,
-    cors_allowed_origins=["https://aspectofthe.site"],
-    ping_interval=25,
-    ping_timeout=20,
-    async_mode="eventlet"
-)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 #def send_logs():
 #    while True:
@@ -297,10 +288,6 @@ def get_uuid(username: str) -> str | None:
 def home():
     return render_template("index.html")
 
-@app.route("/healthz")
-def healthz():
-    return "OK", 200
-
 @app.route("/status")
 def status():
     botinfo()
@@ -399,4 +386,4 @@ def handle_join(bot_name):
 
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)), log_output=False)
+    socketio.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
