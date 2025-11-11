@@ -54,7 +54,10 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const socket = io({ transports: ["websocket"] });
+            const socket = io("https://aspectofthe.site", {
+                transports: ["websocket"],
+            });
+
             const logContainer = document.getElementById("log-container");
             const botName = {{ bot_name|tojson }};
 
