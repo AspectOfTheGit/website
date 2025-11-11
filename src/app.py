@@ -10,6 +10,9 @@ import json
 import re
 from markupsafe import Markup
 import threading
+import logging
+
+logging.getLogger('eventlet.wsgi.server').setLevel(logging.ERROR)
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
