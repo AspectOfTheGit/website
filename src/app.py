@@ -288,6 +288,10 @@ def get_uuid(username: str) -> str | None:
 def home():
     return render_template("index.html")
 
+@app.route("/healthz")
+def healthz():
+    return "OK", 200
+
 @app.route("/status")
 def status():
     botinfo()
