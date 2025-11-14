@@ -64,7 +64,10 @@
             socket.emit('join', botName);
     
             socket.on("log", (contents) => {
-                logContainer.innerText += "[" + contents[0] + "] " + contents[1] + "\n";// GMT Time, make changeable option
+                const time = contents[0];
+                const msg = contents[1];
+                
+                logContainer.innerText += "[" + time + "] " + msg + "\n";// GMT Time, make changeable option
                 logContainer.scrollTop = logContainer.scrollHeight;
             });
         });
