@@ -402,11 +402,14 @@ def handle_join(bot_name):
 
 @socketio.on("screenshot")
 def screenshot_request(data):
-    bot = data.get("bot")
-    print(f"Screenshot requested for {bot}")
-    bot = jsonify(bot)
-    data["bot"][bot].setdefault("do", {})
-    data["bot"][bot]["do"]["screenshot"] = True
+    bot_name = data.get("bot").strip()
+    if bot_name not in data["bot"]:
+        return abort(404)
+        
+    print(f"Screenshot requested for {bot_name}")
+
+    data["bot"][bot_name].setdefault("do", {})
+    data["bot"][bot_name]["do"]["screenshot"] = True
     
 
 if __name__ == "__main__":
