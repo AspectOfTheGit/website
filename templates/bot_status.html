@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    socket.emit('join', { account: botName });
+    socket.emit('join', botName );
 
     socket.on("log", (contents) => {
         const time = contents[0];
