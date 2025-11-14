@@ -363,12 +363,14 @@ def update_log():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 403
 
-    value = request.json.get('value')
+    msg = request.json.get('value')
     room_name = request.json.get('account')
-    msg = f"[{time.strftime('%H:%M:%S')}] {value}"
+    time = time.strftime('%H:%M:%S')
+
+    contents = [time, msg]
 
     print(f"Emitting to room: {room_name}, message: {msg}") # debug
-    socketio.emit('log', msg, room=room_name)
+    socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": value})
 
