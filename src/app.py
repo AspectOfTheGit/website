@@ -76,7 +76,7 @@ timeout = 5
 def alive():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
-        return jsonify({"error": "Unauthorized"}), 403
+        return jsonify({"error": "Unauthorized"}), 401
     
     global data
     data["bot"][request.json.get("account")]["status"] = True  # mark as online
@@ -89,7 +89,7 @@ def alive():
 def world():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
-        return jsonify({"error": "Unauthorized"}), 403
+        return jsonify({"error": "Unauthorized"}), 401
     
     global data
     data["bot"][request.json.get("account")].setdefault("world", {})
@@ -363,7 +363,7 @@ def update_log():
     
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
-        return jsonify({"error": "Unauthorized"}), 403
+        return jsonify({"error": "Unauthorized"}), 401
 
     msg = request.json.get('value')
     room_name = request.json.get('account')
@@ -388,6 +388,33 @@ def bot_instruct(bot):
         return jsonify(data["bot"][bot]["do"])
     except:
         return 200
+
+# Bot posts screenshot
+@app.route("/screenshot", methods=["POST"])
+def upload_screenshot():
+    token = request.headers.get("Authorization")
+    if token != BOT_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = request.form.get("account")
+    if account not in data["bot"]:
+        return abort(404)
+
+    if "file" not in request.files:
+        abort(400, "No file uploaded")
+    
+    file = request.files["file"]
+    file_bytes = file.read()
+    encoded_image = base64.b64encode(file_bytes).decode("utf-8")
+
+    socketio.emit(
+        "screenshot",
+        {"filename": file.filename, "image": encoded_image},# filename probably unused but just in case i want it
+        room=account
+    )
+
+    print(f"Screenshot recieved from {account}: {file.filename}")
+    return {"status": "success"}
 
 # socketio
 #
