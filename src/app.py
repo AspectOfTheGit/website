@@ -386,7 +386,7 @@ def bot_instruct(bot):
     try:
         return jsonify(data["bot"][bot]["do"])
     except:
-        return abort(500)
+        return 200
 
 # socketio
 #
