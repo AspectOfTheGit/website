@@ -50,62 +50,73 @@
 
     <h2>Live Log for {{ bot_name }}</h2>
 
-    <div class="tab-container">
-        <div class="tabs">
-            <button class="tab-button active" data-tab="log">Log</button>
-            <button class="tab-button" data-tab="screenshot">Screenshot</button>
-        </div>
-
-        <div class="controls">
-            <button id="screenshot-btn" class="screenshot-button">
-                <img src="{{ url_for('static', filename='icons/camera.png') }}" class="camera-icon" alt="Screenshot">
-            </button>
-        </div>
-
-        <div id="log" class="tab-content active">
-            <div id="log-container"></div>
-        </div>
-
-        <div id="screenshot" class="tab-content">
-            <div id="screenshot-output">No screenshot taken yet.</div>
-        </div>
+<div class="tab-container">
+    <div class="tabs">
+        <button class="tab-button active" data-tab="log">Log</button>
+        <button class="tab-button" data-tab="screenshot">Screenshot</button>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-            const logContainer = document.getElementById("log-container");
-            const screenshotOutput = document.getElementById("screenshot-output");
-            const botName = {{ bot_name|tojson }};
+    <div class="controls">
+        <button id="screenshot-btn" class="screenshot-button">
+            <img src="{{ url_for('static', filename='icons/camera.png') }}" class="camera-icon" alt="Screenshot">
+        </button>
+    </div>
 
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
+    <div id="log" class="tab-content active">
+        <div id="log-container"></div>
+    </div>
 
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+    <div id="screenshot" class="tab-content">
+        <div id="screenshot-output">No screenshot taken yet.</div>
+    </div>
+</div>
 
-                    const target = btn.dataset.tab;
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    document.getElementById(target).classList.add('active');
-                });
-            });
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
+    const logContainer = document.getElementById("log-container");
+    const screenshotOutput = document.getElementById("screenshot-output");
+    const botName = {{ bot_name|tojson }};
 
-            socket.emit('join', botName);
-            socket.on("log", (contents) => {
-                const time = contents[0];
-                const msg = contents[1];
-                logContainer.textContent += `[${time}] ${msg}\n`;
-                logContainer.scrollTop = logContainer.scrollHeight;
-            });
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-            document.getElementById("screenshot-btn").addEventListener("click", () => {
-                socket.emit("screenshot", {bot: botName});
-                document.querySelector('[data-tab="screenshot"]').click();
-            });
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const target = btn.dataset.tab;
+            tabContents.forEach(c => c.classList.remove('active'));
+            document.getElementById(target).classList.add('active');
         });
-    </script>
-</body>
-</html>
+    });
+
+    socket.emit('join', { account: botName });
+
+    socket.on("log", (contents) => {
+        const time = contents[0];
+        const msg = contents[1];
+        logContainer.textContent += `[${time}] ${msg}\n`;
+        logContainer.scrollTop = logContainer.scrollHeight;
+    });
+
+    socket.on("screenshot", (data) => {
+        const img = document.createElement("img");
+        img.src = "data:image/png;base64," + data.image;
+        img.alt = data.filename;
+        img.style.maxWidth = "100%";
+        img.style.maxHeight = "400px";
+        screenshotOutput.innerHTML = "";
+        screenshotOutput.appendChild(img);
+
+        document.querySelector('[data-tab="screenshot"]').click();
+    });
+
+    document.getElementById("screenshot-btn").addEventListener("click", () => {
+        socket.emit("get_screenshot", { bot: botName });
+    });
+});
+</script>
+
