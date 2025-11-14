@@ -374,7 +374,7 @@ def update_log():
     print(f"Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
 
-    return jsonify({"success": True, "value": value})
+    return jsonify({"success": True, "value": contents})
 
 # socketio
 #
