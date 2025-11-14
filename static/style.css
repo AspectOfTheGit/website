@@ -265,7 +265,6 @@ main {
     color: #fff;
 }
 
-/* --- Tab Content --- */
 .tab-content {
     display: none;
 }
@@ -274,7 +273,6 @@ main {
     display: block;
 }
 
-/* --- Screenshot Button --- */
 .controls {
     display: flex;
     justify-content: flex-end;
@@ -306,7 +304,6 @@ main {
     filter: invert(100%);
 }
 
-/* --- Screenshot Panel --- */
 #screenshot-output {
     width: 90%;
     height: 65vh;
