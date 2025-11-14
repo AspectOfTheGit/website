@@ -428,7 +428,7 @@ def handle_join(bot_name):
     join_room(bot_name)
     print(f'Client joined room: {bot_name}')
 
-@socketio.on("screenshot")
+@socketio.on("get_screenshot")
 def screenshot_request(bot):
     bot_name = bot.get("bot").strip()
     if bot_name not in data["bot"]:
