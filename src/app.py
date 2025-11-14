@@ -402,12 +402,11 @@ def handle_join(bot_name):
     print(f'Client joined room: {bot_name}')
 
 @socketio.on("screenshot")
-def screenshot_request(data):
-    bot_name = data.get("bot").strip()
+def screenshot_request(bot):
+    bot_name = bot.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(404)
 
-    print(data)
     print(f"Screenshot requested for {bot_name}")
 
     data["bot"][bot_name].setdefault("do", {})
