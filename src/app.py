@@ -406,7 +406,8 @@ def screenshot_request(data):
     bot_name = data.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(404)
-        
+
+    print(data)
     print(f"Screenshot requested for {bot_name}")
 
     data["bot"][bot_name].setdefault("do", {})
