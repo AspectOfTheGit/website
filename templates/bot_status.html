@@ -34,13 +34,13 @@
             <button class="tab-button" data-tab="screenshot">Screenshot</button>
         </div>
 
+        <div class="controls">
+            <button id="screenshot-btn" class="screenshot-button">
+                <img src="{{ url_for('static', filename='icons/camera.png') }}" class="camera-icon" alt="Screenshot">
+            </button>
+        </div>
+
         <div id="log" class="tab-content active">
-            <div class="controls">
-                <button id="screenshot-btn" class="screenshot-button">
-                    <img src="{{ url_for('static', filename='icons/camera.png') }}" class="camera-icon" alt="Screenshot">
-                    Screenshot
-                </button>
-            </div>
             <div id="log-container"></div>
         </div>
 
@@ -75,13 +75,12 @@
             socket.on("log", (contents) => {
                 const time = contents[0];
                 const msg = contents[1];
-                logContainer.innerText += `[${time}] ${msg}\n`;
+                logContainer.textContent += `[${time}] ${msg}\n`;
                 logContainer.scrollTop = logContainer.scrollHeight;
             });
 
             document.getElementById("screenshot-btn").addEventListener("click", () => {
-                const data = logContainer.innerText;
-                screenshotOutput.innerText = data ? data : "(log empty)";
+                socket.emit("screenshot", {bot: botName});
                 document.querySelector('[data-tab="screenshot"]').click();
             });
         });
