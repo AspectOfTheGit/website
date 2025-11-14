@@ -404,6 +404,7 @@ def handle_join(bot_name):
 def screenshot_request(data):
     bot = data.get("bot")
     print(f"Screenshot requested for {bot}")
+    bot = jsonify(bot)
     data["bot"][bot].setdefault("do", {})
     data["bot"][bot]["do"]["screenshot"] = True
     
