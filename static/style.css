@@ -214,17 +214,22 @@ main {
 
 #log-container {
     width: 90%;
-    height: 70%;
+    height: 70vh;
     background: #111;
     color: #0f0;
     padding: 10px;
     font-family: monospace;
     overflow-y: scroll;
     white-space: pre-wrap;
-    margin-top: 20px;
     border-radius: 8px;
-    align-items: center;
     text-align: left;
+    margin: 20px auto 0 auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+#log-container::-webkit-scrollbar {
+    display: none;
 }
 
 main {
