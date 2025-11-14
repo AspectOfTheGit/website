@@ -403,7 +403,6 @@ def handle_join(bot_name):
 
 @socketio.on("screenshot")
 def screenshot_request(data):
-    global data
     bot_name = data.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(404)
