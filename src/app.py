@@ -10,6 +10,7 @@ import json
 import re
 from markupsafe import Markup
 import threading
+import base64
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
