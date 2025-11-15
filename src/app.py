@@ -414,6 +414,8 @@ def upload_screenshot():
         room=account
     )
 
+    data["bot"][bot_name]["do"]["screenshot"] = False
+
     print(f"Screenshot recieved from {account}: {file.filename}")
     return {"status": "success"}
 
