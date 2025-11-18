@@ -289,6 +289,17 @@ def get_uuid(username: str) -> str | None:
 def home():
     return render_template("index.html")
 
+@app.route("/deploy")
+def start_deploy():
+    # If not logged in, then log in first
+    session_token = request.cookies.get("authorization.sessionToken")
+    profile_uuid = request.cookies.get("profile.uuid")
+    
+    if session_token and profile_uuid:
+        return render_template("deploy.html")
+    else:
+        mc_login()
+
 @app.route("/status")
 def status():
     botinfo()
