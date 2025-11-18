@@ -298,7 +298,7 @@ def start_deploy():
     if session_token and profile_uuid:
         return render_template("deploy.html")
     else:
-        mc_login()
+        mc_login() #temp just make it go to /login later
 
 @app.route("/status")
 def status():
