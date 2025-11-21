@@ -1,26 +1,22 @@
 @font-face {
-    font-family: 'MinecraftDefault';
-    src: url('/static/fonts/MinecraftDefault-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
+    font-family: "MinecraftDefault";
+    src: url(/static/fonts/MinecraftDefault-Regular.ttf);
 }
 @font-face {
-    font-family: 'MinecraftDefault';
-    src: url('/static/fonts/MinecraftDefault-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: bold;
+    font-family: "MinecraftDefault";
+    font-weight: bold;
+    src: url(/static/fonts/MinecraftDefault-Bold.ttf);
 }
 @font-face {
-    font-family: 'MinecraftDefault';
-    src: url('/static/fonts/MinecraftDefault-Italic.ttf') format('truetype');
-    font-weight: 400;
+    font-family: "MinecraftDefault";
     font-style: italic;
+    src: url(/static/fonts/MinecraftDefault-Italic.ttf);
 }
 @font-face {
-    font-family: 'MinecraftDefault';
-    src: url('/static/fonts/MinecraftDefault-BoldItalic.ttf') format('truetype');
-    font-weight: 700;
+    font-family: "MinecraftDefault";
+    font-weight: bold;
     font-style: italic;
+    src: url(/static/fonts/MinecraftDefault-BoldItalic.ttf);
 }
 
 body {
