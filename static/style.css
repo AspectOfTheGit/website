@@ -211,8 +211,8 @@ main {
 #log-container {
     width: 90%;
     height: 65vh;
-    background: #145233;
-    color: #b5b5b5;
+    background: #05331c;
+    color: #d4fff3;
     padding: 10px;
     font-family: monospace;
     overflow-y: scroll;
@@ -302,8 +302,8 @@ main {
 #screenshot-output {
     width: 90%;
     height: 65vh;
-    background: #145233;
-    color: #b5b5b5;
+    background: #05331c;
+    color: #d4fff3;
     padding: 10px;
     font-family: monospace;
     overflow-y: auto;
