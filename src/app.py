@@ -140,11 +140,11 @@ def get_world_info(uuid: str):
         data = response.json()
         return data
     except requests.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err} — Status code: {response.status_code}")
+        print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
     except requests.RequestException as err:
-        print(f"Request error occurred: {err}")
+        print(f"[app.py] Request error occurred: {err}")
     except ValueError:
-        print("Response was not valid JSON")
+        print("[app.py] Response was not valid JSON")
     return None
 
 def get_username(uuid: str) -> str | None:
@@ -383,7 +383,7 @@ def update_log():
 
     contents = [time, msg]
 
-    print(f"Emitting to room: {room_name}, message: {msg}") # debug
+    print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
@@ -427,7 +427,7 @@ def upload_screenshot():
 
     data["bot"][account]["do"]["screenshot"] = False
 
-    print(f"Screenshot recieved from {account}: {file.filename}")
+    print(f"[app.py] Screenshot recieved from {account}: {file.filename}")
     return {"status": "success"}
 
 # socketio
@@ -435,12 +435,12 @@ def upload_screenshot():
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    print('[app.py] Client connected')
 
 @socketio.on('join')
 def handle_join(bot_name):
     join_room(bot_name)
-    print(f'Client joined room: {bot_name}')
+    print(f'[app.py] Client joined room: {bot_name}')
 
 @socketio.on("get_screenshot")
 def screenshot_request(bot):
@@ -448,7 +448,7 @@ def screenshot_request(bot):
     if bot_name not in data["bot"]:
         return abort(404)
 
-    print(f"Screenshot requested for {bot_name}")
+    print(f"[app.py] Screenshot requested for {bot_name}")
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
