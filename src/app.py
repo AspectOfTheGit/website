@@ -70,6 +70,37 @@ except:
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+'''
+| ROUTES for the bots
+All POST routes relating to the bot will require headers:
+ - Authorization (Bot token)
+ - account (The bot account the request is sent from)
+
+/ping (POST)
+Recieved every ~1 seconds from each bot account
+Sets status of bot to online
+If not recieved for 5 seconds (indicated by timeout variable), status is set offline
+
+/world (POST)
+ - value (World UUID or 'lobby')
+Recieved whenever bot connects to a server
+Sets the world that the bot is currently in
+
+/log (POST)
+ - value (Message recieved)
+Recieved whenever the bot recieves a message
+Sends the message to the bot log
+
+/screenshot (POST)
+Includes screenshot file
+Recieved whenever a screenshot is requested for the bot
+May have a delay of ~3 seconds
+Sends the screenshot to the bot log
+
+/botwhat/<account>
+Requested every ~5 seconds by each bot account
+Tells each bot what to do (e.g. take a screenshot)
+'''
 # check bot alive or somethi
 timeout = 5
 
