@@ -18,6 +18,15 @@
     font-style: italic;
     src: url(/static/fonts/MinecraftDefault-BoldItalic.ttf);
 }
+@font-face {
+    font-family: "Roboto Mono";
+    src: url(/static/fonts/RobotoMono-VariableFont_wght.ttf);
+}
+@font-face {
+    font-family: "Roboto Mono";
+    font-style: italic;
+    src: url(/static/fonts/RobotoMono-Italic-VariableFont_wght.ttf);
+}
 
 body {
     margin: revert;
@@ -83,6 +92,29 @@ main {
 
 .plaintext {
     color: #c8f4e4;
+}
+
+code {
+    display: inline-block;
+    background-color: rgb(10, 10, 15);
+    border-radius: 5px;
+    color: #ffffff;
+    font-family: "Roboto Mono", Courier, monospace;
+    font-size: 0.9em;
+    padding-block: 2px;
+    padding-inline: 5px;
+
+    &.code-block {
+        outline: solid var(--accent) 2px;
+        margin: 20px;
+        max-width: 500px;
+        overflow-x: scroll;
+        padding-block: 5px;
+        padding-inline: 20px;
+        border-radius: 10px;
+        white-space: pre-wrap;
+        text-wrap: nowrap;
+    }
 }
 
 .buttons {
