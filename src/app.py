@@ -316,6 +316,10 @@ def get_uuid(username: str) -> str | None:
 
 
 #######################
+@app.route("/")
+def home():
+    return render_template("index.html")
+    
 @app.route("/bots")
 def home():
     return render_template("aspectbots.html")
