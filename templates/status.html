@@ -33,15 +33,15 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
+            <a href="https://aspectofthe.site/bots" class="logo">
                 <img src="static/icons/favicon.png" alt="Logo" class="logo-img">
             </a>
             Aspect Bots
         </div>
         <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/status">Bot status</a>
-            <a href="/deploy">Deploy bot</a>
+            <a href="/bots">Home</a>
+            <a href="/bots/status">Bot status</a>
+            <a href="/bots/deploy">Deploy bot</a>
         </div>
         <div class="login">
             <a href="/login">Log in</a>
@@ -59,7 +59,7 @@
     {% for bot_name, bot in bots.items() %}
     <div class="bot-card">
         <div class="bot-image">
-            <a href="https://aspectofthe.site/status/{{ bot_name }}">
+            <a href="https://aspectofthe.site/bots/status/{{ bot_name }}">
                 <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
             </a>
             <h2 class="bot-name">{{ bot_name }}</h2>
