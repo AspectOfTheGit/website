@@ -319,6 +319,10 @@ def get_uuid(username: str) -> str | None:
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/utils")
+def utilities():
+    return render_template("utilities.html")
     
 @app.route("/bots")
 def home():
