@@ -104,7 +104,7 @@ Tells each bot what to do (e.g. take a screenshot)
 # check bot alive or somethi
 timeout = 5
 
-@app.route("/ping", methods=["POST"])
+@app.route("/bots/ping", methods=["POST"])
 def alive():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
@@ -117,7 +117,7 @@ def alive():
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
-@app.route("/world", methods=["POST"])
+@app.route("/bots/world", methods=["POST"])
 def world():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
@@ -316,11 +316,11 @@ def get_uuid(username: str) -> str | None:
 
 
 #######################
-@app.route("/")
+@app.route("/bots")
 def home():
     return render_template("aspectbots.html")
 
-@app.route("/deploy")
+@app.route("/bots/deploy")
 def start_deploy():
     # If not logged in, then log in first
     session_token = request.cookies.get("authorization.sessionToken")
@@ -331,12 +331,12 @@ def start_deploy():
     else:
         return redirect("/login")
 
-@app.route("/status")
+@app.route("/bots/status")
 def status():
     botinfo()
     return render_template("status.html",bots=data["bot"])
 
-@app.route("/status/<bot>")
+@app.route("/bots/status/<bot>")
 def bot_status(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
@@ -400,7 +400,7 @@ def mc_login():
     
     return resp
 
-@app.route("/log", methods=["POST"])
+@app.route("/bots/log", methods=["POST"])
 def update_log():
     import time
     
@@ -420,7 +420,7 @@ def update_log():
     return jsonify({"success": True, "value": contents})
 
 # Bot get request
-@app.route("/botwhat/<bot>")
+@app.route("/bots/botwhat/<bot>")
 def bot_instruct(bot):
     global data
     bot = bot.strip()
@@ -433,7 +433,7 @@ def bot_instruct(bot):
         return 200
 
 # Bot posts screenshot
-@app.route("/screenshot", methods=["POST"])
+@app.route("/bots/screenshot", methods=["POST"])
 def upload_screenshot():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
