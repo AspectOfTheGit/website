@@ -393,6 +393,8 @@ def mc_login():
 
 @app.route("/bots/log", methods=["POST"])
 def update_log():
+    import time
+    
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
