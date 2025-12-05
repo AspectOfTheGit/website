@@ -275,7 +275,7 @@ code {
 
 .account-table tbody tr[data-tip] {
     position: relative;
-    cursor: pointer;
+    /*cursor: pointer;*/
 }
 
 .account-table tbody tr[data-tip]:hover::after {
