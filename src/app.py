@@ -66,6 +66,7 @@ try:
 except:
     data = '{}'
     data.setdefault("bot", {})
+    data.setdefault("account", {})
     data = json.loads(data)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -329,6 +330,7 @@ def accountpage():
     if session_token and profile_uuid:
         global data
         mcusername = request.cookies.get("mc_username")
+        data.setdefault("account", {})
         data["account"].setdefault(mcusername, {})
         data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
         data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
