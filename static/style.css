@@ -150,7 +150,7 @@ code {
 }
 
 .bot-card {
-    background: #145233;
+    background: #001a11;
     border-radius: 8px;
     padding: 1rem;
     display: flex;
@@ -247,8 +247,8 @@ code {
 #log-container {
     width: 90%;
     height: 65vh;
-    background: #05331c;
-    color: #d4fff3;
+    background: #001a11;
+    color: #f7fffc;
     padding: 10px;
     font-family: monospace;
     overflow-y: scroll;
@@ -313,7 +313,7 @@ code {
 }
 
 .screenshot-button {
-    background: #05331c;
+    background: #001a11;
     border: none;
     padding: 0.5rem 1rem;
     font-weight: 600;
@@ -326,7 +326,7 @@ code {
 }
 
 .screenshot-button:hover {
-    background: #145233;
+    background: #003825;
 }
 
 .camera-icon {
@@ -339,7 +339,7 @@ code {
     width: 90%;
     height: 65vh;
     background: #05331c;
-    color: #d4fff3;
+    color: #f7fffc;
     padding: 10px;
     font-family: monospace;
     overflow-y: auto;
