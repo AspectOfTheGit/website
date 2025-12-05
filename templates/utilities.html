@@ -43,7 +43,11 @@
             <a href="/utils">Utilities</a>
         </div>
         <div class="login">
-            <a href="/login">Log in</a>
+            {% if username %}
+                <a href="/account">{{ username }}</a>
+            {% else %}
+                <a href="/login">Log in</a>
+            {% endif %}
         </div>
     </nav>
 
