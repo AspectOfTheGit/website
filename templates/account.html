@@ -124,7 +124,7 @@
               <div class="token-spoiler">
                   <button class="toggle-token-btn">Show Read Token</button>
                   <div class="token-content">
-                      <code id="read-token">{{ account.storage.token.read }}</code>
+                      <code id="read-token">{{ account.storage.token.read if account.storage.token.read is defined else "No Token" }}</code>
                       <button class="refresh-token-btn" data-token="read">Refresh</button>
                   </div>
               </div>
@@ -132,7 +132,7 @@
               <div class="token-spoiler">
                   <button class="toggle-token-btn">Show Write Token</button>
                   <div class="token-content">
-                      <code id="write-token">{{ account.storage.token.write }}</code>
+                      <code id="write-token">{{ account.storage.token.write if account.storage.token.write is defined else "No Token" }}</code>
                       <button class="refresh-token-btn" data-token="write">Refresh</button>
                   </div>
               </div>
@@ -141,85 +141,89 @@
     </main>
   </div>
 
-  <script>
-    const buttons = document.querySelectorAll('.sidebar-btn:not(.logout-btn)');
-    const contents = document.querySelectorAll('.tab-content');
-
-    // Side buttons
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
-        contents.forEach(c => c.classList.remove('active'));
-
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
-      });
-    });
-
-    // Logout
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      window.location.href = "/logout";
-    });
-
+    <script>
     document.addEventListener('DOMContentLoaded', () => {
-    const saveBtn = document.getElementById('save-storage-btn');
-    const textarea = document.getElementById('storage-textarea');
-    const status = document.getElementById('storage-status');
+        // Sidebar buttons
+        const buttons = document.querySelectorAll('.sidebar-btn:not(.logout-btn)');
+        const contents = document.querySelectorAll('.tab-content');
     
-    saveBtn.addEventListener('click', async () => {
-        const newContent = textarea.value;
-        status.textContent = "Saving...";
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => b.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
     
-        try {
-            const res = await fetch('/api/save-storage', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ contents: newContent })
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
             });
+        });
     
-            if(res.ok) {
-                status.textContent = "Saved ✅";
-                setTimeout(() => status.textContent = "", 2000);
-            } else {
-                status.textContent = "Error ❌";
-            }
-        } catch (e) {
-            status.textContent = "Error ❌";
-            console.error(e);
+        // Logout
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.location.href = "/logout";
+            });
         }
-    });
     
-    // Spoiler toggles
-    document.querySelectorAll('.toggle-token-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const content = btn.nextElementSibling;
-            content.style.display = content.style.display === 'flex' ? 'none' : 'flex';
-        });
-    });
+        // Save storage
+        const saveBtn = document.getElementById('save-storage-btn');
+        const textarea = document.getElementById('storage-textarea');
+        const status = document.getElementById('storage-status');
     
-    // Refresh tokens
-    document.querySelectorAll('.refresh-token-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const type = btn.dataset.token;
-            btn.disabled = true;
+        if (saveBtn && textarea && status) {
+            saveBtn.addEventListener('click', async () => {
+                const newContent = textarea.value;
+                status.textContent = "Saving...";
     
-            try {
-                const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
-                if(res.ok) {
-                    const data = await res.json();
-                    document.getElementById(`${type}-token`).textContent = data.token;
+                try {
+                    const res = await fetch('/api/save-storage', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: newContent })
+                    });
+    
+                    if(res.ok) {
+                        status.textContent = "Saved ✅";
+                        setTimeout(() => status.textContent = "", 2000);
+                    } else {
+                        status.textContent = "Error ❌";
+                    }
+                } catch (e) {
+                    status.textContent = "Error ❌";
+                    console.error(e);
                 }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                btn.disabled = false;
-            }
+            });
+        }
+    
+        // Spoiler toggles
+        document.querySelectorAll('.toggle-token-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                content.style.display = content.style.display === 'flex' ? 'none' : 'flex';
+            });
+        });
+    
+        // Refresh tokens
+        document.querySelectorAll('.refresh-token-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const type = btn.dataset.token;
+                btn.disabled = true;
+    
+                try {
+                    const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
+                    if(res.ok) {
+                        const data = await res.json();
+                        document.getElementById(`${type}-token`).textContent = data.token;
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
         });
     });
-    });
-  </script>
+    </script>
   
 </body>
 </html>
