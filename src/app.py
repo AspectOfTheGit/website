@@ -353,23 +353,10 @@ def bot_status(bot):
 
 @app.route("/login")
 def mc_login():
-    session_token = request.cookies.get("authorization.sessionToken")
-    profile_uuid = request.cookies.get("profile.uuid")
-    
-    if session_token and profile_uuid:
-        check_session_res = requests.post(
-            f"https://aspectofthe.site/check-session",
-            headers={"Session-Token": session_token},
-            json={"profile_uuid": profile_uuid}
-        )
-        if check_session_res.ok and check_session_res.json().get("success"):
-            return redirect(f"/signedintest")
-    
     code = request.args.get("code")
-    
     if not code:
         return redirect(AUTH_REQ_URL)
-    
+
     mc_auth_payload = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -377,35 +364,27 @@ def mc_login():
         "redirect_uri": REDIRECT_URI,
         "grant_type": "authorization_code"
     }
-    
+
     mc_auth_response = requests.post(
         "https://mc-auth.com/oAuth2/token",
-        json=mc_auth_payload
+        data=mc_auth_payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
     ).json()
-    
+
     if mc_auth_response.get("error"):
-        return "Internal error occurred.", 500
-    
-    token_response = requests.post(
-        f"https://aspectofthe.site/login",
-        json={"access_token": mc_auth_response["access_token"]}
-    )
-    
-    if not token_response.ok:
-        return redirect("/")
-    
-    token_data = token_response.json()
-    session_token = token_data["sessionToken"]
-    refresh_token = token_data["refreshToken"]
-    profile_uuid = token_data["profile_uuid"]
-    refresh_expires = token_data["refreshTokenExpiresAt"]
-    
-    resp = make_response(redirect(f"/signedintest"))
-    expires_dt = datetime.utcfromtimestamp(refresh_expires)
-    resp.set_cookie("authorization.sessionToken", session_token, path="/", expires=expires_dt)
-    resp.set_cookie("authorization.refreshToken", refresh_token, path="/", expires=expires_dt)
-    resp.set_cookie("profile.uuid", profile_uuid, path="/", expires=expires_dt)
-    
+        return "Error while attempting login", 500
+
+    access_token = mc_auth_response["access_token"]
+    username = mc_auth_response["profile"]["username"]
+    uuid = mc_auth_response["profile"]["uuid"]
+
+    resp = make_response(redirect("/"))
+    expires_dt = datetime.utcnow() + timedelta(days=30)
+
+    resp.set_cookie("mc_access_token", access_token, path="/", expires=expires_dt)
+    resp.set_cookie("mc_username", username, path="/", expires=expires_dt)
+    resp.set_cookie("mc_uuid", uuid, path="/", expires=expires_dt)
+
     return resp
 
 @app.route("/bots/log", methods=["POST"])
