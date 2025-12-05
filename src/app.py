@@ -335,8 +335,8 @@ def home():
 @app.route("/bots/deploy")
 def start_deploy():
     # If not logged in, then log in first
-    session_token = request.cookies.get("authorization.sessionToken")
-    profile_uuid = request.cookies.get("profile.uuid")
+    session_token = request.cookies.get("mc_access_token")
+    profile_uuid = request.cookies.get("mc_uuid")
     
     if session_token and profile_uuid:
         return render_template("deploy.html")
