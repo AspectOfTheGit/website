@@ -94,6 +94,16 @@
                         {{ '❌' if account.abilities.unowned is defined else '✔️' }}
                     </td>
                 </tr>
+                <tr data-tip="Capacity of your user storage">
+                    <td>Storage Capacity</td>
+                    <td class="plaintext">{{ account.abilities.capacity if account.abilities.capacity is defined else 1 }}MB</td>
+                </tr>
+                <tr data-tip="Whether you can make bots take a screenshot">
+                    <td>Bot Screenshot</td>
+                    <td class="status {{ 'unavailable' if account.abilities.screenshot is defined else 'available' }}">
+                        {{ '❌' if account.abilities.unowned is defined else '✔️' }}
+                    </td>
+                </tr>
             </tbody>
         </table>
       </div>
