@@ -85,7 +85,7 @@
                 <tr title="Whether your bot will go offline 2 minutes after being alone or not">
                     <td>No abandoned timeout</td>
                     <td class="status {{ 'available' if account.abilities.abandoned is defined else 'unavailable' }}">
-                        {{ '✔️' if account.abilities.abandoned is defined and else '❌' }}
+                        {{ '✔️' if account.abilities.abandoned is defined else '❌' }}
                     </td>
                 </tr>
                 <tr title="Whether you can deploy a bot on a world you dont own">
