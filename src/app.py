@@ -320,11 +320,11 @@ def get_uuid(username: str) -> str | None:
 def index():
     try:
         mcusername = request.cookies.get("mc_username")
-        return render_template("index.html", username=mcusername)
         print("[app.py] Successfully rendered index template") # debug
+        return render_template("index.html", username=mcusername)
     except:
-        return render_template("index.html")
         print("[app.py] Couldn't get mc_username") # debug
+        return render_template("index.html")
 
 @app.route("/utils")
 def utilities():
