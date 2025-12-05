@@ -131,10 +131,7 @@
 
     // Logout
     document.getElementById('logout-btn').addEventListener('click', () => {
-      document.cookie = "mc_username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie = "mc_access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie = "mc_uuid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      window.location.href = "/";
+      window.location.href = "/logout";
     });
   </script>
   
