@@ -84,11 +84,15 @@
                 </tr>
                 <tr title="Whether your bot will go offline 2 minutes after being alone or not">
                     <td>No abandoned timeout</td>
-                    <td class="status unavailable">{{ account.abilities.abandoned if account.abilities.abandoned is defined else ❌ }}</td>
+                    <td class="status {{ 'available' if account.abilities.abandoned is defined else 'unavailable' }}">
+                        {{ '✔️' if account.abilities.abandoned is defined and else '❌' }}
+                    </td>
                 </tr>
                 <tr title="Whether you can deploy a bot on a world you dont own">
                     <td>Deploy on unowned servers</td>
-                    <td class="status available">{{ account.abilities.unowned if account.abilities.unowned is defined else ✔️ }}</td>
+                    <td class="status {{ 'unavailable' if account.abilities.unowned is defined else 'available' }}">
+                        {{ '❌' if account.abilities.unowned is defined else '✔️' }}
+                    </td>
                 </tr>
             </tbody>
         </table>
