@@ -321,6 +321,17 @@ def index():
     mcusername = request.cookies.get("mc_username")
     return render_template("index.html", username=mcusername)
 
+@app.route("/account")
+def accountpage():
+    session_token = request.cookies.get("mc_access_token")
+    profile_uuid = request.cookies.get("mc_uuid")
+    
+    if session_token and profile_uuid:
+        mcusername = request.cookies.get("mc_username")
+        return render_template("account.html", username=mcusername)
+    else:
+        return redirect("/login")
+
 @app.route("/utils")
 def utilities():
     mcusername = request.cookies.get("mc_username")
