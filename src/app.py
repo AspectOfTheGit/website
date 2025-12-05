@@ -379,8 +379,8 @@ def mc_login():
         return "Error while attempting login", 500
 
     access_token = mc_auth_response["access_token"]
-    username = mc_auth_response["profile"]["username"]
-    uuid = mc_auth_response["profile"]["uuid"]
+    username = mc_auth_response["data"]["profile"]["name"]
+    uuid = mc_auth_response["data"]["profile"]["id"]
 
     resp = make_response(redirect("/"))
     expires_dt = datetime.utcnow() + timedelta(days=30)
