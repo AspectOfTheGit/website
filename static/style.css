@@ -244,6 +244,68 @@ code {
     color: #fff;
 }
 
+.storage-container, .logs-container, .tokens-container {
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+#storage-textarea {
+    width: 100%;
+    min-height: 150px;
+    background: #031014;
+    color: #f7fffc;
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #21505d;
+    font-family: "Roboto Mono", monospace;
+    resize: vertical;
+}
+
+#save-storage-btn {
+    margin-top: 8px;
+    background: #2fa08c;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+#save-storage-btn:hover {
+    background: #3dc9b0;
+}
+
+.log-box {
+    width: 100%;
+    min-height: 150px;
+    background: #031014;
+    border-radius: 6px;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+    color: #f7fffc;
+}
+
+.token-spoiler {
+    margin-top: 1rem;
+}
+
+.token-content {
+    display: none;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.token-content code {
+    background: #031014;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
 .account-table {
     width: 100%;
     border-collapse: collapse;
