@@ -160,6 +160,65 @@
     document.getElementById('logout-btn').addEventListener('click', () => {
       window.location.href = "/logout";
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const saveBtn = document.getElementById('save-storage-btn');
+    const textarea = document.getElementById('storage-textarea');
+    const status = document.getElementById('storage-status');
+    
+    saveBtn.addEventListener('click', async () => {
+        const newContent = textarea.value;
+        status.textContent = "Saving...";
+    
+        try {
+            const res = await fetch('/api/save-storage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ contents: newContent })
+            });
+    
+            if(res.ok) {
+                status.textContent = "Saved ✅";
+                setTimeout(() => status.textContent = "", 2000);
+            } else {
+                status.textContent = "Error ❌";
+            }
+        } catch (e) {
+            status.textContent = "Error ❌";
+            console.error(e);
+        }
+    });
+    
+    // Spoiler toggles
+    document.querySelectorAll('.toggle-token-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const content = btn.nextElementSibling;
+            content.style.display = content.style.display === 'flex' ? 'none' : 'flex';
+        });
+    });
+    
+    // Refresh tokens
+    document.querySelectorAll('.refresh-token-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const type = btn.dataset.token;
+            btn.disabled = true;
+    
+            try {
+                const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
+                if(res.ok) {
+                    const data = await res.json();
+                    document.getElementById(`${type}-token`).textContent = data.token;
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    });
+    });
   </script>
   
 </body>
