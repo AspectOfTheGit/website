@@ -244,6 +244,63 @@ code {
     color: #fff;
 }
 
+.layout {
+    display: flex;
+    min-height: calc(100vh - 100px); /* Adjust for footer */
+}
+
+.sidebar {
+    width: 200px;
+    background-color: #102b33;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.sidebar-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-btn {
+    background: none;
+    border: none;
+    color: #d4fff3;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.sidebar-btn:hover {
+    background: #21505d;
+}
+
+.sidebar-btn.active {
+    background: #2fa08c;
+    color: #fff;
+}
+
+.logout-btn {
+    color: #fc3c3c;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+}
+
 #log-container {
     width: 90%;
     height: 65vh;
