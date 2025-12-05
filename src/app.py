@@ -145,7 +145,7 @@ def world():
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
-def botinfo():
+def refreshbotinfo():
     global data, timeout
     bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
     for bot in bots:
@@ -341,7 +341,7 @@ def start_deploy():
 
 @app.route("/bots/status")
 def status():
-    botinfo()
+    refreshbotinfo()
     return render_template("status.html",bots=data["bot"])
 
 @app.route("/bots/status/<bot>")
@@ -503,6 +503,7 @@ def apibotstatus(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
+    refreshbotinfo()
     return jsonify({"success": True, "value": data["bot"][bot]})
 
 
