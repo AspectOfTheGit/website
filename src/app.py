@@ -497,7 +497,7 @@ def screenshot_request(bot):
 # API/Utilities
 #
 
-@app.route("/api/<bot>/status", methods=["GET"])
+@app.route("/api/bots/<bot>/status", methods=["GET"])
 def apibotstatus(bot):
     global data
     bot = bot.strip()
