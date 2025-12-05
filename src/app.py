@@ -469,6 +469,7 @@ def upload_screenshot():
     print(f"[app.py] Screenshot recieved from {account}: {file.filename}")
     return {"status": "success"}
 
+#
 # socketio
 #
 
@@ -491,7 +492,19 @@ def screenshot_request(bot):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
-    
+
+#
+# API/Utilities
+#
+
+@app.route("/api/<bot>/status", methods=["GET"])
+def apibotstatus(bot):
+    global data
+    bot = bot.strip()
+    if bot not in data["bot"]:
+        return abort(400)
+    return jsonify({"success": True, "value": data["bot"][bot]})
+
 
 if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
