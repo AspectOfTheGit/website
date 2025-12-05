@@ -493,8 +493,11 @@ def screenshot_request(bot):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
 
-#
-# API/Utilities
+##
+## API/Utilities
+##
+
+## BOT API
 #
 
 @app.route("/api/bots/<bot>/status", methods=["GET"])
@@ -505,6 +508,38 @@ def apibotstatus(bot):
         return abort(400)
     refreshbotinfo()
     return jsonify({"success": True, "value": data["bot"][bot]})
+
+## STORAGE API
+#
+
+@app.route("/api/storage/write", methods=["POST"])
+def write_storage():
+    global data
+    rdata = request.get_json()
+    contents = rdata.get("contents", "")
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+    # Does account exist?
+    if account not in data["account"]:
+        return abort(400)
+    # Does token match?
+    try:
+        if token != data["account"][account]["token"]["write"]:
+            return jsonify({"error": "Unauthorized"}), 401
+    except:
+        return jsonify({"error": "No Token Generated"})
+    # Is size over limit?
+    data["account"][account].setdefault("abilities", {})
+    capacity = data["account"][account]["abilities"].get("capacity", 1)
+    if len(contents.encode('utf-8')) > capacity * 1024 * 1024:
+        return jsonify({"error": "Storage limit exceeded"}), 400
+
+    # Save content
+    data["account"][account].setdefault("storage", {})
+    data["account"][account]["storage"].setdefault("contents", "")
+    data["account"][account]["storage"]["contents"] = contents
+
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":
