@@ -65,8 +65,33 @@
 
     <main class="main-content">
       <div id="account-status" class="tab-content active">
-        <h2>Account Status</h2>
-        <p>Show account details here...</p>
+        <p class="plaintext">
+            Please contact me if you need more capabilities
+        </p>
+        <table class="account-table">
+            <tbody>
+                <tr title="How many times you can deploy a bot each day">
+                    <td>Uses per day</td>
+                    <td class="plaintext">{{ account.abilities.uses if account.abilities.uses is defined else 10 }}</td>
+                </tr>
+                <tr title="How many bots you can have at the same time">
+                    <td>Simultaneous Bots</td>
+                    <td class="plaintext">{{ account.abilities.simultaneous if account.abilities.simultaneous is defined else 1 }}</td>
+                </tr>
+                <tr title="How long until your bot will go offline after deploying">
+                    <td>Bot uptime limit</td>
+                    <td class="plaintext">{{ account.abilities.uptime if account.abilities.uptime is defined else 30 }} mins</td>
+                </tr>
+                <tr title="Whether your bot will go offline 2 minutes after being alone or not">
+                    <td>No abandoned timeout</td>
+                    <td class="status unavailable">{{ account.abilities.abandoned if account.abilities.abandoned is defined else ❌ }}</td>
+                </tr>
+                <tr title="Whether you can deploy a bot on a world you dont own">
+                    <td>Deploy on unowned servers</td>
+                    <td class="status available">{{ account.abilities.unowned if account.abilities.unowned is defined else ✔️ }}</td>
+                </tr>
+            </tbody>
+        </table>
       </div>
       <div id="user-storage" class="tab-content">
         <h2>User Storage</h2>
