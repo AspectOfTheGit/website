@@ -318,21 +318,18 @@ def get_uuid(username: str) -> str | None:
 #######################
 @app.route("/")
 def index():
-    try:
-        mcusername = request.cookies.get("mc_username")
-        print("[app.py] Successfully rendered index template") # debug
-        return render_template("index.html", username=mcusername)
-    except:
-        print("[app.py] Couldn't get mc_username") # debug
-        return render_template("index.html")
+    mcusername = request.cookies.get("mc_username")
+    return render_template("index.html", username=mcusername)
 
 @app.route("/utils")
 def utilities():
-    return render_template("utilities.html")
+    mcusername = request.cookies.get("mc_username")
+    return render_template("utilities.html", username=mcusername)
     
 @app.route("/bots")
 def home():
-    return render_template("aspectbots.html")
+    mcusername = request.cookies.get("mc_username")
+    return render_template("aspectbots.html", username=mcusername)
 
 @app.route("/bots/deploy")
 def start_deploy():
@@ -341,21 +338,24 @@ def start_deploy():
     profile_uuid = request.cookies.get("mc_uuid")
     
     if session_token and profile_uuid:
-        return render_template("deploy.html")
+        mcusername = request.cookies.get("mc_username")
+        return render_template("deploy.html", username=mcusername)
     else:
         return redirect("/login")
 
 @app.route("/bots/status")
 def status():
     refreshbotinfo()
-    return render_template("status.html",bots=data["bot"])
+    mcusername = request.cookies.get("mc_username")
+    return render_template("status.html", username=mcusername)
 
 @app.route("/bots/status/<bot>")
 def bot_status(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
-    return render_template("bot_status.html",bot=data["bot"][bot],bot_name=bot)
+    mcusername = request.cookies.get("mc_username")
+    return render_template("bot_status.html", bot=data["bot"][bot],bot_name=bot, username=mcusername)
 
 @app.route("/login")
 def mc_login():
