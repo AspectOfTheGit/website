@@ -251,7 +251,7 @@ code {
     background-color: #001a11;
     color: #e9f8f2;
     border-radius: 8px;
-    overflow: hidden;
+    /*overflow: hidden;*/
 }
 
 .account-table th,
@@ -283,7 +283,7 @@ code {
 }
 
 .account-table tbody tr[data-tip]::after {
-    content: attr(title);
+    content: attr(data-tip);
     position: absolute;
     left: 0;
     bottom: 100%;
