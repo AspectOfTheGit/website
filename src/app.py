@@ -318,7 +318,11 @@ def get_uuid(username: str) -> str | None:
 #######################
 @app.route("/")
 def index():
-    return render_template("index.html")
+    try:
+        mcusername = request.cookies.get("mc_username")
+        return render_template("index.html", username=mcusername)
+    except:
+        return render_template("index.html")
 
 @app.route("/utils")
 def utilities():
