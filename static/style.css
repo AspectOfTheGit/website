@@ -273,16 +273,16 @@ code {
     background-color: #031014;
 }
 
-.account-table tbody tr {
+.account-table tbody tr[data-tip] {
     position: relative;
     cursor: pointer;
 }
 
-.account-table tbody tr:hover::after {
+.account-table tbody tr[data-tip]:hover::after {
     opacity: 1;
 }
 
-.account-table tbody tr::after {
+.account-table tbody tr[data-tip]::after {
     content: attr(title);
     position: absolute;
     left: 0;
