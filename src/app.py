@@ -338,6 +338,11 @@ def accountpage():
     else:
         return redirect("/login")
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
 @app.route("/utils")
 def utilities():
     mcusername = session.get("mc_username")
