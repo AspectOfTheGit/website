@@ -321,8 +321,10 @@ def index():
     try:
         mcusername = request.cookies.get("mc_username")
         return render_template("index.html", username=mcusername)
+        print("[app.py] Successfully rendered index template") # debug
     except:
         return render_template("index.html")
+        print("[app.py] Couldn't get mc_username") # debug
 
 @app.route("/utils")
 def utilities():
