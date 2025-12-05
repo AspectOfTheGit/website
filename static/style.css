@@ -150,7 +150,7 @@ code {
 }
 
 .bot-card {
-    background: #001a11;
+    background: #061a21;
     border-radius: 8px;
     padding: 1rem;
     display: flex;
@@ -270,7 +270,7 @@ code {
 }
 
 .account-table tbody tr:nth-child(odd) {
-    background-color: #001a11;
+    background-color: #061a21;
 }
 
 .account-table tbody tr {
@@ -372,7 +372,7 @@ code {
 #log-container {
     width: 90%;
     height: 65vh;
-    background: #001a11;
+    background: #061a21;
     color: #f7fffc;
     padding: 10px;
     font-family: monospace;
@@ -438,7 +438,7 @@ code {
 }
 
 .screenshot-button {
-    background: #001a11;
+    background: #061a21;
     border: none;
     padding: 0.5rem 1rem;
     font-weight: 600;
@@ -451,7 +451,7 @@ code {
 }
 
 .screenshot-button:hover {
-    background: #003825;
+    background: #092630;
 }
 
 .camera-icon {
@@ -463,7 +463,7 @@ code {
 #screenshot-output {
     width: 90%;
     height: 65vh;
-    background: #05331c;
+    background: #061a21;
     color: #f7fffc;
     padding: 10px;
     font-family: monospace;
