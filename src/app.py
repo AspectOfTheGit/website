@@ -319,17 +319,17 @@ def get_uuid(username: str) -> str | None:
 #######################
 @app.route("/")
 def index():
-    mcusername = request.cookies.get("mc_username")
+    mcusername = session.get("mc_username")
     return render_template("index.html", username=mcusername)
 
 @app.route("/account")
 def accountpage():
-    session_token = request.cookies.get("mc_access_token")
-    profile_uuid = request.cookies.get("mc_uuid")
+    session_token = session.get("mc_access_token")
+    profile_uuid = session.get("mc_uuid")
     
     if session_token and profile_uuid:
         global data
-        mcusername = request.cookies.get("mc_username")
+        mcusername = session.get("mc_username")
         data.setdefault("account", {})
         data["account"].setdefault(mcusername, {})
         data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
@@ -340,22 +340,22 @@ def accountpage():
 
 @app.route("/utils")
 def utilities():
-    mcusername = request.cookies.get("mc_username")
+    mcusername = session.get("mc_username")
     return render_template("utilities.html", username=mcusername)
     
 @app.route("/bots")
 def home():
-    mcusername = request.cookies.get("mc_username")
+    mcusername = session.get("mc_username")
     return render_template("aspectbots.html", username=mcusername)
 
 @app.route("/bots/deploy")
 def start_deploy():
     # If not logged in, then log in first
-    session_token = request.cookies.get("mc_access_token")
-    profile_uuid = request.cookies.get("mc_uuid")
+    session_token = session.get("mc_access_token")
+    profile_uuid = session.get("mc_uuid")
     
     if session_token and profile_uuid:
-        mcusername = request.cookies.get("mc_username")
+        mcusername = session.get("mc_username")
         return render_template("deploy.html", username=mcusername)
     else:
         return redirect("/login")
@@ -363,7 +363,7 @@ def start_deploy():
 @app.route("/bots/status")
 def status():
     refreshbotinfo()
-    mcusername = request.cookies.get("mc_username")
+    mcusername = session.get("mc_username")
     return render_template("status.html", bots=data["bot"], username=mcusername)
 
 @app.route("/bots/status/<bot>")
@@ -371,7 +371,7 @@ def bot_status(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
-    mcusername = request.cookies.get("mc_username")
+    mcusername = session.get("mc_username")
     return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
 
 @app.route("/login")
@@ -397,18 +397,11 @@ def mc_login():
     if mc_auth_response.get("error"):
         return "Error while attempting login", 500
 
-    access_token = mc_auth_response["access_token"]
-    username = mc_auth_response["data"]["profile"]["name"]
-    uuid = mc_auth_response["data"]["profile"]["id"]
+    session['mc_access_token'] = mc_auth_response["access_token"]
+    session['mc_username'] = mc_auth_response["data"]["profile"]["name"]
+    session['mc_uuid'] = mc_auth_response["data"]["profile"]["id"]
 
-    resp = make_response(redirect("/"))
-    expires_dt = datetime.utcnow() + timedelta(days=30)
-
-    resp.set_cookie("mc_access_token", access_token, path="/", expires=expires_dt)
-    resp.set_cookie("mc_username", username, path="/", expires=expires_dt)
-    resp.set_cookie("mc_uuid", uuid, path="/", expires=expires_dt)
-
-    return resp
+    return redirect("/")
 
 @app.route("/bots/log", methods=["POST"])
 def update_log():
