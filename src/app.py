@@ -347,7 +347,7 @@ def start_deploy():
 def status():
     refreshbotinfo()
     mcusername = request.cookies.get("mc_username")
-    return render_template("status.html", username=mcusername)
+    return render_template("status.html", bots=data["bot"], username=mcusername)
 
 @app.route("/bots/status/<bot>")
 def bot_status(bot):
@@ -355,7 +355,7 @@ def bot_status(bot):
     if bot not in data["bot"]:
         return abort(400)
     mcusername = request.cookies.get("mc_username")
-    return render_template("bot_status.html", bot=data["bot"][bot],bot_name=bot, username=mcusername)
+    return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
 
 @app.route("/login")
 def mc_login():
