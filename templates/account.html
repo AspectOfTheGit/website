@@ -169,17 +169,23 @@
         const saveBtn = document.getElementById('save-storage-btn');
         const textarea = document.getElementById('storage-textarea');
         const status = document.getElementById('storage-status');
+        const accountName = "{{ username }}"
     
         if (saveBtn && textarea && status) {
             saveBtn.addEventListener('click', async () => {
                 const newContent = textarea.value;
+                const writeToken = document.getElementById('write-token')?.textContent || "";
                 status.textContent = "Saving...";
     
                 try {
                     const res = await fetch('/api/storage/write', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: newContent })
+                        body: JSON.stringify({
+                            contents: newContent,
+                            account: accountName,
+                            token: writeToken
+                        })
                     });
     
                     if(res.ok) {
