@@ -66,10 +66,8 @@ try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
 except:
-    data = {}
-    data.setdefault("bot", {})
-    data.setdefault("account", {})
-    data = json.loads(data)
+    data = {"bot": {}, "account": {}}
+    os.makedirs("/data", exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
