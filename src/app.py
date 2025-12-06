@@ -545,6 +545,9 @@ def write_storage():
     data["account"][account]["storage"].setdefault("contents", "")
     data["account"][account]["storage"]["contents"] = contents
 
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
     print("Successfully saved") # debug
 
     return jsonify({"success": True})
@@ -574,6 +577,9 @@ def refresh_token(token):
     data["account"][account]["token"].setdefault(token, {})
 
     data["account"][account]["token"][token] = new_token
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
     return jsonify({"token": new_token}), 200
 
