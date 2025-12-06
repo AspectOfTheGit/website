@@ -517,6 +517,9 @@ def apibotstatus(bot):
 @app.route("/api/storage/write", methods=["POST"])
 def write_storage():
     import time
+
+    ua = request.headers.get("User-Agent", "")
+    world_id = re.search(r"world:([a-zA-Z0-9-]+)", ua).group(1) if match else None
     
     global data
     rdata = request.get_json()
@@ -525,26 +528,28 @@ def write_storage():
     token = rdata.get("token", "")
     # Does account exist?
     if account not in data["account"]:
-        print("Account doesn't exist") # debug
         return jsonify({"error": "Account doesn't exist"}), 400
     time = time.strftime('%H:%M:%S')
     # Does token match?
     try:
         if token != data["account"][account]["token"]["write"]:
-            print("Incorrect token") # debug
-            contents = [time, "Write request attempted with incorrect token"]
+            if world_id:
+                contents = [time, f"[World {world_id}] Write request attempted with incorrect token"]
+            else:
+                contents = [time, "Write request attempted with incorrect token"]
             socketio.emit('log', contents, room=account)
             return jsonify({"error": "Unauthorized"}), 401
     except:
-        print("No token generated") # debug
         return jsonify({"error": "No Token Generated"}), 400
     # Is size over limit?
     data["account"][account].setdefault("abilities", {})
     capacity = data["account"][account]["abilities"].get("capacity", 1)
     size = len(content.encode('utf-8'))
     if size > capacity * 1024 * 1024:
-        print("Exceeds size limit") # debug
-        contents = [time, f"Write request attempted with large data: {size} bytes"]
+        if world_id:
+            contents = [time, f"[World {world_id}] Write request attempted with large data of {size} bytes"]
+        else:
+            contents = [time, f"Write request attempted with large data of {size} bytes"]
         socketio.emit('log', contents, room=account)
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
@@ -554,13 +559,14 @@ def write_storage():
     data["account"][account]["storage"]["contents"] = content
 
     # Emit to logs
-    contents = [time, f"Successfully wrote to storage: {content}"]
+    if world_id:
+        contents = [time, f"[World {world_id}] Successfully wrote to storage: {content}"]
+    else:
+        contents = [time, f"Successfully wrote to storage: {content}"]
     socketio.emit('log', contents, room=account)
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-
-    print("Successfully saved") # debug
 
     return jsonify({"success": True})
 
