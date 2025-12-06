@@ -161,20 +161,14 @@
         const logContainer = document.getElementById("logs-output");
 
         // socket.io
-        let socket;
-        try {
-            socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-            socket.emit('join', accountName);
-        
-            socket.on("log", (contents) => {
-                const time = contents[0];
-                const msg = contents[1];
-                logContainer.textContent += `[${time}] ${msg}\n`;
-                logContainer.scrollTop = logContainer.scrollHeight;
-            });
-        } catch (e) {
-            console.warn("Socket.IO connection failed:", e);
-        }
+        socket.emit('join', accountName);
+    
+        socket.on("log", (contents) => {
+            const time = contents[0];
+            const msg = contents[1];
+            logContainer.textContent += `[${time}] ${msg}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        });
         
         // Sidebar buttons
         const buttons = document.querySelectorAll('.sidebar-btn:not(.logout-btn)');
