@@ -527,6 +527,7 @@ def write_storage():
     if account not in data["account"]:
         print("Account doesn't exist") # debug
         return jsonify({"error": "Account doesn't exist"}), 400
+    time = time.strftime('%H:%M:%S')
     # Does token match?
     try:
         if token != data["account"][account]["token"]["write"]:
@@ -553,8 +554,6 @@ def write_storage():
     data["account"][account]["storage"]["contents"] = content
 
     # Emit to logs
-    time = time.strftime('%H:%M:%S')
-
     contents = [time, f"Successfully wrote to storage: {content}"]
     socketio.emit('log', contents, room=account)
 
