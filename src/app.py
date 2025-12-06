@@ -516,6 +516,8 @@ def apibotstatus(bot):
 
 @app.route("/api/storage/write", methods=["POST"])
 def write_storage():
+    import time
+    
     global data
     rdata = request.get_json()
     content = rdata.get("contents", "")
