@@ -124,7 +124,7 @@
               <div class="token-spoiler">
                   <button class="toggle-token-btn">Show Read Token</button>
                   <div class="token-content">
-                      <code id="read-token">{{ account.storage.token.read if account.storage.token is defined and account.storage.token.read is defined else "No Token" }}</code>
+                      <code id="read-token">{{ account.token.read if account.token is defined and account.token.read is defined else "No Token" }}</code>
                       <button class="refresh-token-btn" data-token="read">Refresh</button>
                   </div>
               </div>
@@ -132,7 +132,7 @@
               <div class="token-spoiler">
                   <button class="toggle-token-btn">Show Write Token</button>
                   <div class="token-content">
-                      <code id="write-token">{{ account.storage.token.write if account.storage.token is defined and account.storage.token.write is defined else "No Token" }}</code>
+                      <code id="write-token">{{ account.token.write if account.token is defined and account.token.write is defined else "No Token" }}</code>
                       <button class="refresh-token-btn" data-token="write">Refresh</button>
                   </div>
               </div>
