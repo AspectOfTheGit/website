@@ -278,7 +278,7 @@ code {
 
 .log-box {
     width: 100%;
-    min-height: 150px;
+    height: 150px;
     background: #031014;
     border-radius: 6px;
     padding: 10px;
