@@ -195,6 +195,8 @@
                         const data = await res.json().catch(() => ({}));
                         if (data.error === "No Token Generated") {
                             status.textContent = "Generate a token first ❌";
+                        } else if (data.error === "Storage Limit Exceeded") {
+                            status.textContent = "Storage limit exceeded ❌";
                         } else {
                             status.textContent = "Error ❌";
                         }
