@@ -480,9 +480,9 @@ def handle_connect():
     print('[app.py] Client connected')
 
 @socketio.on('join')
-def handle_join(bot_name):
-    join_room(bot_name)
-    print(f'[app.py] Client joined room: {bot_name}')
+def handle_join(room):
+    join_room(room)
+    print(f'[app.py] Client joined room: {room}')
 
 @socketio.on("get_screenshot")
 def screenshot_request(bot):
@@ -518,7 +518,7 @@ def apibotstatus(bot):
 def write_storage():
     global data
     rdata = request.get_json()
-    contents = rdata.get("contents", "")
+    content = rdata.get("contents", "")
     account = rdata.get("account", "")
     token = rdata.get("token", "")
     # Does account exist?
@@ -529,6 +529,8 @@ def write_storage():
     try:
         if token != data["account"][account]["token"]["write"]:
             print("Incorrect token") # debug
+            contents = [time, "Write request attempted with incorrect token"]
+            socketio.emit('log', contents, room=account)
             return jsonify({"error": "Unauthorized"}), 401
     except:
         print("No token generated") # debug
@@ -536,14 +538,23 @@ def write_storage():
     # Is size over limit?
     data["account"][account].setdefault("abilities", {})
     capacity = data["account"][account]["abilities"].get("capacity", 1)
-    if len(contents.encode('utf-8')) > capacity * 1024 * 1024:
+    size = len(content.encode('utf-8'))
+    if size > capacity * 1024 * 1024:
         print("Exceeds size limit") # debug
+        contents = [time, f"Write request attempted with large data: {size} bytes"]
+        socketio.emit('log', contents, room=account)
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # Save content
     data["account"][account].setdefault("storage", {})
     data["account"][account]["storage"].setdefault("contents", "")
-    data["account"][account]["storage"]["contents"] = contents
+    data["account"][account]["storage"]["contents"] = content
+
+    # Emit to logs
+    time = time.strftime('%H:%M:%S')
+
+    contents = [time, f"Successfully wrote to storage: {content}"]
+    socketio.emit('log', contents, room=account)
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
