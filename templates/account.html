@@ -22,6 +22,7 @@
       Not affiliated with Mojang AB or Partners.
     </p>
   </div>
+              <h3>Tokens</h3>
 
   <div class="footer-right">
     <a href="https://www.youtube.com/@Legitimoose" target="_blank" rel="noopener noreferrer">
@@ -120,7 +121,6 @@
           </div>
     
           <div class="tokens-container">
-              <h3>Tokens</h3>
               <div class="token-spoiler">
                   <button class="toggle-token-btn">Show Read Token</button>
                   <div class="token-content">
@@ -156,6 +156,20 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const accountName = "{{ username }}"
+        
+        // socket.io
+        const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
+        
+        socket.emit('join', accountName);
+
+        socket.on("log", (contents) => {
+            const time = contents[0];
+            const msg = contents[1];
+            logContainer.textContent += `[${time}] ${msg}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        });
+        
         // Sidebar buttons
         const buttons = document.querySelectorAll('.sidebar-btn:not(.logout-btn)');
         const contents = document.querySelectorAll('.tab-content');
@@ -182,7 +196,6 @@
         const saveBtn = document.getElementById('save-storage-btn');
         const textarea = document.getElementById('storage-textarea');
         const status = document.getElementById('storage-status');
-        const accountName = "{{ username }}"
     
         if (saveBtn && textarea && status) {
             saveBtn.addEventListener('click', async () => {
