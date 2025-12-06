@@ -519,7 +519,8 @@ def write_storage():
     import time
 
     ua = request.headers.get("User-Agent", "")
-    world_id = re.search(r"world:([a-zA-Z0-9-]+)", ua).group(1) if match else None
+    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
+    world_id = match.group(1) if match else None
     
     global data
     rdata = request.get_json()
