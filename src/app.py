@@ -572,7 +572,7 @@ def read_storage():
         return jsonify({"error": "No Token Generated"}), 400
         
     # return storage
-    return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]}})
+    return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
 
 @app.post("/api/storage/refresh-token/<token>")
 def refresh_token(token):
