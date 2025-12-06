@@ -552,6 +552,28 @@ def write_storage():
 
     return jsonify({"success": True})
 
+@app.route("/api/storage/write", methods=["GET"])
+def write_storage():
+    global data
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+    # Does account exist?
+    if account not in data["account"]:
+        print("Account doesn't exist") # debug
+        return jsonify({"error": "Account doesn't exist"}), 400
+    # Does token match?
+    try:
+        if token != data["account"][account]["token"]["read"]:
+            print("Incorrect token") # debug
+            return jsonify({"error": "Unauthorized"}), 401
+    except:
+        print("No token generated") # debug
+        return jsonify({"error": "No Token Generated"}), 400
+        
+    # return storage
+    return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]}})
+
 @app.post("/api/storage/refresh-token/<token>")
 def refresh_token(token):
     global data
