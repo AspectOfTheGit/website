@@ -552,7 +552,7 @@ def write_storage():
 
     return jsonify({"success": True})
 
-@app.route("/api/storage/read", methods=["GET"])
+@app.route("/api/storage/read", methods=["POST"])
 def read_storage():
     global data
     rdata = request.get_json()
