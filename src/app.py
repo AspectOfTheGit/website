@@ -11,6 +11,8 @@ import re
 from markupsafe import Markup
 import threading
 import base64
+import secrets
+import string
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
@@ -565,7 +567,8 @@ def refresh_token(token):
         return jsonify({"error": "Incorrect Token Type"}), 400
 
     # generate new token
-    new_token = "Example"
+    chars = string.ascii_letters + string.digits + string.punctuation
+    new_token = ''.join(secrets.choice(chars) for _ in range(24))
 
     data["account"][account].setdefault("token", {})
     data["account"][account]["token"].setdefault(token, {})
