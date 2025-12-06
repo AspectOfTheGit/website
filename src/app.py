@@ -65,11 +65,13 @@ HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
+        print(data)
 except:
     data = {"bot": {}, "account": {}}
     os.makedirs("/data", exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
+    print("No file found")
 
 '''
 | ROUTES for the bots
