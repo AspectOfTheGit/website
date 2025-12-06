@@ -521,23 +521,29 @@ def write_storage():
     token = rdata.get("token", "")
     # Does account exist?
     if account not in data["account"]:
+        print("Account doesnt exist") # debug
         return abort(400)
     # Does token match?
     try:
         if token != data["account"][account]["token"]["write"]:
+            print("Incorrect token") # debug
             return jsonify({"error": "Unauthorized"}), 401
     except:
+        print("No token generated") # debug
         return jsonify({"error": "No Token Generated"})
     # Is size over limit?
     data["account"][account].setdefault("abilities", {})
     capacity = data["account"][account]["abilities"].get("capacity", 1)
     if len(contents.encode('utf-8')) > capacity * 1024 * 1024:
+        print("Exceeds size limit") # debug
         return jsonify({"error": "Storage limit exceeded"}), 400
 
     # Save content
     data["account"][account].setdefault("storage", {})
     data["account"][account]["storage"].setdefault("contents", "")
     data["account"][account]["storage"]["contents"] = contents
+
+    print("Successfully saved") # debug
 
     return jsonify({"success": True})
 
