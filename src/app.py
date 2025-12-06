@@ -530,13 +530,13 @@ def write_storage():
             return jsonify({"error": "Unauthorized"}), 401
     except:
         print("No token generated") # debug
-        return jsonify({"error": "No Token Generated"})
+        return jsonify({"error": "No Token Generated"}), 400
     # Is size over limit?
     data["account"][account].setdefault("abilities", {})
     capacity = data["account"][account]["abilities"].get("capacity", 1)
     if len(contents.encode('utf-8')) > capacity * 1024 * 1024:
         print("Exceeds size limit") # debug
-        return jsonify({"error": "Storage limit exceeded"}), 400
+        return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # Save content
     data["account"][account].setdefault("storage", {})
