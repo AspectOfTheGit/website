@@ -521,8 +521,8 @@ def write_storage():
     token = rdata.get("token", "")
     # Does account exist?
     if account not in data["account"]:
-        print("Account doesnt exist") # debug
-        return abort(400)
+        print("Account doesn't exist") # debug
+        return jsonify({"error": "Account doesn't exist"}), 400
     # Does token match?
     try:
         if token != data["account"][account]["token"]["write"]:
@@ -546,6 +546,33 @@ def write_storage():
     print("Successfully saved") # debug
 
     return jsonify({"success": True})
+
+@app.post("/api/storage/refresh-token/<token>")
+def refresh_token(token):
+    global data
+
+    if "mc_username" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = session["mc_username"]
+
+    if account not in data["account"]:
+        print("Account doesn't exist")
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if token not in ["write", "read"]:
+        print("Incorrect token type")
+        return jsonify({"error": "Incorrect Token Type"}), 400
+
+    # generate new token
+    new_token = "Example"
+
+    data["account"][account].setdefault("token", {})
+    data["account"][account]["token"].setdefault(token, {})
+
+    data["account"][account]["token"][token] = new_token
+
+    return jsonify({"token": new_token}), 200
 
 
 if __name__ == "__main__":
