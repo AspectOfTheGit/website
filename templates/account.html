@@ -137,6 +137,19 @@
                   </div>
               </div>
           </div>
+
+          <h2>How to Use</h3>
+          <p class="plaintext">
+              Example http request to write:<br>
+              <code>
+                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
+              </code>
+              <br><br>
+              Example http request to read:<br>
+              <code>
+                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
+              </code>
+          </p>
       </div>
     </main>
   </div>
