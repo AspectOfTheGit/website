@@ -363,7 +363,7 @@ def start_deploy():
     
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
-        return render_template("deploy.html", username=mcusername)
+        return render_template("deploy.html", username=mcusername, bots=data["bot"])
     else:
         return redirect("/login")
 
