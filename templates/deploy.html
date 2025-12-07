@@ -55,11 +55,31 @@
     <div class="dropdown-wrapper">
         <label for="bot-select" class="dropdown-label">Choose a bot:</label>
         <select id="bot-select" class="dropdown">
-            {% for name in bots.keys() %}
-                <option value="{{ name }}">{{ name }}</option>
+            {% for name, bot in bots.items() %}
+                <option 
+                    value="{{ name }}"
+                    data-status="{{ 'online' if bot.status else 'offline' }}"
+                >
+                    {{ name }}
+                </option>
             {% endfor %}
         </select>
     </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const options = document.querySelectorAll("#bot-select option");
+    
+        options.forEach(option => {
+            const status = option.getAttribute("data-status");
+    
+            if (status === "online") {
+                option.style.background = "#240303";
+                option.style.color = "#f8e2e2";
+            }
+        });
+    });
+    </script>
   
 </body>
 </html>
