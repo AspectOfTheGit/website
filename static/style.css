@@ -244,6 +244,44 @@ code {
     color: #fff;
 }
 
+.dropdown-wrapper {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.dropdown-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #d4fff3;
+}
+
+.dropdown {
+    background: #031014;
+    color: #e9f8f2;
+    border: 1px solid #21505d;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    width: 220px;
+}
+
+.dropdown:hover {
+    background: #092630;
+    border-color: #2fa08c;
+}
+
+.dropdown:focus {
+    outline: none;
+    border-color: #3dc9b0;
+    transform: translateY(2px);
+}
+
 .storage-container, .logs-container, .tokens-container {
     margin-bottom: 2rem;
     text-align: left;
