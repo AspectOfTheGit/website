@@ -52,7 +52,12 @@
         </div>
     </nav>
 
-
+    <label for="bot-select">Choose a bot:</label>
+    <select id="bot-select">
+        {% for name in bots.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+    </select>
   
 </body>
 </html>
