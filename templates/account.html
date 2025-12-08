@@ -249,7 +249,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`/api/storage/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
                     if(res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
