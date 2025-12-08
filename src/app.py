@@ -65,13 +65,13 @@ HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 try:
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-        print(data)
+        #print(data)
 except:
     data = {"bot": {}, "account": {}}
     os.makedirs("/data", exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
-    print("No file found")
+    #print("No file found")
 
 #
 ## FUNCTIONS
@@ -420,7 +420,7 @@ def update_log():
 
     contents = [time, msg]
 
-    print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
+    #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
@@ -615,15 +615,15 @@ def apistorageread():
     token = rdata.get("token", "")
     # Does account exist?
     if account not in data["account"]:
-        print("Account doesn't exist") # debug
+        #print("Account doesn't exist") # debug
         return jsonify({"error": "Account doesn't exist"}), 400
     # Does token match?
     try:
         if token != data["account"][account]["token"]["read"]:
-            print("Incorrect token") # debug
+            #print("Incorrect token") # debug
             return jsonify({"error": "Unauthorized"}), 401
     except:
-        print("No token generated") # debug
+        #print("No token generated") # debug
         return jsonify({"error": "No Token Generated"}), 400
         
     # return storage
@@ -641,12 +641,12 @@ def apirefreshtoken(token):
     account = session["mc_username"]
 
     if account not in data["account"]:
-        print("Account doesn't exist")
+        #print("Account doesn't exist")
         return jsonify({"error": "Account doesn't exist"}), 400
 
     if token not in ["write", "read", "deploy"]:
-        print("Incorrect token type")
-        return jsonify({"error": "Incorrect Token Type"}), 400
+        #print("Invalid token type")
+        return jsonify({"error": "Invalid Token Type"}), 400
 
     # generate new token
     chars = string.ascii_letters + string.digits + string.punctuation
