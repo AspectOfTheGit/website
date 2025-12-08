@@ -511,6 +511,19 @@ def apibotstatus(bot):
     refreshbotinfo()
     return jsonify({"success": True, "value": data["bot"][bot]})
 
+## DEPLOY API
+#
+
+@app.route("/api/deploy", methods=["POST"])
+def deploybot():
+    global data
+    
+    rdata = request.get_json()
+    bot = rdata.get("bot", "")
+    world = rdata.get("world", "")
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+
 ## STORAGE API
 #
 
@@ -593,6 +606,8 @@ def read_storage():
     # return storage
     return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
 
+## TOKENS
+
 @app.post("/api/storage/refresh-token/<token>")
 def refresh_token(token):
     global data
@@ -606,7 +621,7 @@ def refresh_token(token):
         print("Account doesn't exist")
         return jsonify({"error": "Account doesn't exist"}), 400
 
-    if token not in ["write", "read"]:
+    if token not in ["write", "read", "deploy"]:
         print("Incorrect token type")
         return jsonify({"error": "Incorrect Token Type"}), 400
 
