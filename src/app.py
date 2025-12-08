@@ -514,7 +514,7 @@ def apibotstatus(bot):
 ## DEPLOY API
 #
 
-@app.route("/api/deploy", methods=["POST"])
+@app.route("/api/deploy", methods=["POST"]) # WORK IN PROGRESS
 def deploybot():
     global data
     
@@ -523,6 +523,54 @@ def deploybot():
     world = rdata.get("world", "")
     account = rdata.get("account", "")
     token = rdata.get("token", "")
+    # Does account exist?
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+    # Does token match?
+    try:
+        if token != data["account"][account]["token"]["deploy"]:
+            return jsonify({"error": "Unauthorized"}), 401
+    except:
+        return jsonify({"error": "No Token Generated"}), 400
+    # Bot exists?
+    if bot not in data["bot"]:
+        return jsonify({"error": "Bot doesn't exist"}), 400
+    # Is bot in use?
+    if data["bot"][bot]["status"] == True:
+        return ({"error": "Bot is unavailable"}), 400
+    # Can account deploy?
+    try:
+        dlimitu = data["account"][account]["abilities"]["uses"]
+    except:
+        dlimitu = 10
+    try:
+        dlimits = data["account"][account]["abilities"]["simultaneous"]
+    except:
+        dlimits = 1
+    deployed = 0
+    for botname in data["bot"]:
+        botname.setdefault("deployer", "")
+        if botname["status"] == True and botname["deployer"] == account:
+            deployed += 1
+    if deployed => dlimits:
+        return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
+    try:
+        if data["account"][account]["used"] => dlimitu:
+            return jsonify({"error": f"Deploy uses spent ({dlimitu})"}), 400
+    except:
+        data["account"][account].setdefault("used", 0)
+
+    # Deploy bot
+    data["bot"][bot]["deployer"] = account
+    data["account"][account]["used"] += 1
+    data["bot"][bot]["do"]["deploy"] = world
+
+    print(f"[app.py] {bot} deployed to {world} by {account}")
+    
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True})
 
 ## STORAGE API
 #
