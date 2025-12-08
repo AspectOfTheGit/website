@@ -73,6 +73,263 @@ except:
         json.dump(data, f, indent=4)
     print("No file found")
 
+#
+## FUNCTIONS
+#
+
+# Refresh the bot information for all bots:
+# Bot array, Status, uuid
+def refreshbotinfo():
+    global data, timeout
+    bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
+    for bot in bots:
+        data["bot"].setdefault(bot, {})
+        if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
+            data["bot"][bot]["status"] = False
+        else:
+            data["bot"][bot]["uuid"] = get_uuid(bot)
+            #data["bot"][bot].setdefault("world", {})
+            #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
+            #data["bot"][bot]["world"].setdefault("owner", {})
+            #data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
+            #data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
+        with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+
+# Use legitidevs to get world info
+def get_world_info(uuid: str):
+    url = f"https://api.legiti.dev/world/{uuid}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.HTTPError as http_err:
+        print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
+    except requests.RequestException as err:
+        print(f"[app.py] Request error occurred: {err}")
+    except ValueError:
+        print("[app.py] Response was not valid JSON")
+    return None
+
+# Use ashcon api to get username from uuid
+def get_username(uuid: str) -> str | None:
+    uuid = uuid.replace("-", "")
+    url = f"https://api.ashcon.app/mojang/v2/user/{uuid}" # wtf is ashcon
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("username") # username is this
+    except requests.RequestException:
+        return None
+
+# Get HTML from raw json text
+def raw_to_html(component):
+    # allow both dict and JSON string inputs
+    if isinstance(component, str):
+        try:
+            component = json.loads(component)
+        except json.JSONDecodeError:
+            return Markup(component)
+    segments = []
+    def collect(c, inherited=None):
+        # collect is a nice word
+        if isinstance(c, str):
+            style_str = inherited.get("_style_str", "") if inherited else ""
+            segments.append((c, style_str))
+            return
+        if inherited is None:
+            inherited = {}
+            
+        text = c.get("text", "")
+        color = c.get("color", inherited.get("color"))
+        italic = c.get("italic", inherited.get("italic", False))
+        bold = c.get("bold", inherited.get("bold", False))
+        underlined = c.get("underlined", inherited.get("underlined", False))
+        strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
+
+        # gimme colour
+        resolved_color = None
+        if color:
+            if color in COLOURS:
+                resolved_color = COLOURS[color]
+            elif HEX_COLOUR.match(color):
+                resolved_color = color if color.startswith("#") else f"#{color}"
+
+        # build dem parts ig
+        style_parts = []
+        if resolved_color:
+            style_parts.append(f"color:{resolved_color}")
+        if italic:
+            style_parts.append("font-style:italic")
+        if bold:
+            style_parts.append("font-weight:bold")
+        # combine the styles properly
+        decorations = []
+        if underlined:
+            decorations.append("underline")
+        if strikethrough:
+            decorations.append("line-through")
+        if decorations:
+            style_parts.append("text-decoration:" + " ".join(decorations))
+        style_str = ";".join(style_parts)  # may be empty string womp
+        new_inherited = dict(inherited)
+        new_inherited.update({
+            "color": resolved_color or color,
+            "italic": italic,
+            "bold": bold,
+            "underlined": underlined,
+            "strikethrough": strikethrough,
+            "_style_str": style_str
+        })
+
+        # append this (could be empty)
+        if text:
+            segments.append((text, style_str))
+
+        # AGAIN
+        for e in c.get("extra", []):
+            collect(e, new_inherited)
+    collect(component)
+    # merge pls
+    if not segments:
+        return Markup("")
+    merged = []
+    cur_text, cur_style = segments[0]
+    for t, s in segments[1:]:
+        if s == cur_style:
+            cur_text += t
+        else:
+            merged.append((cur_text, cur_style))
+            cur_text, cur_style = t, s
+    merged.append((cur_text, cur_style))
+    # build HTML yes
+    out = []
+    for text, style in merged:
+        if style:
+            # escape text
+            escaped = Markup.escape(text)
+            out.append(f"<span style='{style}'>{escaped}</span>")
+        else:
+            out.append(Markup.escape(text))
+
+    return Markup("".join(out))
+
+# Get username from uuid using mojang api
+def get_uuid(username: str) -> str | None:
+    url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("id")  # UUID
+        else:
+            return None
+    except Exception:
+        return None
+
+#
+## MAIN ROUTES
+#
+
+@app.route("/")
+def index():
+    mcusername = session.get("mc_username")
+    return render_template("index.html", username=mcusername)
+
+@app.route("/account")
+def accountpage():
+    session_token = session.get("mc_access_token")
+    profile_uuid = session.get("mc_uuid")
+    
+    if session_token and profile_uuid:
+        global data
+        mcusername = session.get("mc_username")
+        data.setdefault("account", {})
+        data["account"].setdefault(mcusername, {})
+        data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
+        data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
+        return render_template("account.html", username=mcusername, account=data["account"][mcusername])
+    else:
+        return redirect("/login")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+@app.route("/utils")
+def utilities():
+    mcusername = session.get("mc_username")
+    return render_template("utilities.html", username=mcusername)
+    
+@app.route("/bots")
+def home():
+    mcusername = session.get("mc_username")
+    return render_template("aspectbots.html", username=mcusername)
+
+@app.route("/bots/deploy")
+def start_deploy():
+    # If not logged in, then log in first
+    session_token = session.get("mc_access_token")
+    profile_uuid = session.get("mc_uuid")
+    
+    if session_token and profile_uuid:
+        mcusername = session.get("mc_username")
+        refreshbotinfo()
+        ### TODO - include owned worlds in template
+        return render_template("deploy.html", username=mcusername, bots=data["bot"])
+    else:
+        return redirect("/login")
+
+@app.route("/bots/status")
+def status():
+    refreshbotinfo()
+    mcusername = session.get("mc_username")
+    return render_template("status.html", bots=data["bot"], username=mcusername)
+
+@app.route("/bots/status/<bot>")
+def bot_status(bot):
+    bot = bot.strip()
+    if bot not in data["bot"]:
+        return abort(400)
+    mcusername = session.get("mc_username")
+    return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
+
+@app.route("/login")
+def mc_login():
+    code = request.args.get("code")
+    if not code:
+        return redirect(AUTH_REQ_URL)
+
+    mc_auth_payload = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": REDIRECT_URI,
+        "grant_type": "authorization_code"
+    }
+
+    mc_auth_response = requests.post(
+        "https://mc-auth.com/oAuth2/token",
+        data=mc_auth_payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    ).json()
+
+    if mc_auth_response.get("error"):
+        return "Error while attempting login", 500
+
+    session['mc_access_token'] = mc_auth_response["access_token"]
+    session['mc_username'] = mc_auth_response["data"]["profile"]["name"]
+    session['mc_uuid'] = mc_auth_response["data"]["profile"]["id"]
+
+    return redirect("/")
+
+#
+## BOT ROUTES
+#
+
 '''
 | ROUTES for the bots
 All POST routes relating to the bot will require headers:
@@ -148,269 +405,7 @@ def world():
         json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
-def refreshbotinfo():
-    global data, timeout
-    bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
-    for bot in bots:
-        data["bot"].setdefault(bot, {})
-        if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
-            data["bot"][bot]["status"] = False
-        else:
-            data["bot"][bot]["uuid"] = get_uuid(bot)
-            #data["bot"][bot].setdefault("world", {})
-            #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
-            #data["bot"][bot]["world"].setdefault("owner", {})
-            #data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
-            #data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
-        with open(DATA_FILE, "w") as f:
-                json.dump(data, f, indent=4)
-
-# uses legitidevs to get world info
-def get_world_info(uuid: str):
-    url = f"https://api.legiti.dev/world/{uuid}"
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        return data
-    except requests.HTTPError as http_err:
-        print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
-    except requests.RequestException as err:
-        print(f"[app.py] Request error occurred: {err}")
-    except ValueError:
-        print("[app.py] Response was not valid JSON")
-    return None
-
-def get_username(uuid: str) -> str | None:
-    uuid = uuid.replace("-", "")
-    url = f"https://api.ashcon.app/mojang/v2/user/{uuid}" # wtf is ashcon
-    try:
-        r = requests.get(url, timeout=5)
-        r.raise_for_status()
-        data = r.json()
-        return data.get("username") # username is this
-    except requests.RequestException:
-        return None
-
-# get html from the raw json
-def raw_to_html(component):
-    # allow both dict and JSON string inputs
-    if isinstance(component, str):
-        try:
-            component = json.loads(component)
-        except json.JSONDecodeError:
-            return Markup(component)
-
-    segments = []
-
-    def collect(c, inherited=None):
-        # collect is a nice word
-        if isinstance(c, str):
-            style_str = inherited.get("_style_str", "") if inherited else ""
-            segments.append((c, style_str))
-            return
-
-        if inherited is None:
-            inherited = {}
-
-        text = c.get("text", "")
-        color = c.get("color", inherited.get("color"))
-        italic = c.get("italic", inherited.get("italic", False))
-        bold = c.get("bold", inherited.get("bold", False))
-        underlined = c.get("underlined", inherited.get("underlined", False))
-        strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
-
-        # gimme colour
-        resolved_color = None
-        if color:
-            if color in COLOURS:
-                resolved_color = COLOURS[color]
-            elif HEX_COLOUR.match(color):
-                resolved_color = color if color.startswith("#") else f"#{color}"
-
-        # build dem parts ig
-        style_parts = []
-        if resolved_color:
-            style_parts.append(f"color:{resolved_color}")
-        if italic:
-            style_parts.append("font-style:italic")
-        if bold:
-            style_parts.append("font-weight:bold")
-        # combine the styles properly
-        decorations = []
-        if underlined:
-            decorations.append("underline")
-        if strikethrough:
-            decorations.append("line-through")
-        if decorations:
-            style_parts.append("text-decoration:" + " ".join(decorations))
-
-        style_str = ";".join(style_parts)  # may be empty string womp
-
-        new_inherited = dict(inherited)
-        new_inherited.update({
-            "color": resolved_color or color,
-            "italic": italic,
-            "bold": bold,
-            "underlined": underlined,
-            "strikethrough": strikethrough,
-            "_style_str": style_str
-        })
-
-        # append this (could be empty)
-        if text:
-            segments.append((text, style_str))
-
-        # AGAIN
-        for e in c.get("extra", []):
-            collect(e, new_inherited)
-
-    collect(component)
-
-    # merge pls
-    if not segments:
-        return Markup("")
-
-    merged = []
-    cur_text, cur_style = segments[0]
-    for t, s in segments[1:]:
-        if s == cur_style:
-            cur_text += t
-        else:
-            merged.append((cur_text, cur_style))
-            cur_text, cur_style = t, s
-    merged.append((cur_text, cur_style))
-
-    # build HTML yes
-    out = []
-    for text, style in merged:
-        if style:
-            # escape text
-            escaped = Markup.escape(text)
-            out.append(f"<span style='{style}'>{escaped}</span>")
-        else:
-            out.append(Markup.escape(text))
-
-    return Markup("".join(out))
-
-
-# uh oh here comes mojang api
-
-def get_uuid(username: str) -> str | None:
-    url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
-    try:
-        r = requests.get(url, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            return data.get("id")  # UUID
-        else:
-            return None
-    except Exception:
-        return None
-
-######################
-
-
-
-
-#help
-
-
-
-
-#######################
-@app.route("/")
-def index():
-    mcusername = session.get("mc_username")
-    return render_template("index.html", username=mcusername)
-
-@app.route("/account")
-def accountpage():
-    session_token = session.get("mc_access_token")
-    profile_uuid = session.get("mc_uuid")
-    
-    if session_token and profile_uuid:
-        global data
-        mcusername = session.get("mc_username")
-        data.setdefault("account", {})
-        data["account"].setdefault(mcusername, {})
-        data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
-        data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
-        return render_template("account.html", username=mcusername, account=data["account"][mcusername])
-    else:
-        return redirect("/login")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/")
-
-@app.route("/utils")
-def utilities():
-    mcusername = session.get("mc_username")
-    return render_template("utilities.html", username=mcusername)
-    
-@app.route("/bots")
-def home():
-    mcusername = session.get("mc_username")
-    return render_template("aspectbots.html", username=mcusername)
-
-@app.route("/bots/deploy")
-def start_deploy():
-    # If not logged in, then log in first
-    session_token = session.get("mc_access_token")
-    profile_uuid = session.get("mc_uuid")
-    
-    if session_token and profile_uuid:
-        mcusername = session.get("mc_username")
-        ### TODO - include owned worlds in template
-        return render_template("deploy.html", username=mcusername, bots=data["bot"])
-    else:
-        return redirect("/login")
-
-@app.route("/bots/status")
-def status():
-    refreshbotinfo()
-    mcusername = session.get("mc_username")
-    return render_template("status.html", bots=data["bot"], username=mcusername)
-
-@app.route("/bots/status/<bot>")
-def bot_status(bot):
-    bot = bot.strip()
-    if bot not in data["bot"]:
-        return abort(400)
-    mcusername = session.get("mc_username")
-    return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
-
-@app.route("/login")
-def mc_login():
-    code = request.args.get("code")
-    if not code:
-        return redirect(AUTH_REQ_URL)
-
-    mc_auth_payload = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-        "grant_type": "authorization_code"
-    }
-
-    mc_auth_response = requests.post(
-        "https://mc-auth.com/oAuth2/token",
-        data=mc_auth_payload,
-        headers={"Content-Type": "application/x-www-form-urlencoded"}
-    ).json()
-
-    if mc_auth_response.get("error"):
-        return "Error while attempting login", 500
-
-    session['mc_access_token'] = mc_auth_response["access_token"]
-    session['mc_username'] = mc_auth_response["data"]["profile"]["name"]
-    session['mc_uuid'] = mc_auth_response["data"]["profile"]["id"]
-
-    return redirect("/")
-
+# Log message to bot log
 @app.route("/bots/log", methods=["POST"])
 def update_log():
     import time
@@ -471,30 +466,6 @@ def upload_screenshot():
 
     print(f"[app.py] Screenshot recieved from {account}: {file.filename}")
     return {"status": "success"}
-
-#
-# socketio
-#
-
-@socketio.on('connect')
-def handle_connect():
-    print('[app.py] Client connected')
-
-@socketio.on('join')
-def handle_join(room):
-    join_room(room)
-    print(f'[app.py] Client joined room: {room}')
-
-@socketio.on("get_screenshot")
-def screenshot_request(bot):
-    bot_name = bot.get("bot").strip()
-    if bot_name not in data["bot"]:
-        return abort(404)
-
-    print(f"[app.py] Screenshot requested for {bot_name}")
-
-    data["bot"][bot_name].setdefault("do", {})
-    data["bot"][bot_name]["do"]["screenshot"] = True
 
 ##
 ## API/Utilities
@@ -690,6 +661,30 @@ def apirefreshtoken(token):
         json.dump(data, f, indent=4)
 
     return jsonify({"token": new_token}), 200
+
+#
+# socketio
+#
+
+@socketio.on('connect')
+def handle_connect():
+    print('[app.py] Client connected')
+
+@socketio.on('join')
+def handle_join(room):
+    join_room(room)
+    print(f'[app.py] Client joined room: {room}')
+
+@socketio.on("get_screenshot")
+def screenshot_request(bot):
+    bot_name = bot.get("bot").strip()
+    if bot_name not in data["bot"]:
+        return abort(404)
+
+    print(f"[app.py] Screenshot requested for {bot_name}")
+
+    data["bot"][bot_name].setdefault("do", {})
+    data["bot"][bot_name]["do"]["screenshot"] = True
 
 
 if __name__ == "__main__":
