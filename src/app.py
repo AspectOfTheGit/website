@@ -363,6 +363,7 @@ def start_deploy():
     
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
+        ### TODO - include owned worlds in template
         return render_template("deploy.html", username=mcusername, bots=data["bot"])
     else:
         return redirect("/login")
@@ -532,6 +533,7 @@ def apideploybot():
             return jsonify({"error": "Unauthorized"}), 401
     except:
         return jsonify({"error": "No Token Generated"}), 400
+    refreshbotinfo()
     # Bot exists?
     if bot not in data["bot"]:
         return jsonify({"error": "Bot doesn't exist"}), 400
