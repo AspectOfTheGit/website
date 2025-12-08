@@ -561,8 +561,10 @@ def deploybot():
         data["account"][account].setdefault("used", 0)
 
     # Deploy bot
+    data["bot"][bot].setdefault("deployer", "")
     data["bot"][bot]["deployer"] = account
     data["account"][account]["used"] += 1
+    data["bot"][bot]["do"].setdefault("deploy", "")
     data["bot"][bot]["do"]["deploy"] = world
 
     print(f"[app.py] {bot} deployed to {world} by {account}")
