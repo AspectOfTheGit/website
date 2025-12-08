@@ -552,10 +552,10 @@ def apideploybot():
         botname.setdefault("deployer", "")
         if botname["status"] == True and botname["deployer"] == account:
             deployed += 1
-    if deployed => dlimits:
+    if deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
     try:
-        if data["account"][account]["used"] => dlimitu:
+        if data["account"][account]["used"] >= dlimitu:
             return jsonify({"error": f"Deploy uses spent ({dlimitu})"}), 400
     except:
         data["account"][account].setdefault("used", 0)
