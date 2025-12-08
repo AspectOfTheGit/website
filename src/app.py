@@ -515,7 +515,7 @@ def apibotstatus(bot):
 #
 
 @app.route("/api/deploy", methods=["POST"]) # WORK IN PROGRESS
-def deploybot():
+def apideploybot():
     global data
     
     rdata = request.get_json()
@@ -578,7 +578,7 @@ def deploybot():
 #
 
 @app.route("/api/storage/write", methods=["POST"])
-def write_storage():
+def apistoragewrite():
     import time
 
     ua = request.headers.get("User-Agent", "")
@@ -635,7 +635,7 @@ def write_storage():
     return jsonify({"success": True})
 
 @app.route("/api/storage/read", methods=["POST"])
-def read_storage():
+def apistorageread():
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -658,8 +658,8 @@ def read_storage():
 
 ## TOKENS
 
-@app.post("/api/storage/refresh-token/<token>")
-def refresh_token(token):
+@app.post("/api/refresh-token/<token>")
+def apirefreshtoken(token):
     global data
 
     if "mc_username" not in session:
