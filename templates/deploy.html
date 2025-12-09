@@ -53,7 +53,7 @@
     </nav>
 
     <div class="dropdown-wrapper">
-        <label for="bot-select" class="dropdown-label">Choose a bot:</label>
+        <label for="bot-select" class="headerlabel">Choose a bot:</label>
         <select id="bot-select" class="dropdown">
             {% for name, bot in bots.items() %}
                 <option 
@@ -65,6 +65,14 @@
             {% endfor %}
         </select>
     </div>
+
+    <label for="world-uuid" class="headerlabel">Choose a world:</label>
+    <textarea
+        id="world-uuid"
+        class="world-uuid storage-textarea"
+        placeholder="World UUID"
+        aria-label="World UUID"
+    ></textarea>
 
     <div class="tokens-container">
         <div class="token-spoiler">
