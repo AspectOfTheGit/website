@@ -265,10 +265,10 @@ code {
     color: #f7fffc;
     border-radius: 6px;
     padding: 10px 12px;
+    margin-top: 1rem;
     border: 1px solid #21505d;
     font-family: "Roboto Mono", monospace;
     font-size: 0.95rem;
-    box-sizing: border-box;
     caret-color: #f7fffc;
     line-height: 1.4;
 }
