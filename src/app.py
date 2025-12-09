@@ -279,7 +279,7 @@ def start_deploy():
         mcusername = session.get("mc_username")
         refreshbotinfo()
         ### TODO - include owned worlds in template
-        return render_template("deploy.html", username=mcusername, bots=data["bot"])
+        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername])
     else:
         return redirect("/login")
 
