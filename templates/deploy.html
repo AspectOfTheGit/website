@@ -70,8 +70,8 @@
         <div class="token-spoiler">
             <button class="toggle-token-btn">Show Deploy Token</button>
             <div class="token-content">
-                <code id="read-token">{{ account.token.deploy if account.token is defined and account.token.deploy is defined else "No Token" }}</code>
-                <button class="refresh-token-btn" data-token="read">Refresh</button>
+                <code id="deploy-token">{{ account.token.deploy if account.token is defined and account.token.deploy is defined else "No Token" }}</code>
+                <button class="refresh-token-btn" data-token="deploy">Refresh</button>
             </div>
         </div>
     </div>
