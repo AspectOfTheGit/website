@@ -66,6 +66,16 @@
         </select>
     </div>
 
+    <div class="tokens-container">
+        <div class="token-spoiler">
+            <button class="toggle-token-btn">Show Deploy Token</button>
+            <div class="token-content">
+                <code id="read-token">{{ account.token.deploy if account.token is defined and account.token.deploy is defined else "No Token" }}</code>
+                <button class="refresh-token-btn" data-token="read">Refresh</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener("DOMContentLoaded", () => {
         const options = document.querySelectorAll("#bot-select option");
@@ -77,6 +87,34 @@
                 option.style.background = "#240303";
                 option.style.color = "#f8e2e2";
             }
+        });
+
+        // Spoiler toggles
+        document.querySelectorAll('.toggle-token-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                content.style.display = content.style.display === 'flex' ? 'none' : 'flex';
+            });
+        });
+    
+        // Refresh tokens
+        document.querySelectorAll('.refresh-token-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const type = btn.dataset.token;
+                btn.disabled = true;
+    
+                try {
+                    const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
+                    if(res.ok) {
+                        const data = await res.json();
+                        document.getElementById(`${type}-token`).textContent = data.token;
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
         });
     });
     </script>
