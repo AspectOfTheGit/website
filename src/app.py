@@ -533,6 +533,12 @@ def apideploybot():
     except:
         data["account"][account].setdefault("used", 0)
 
+    try:
+        worldinfo = getworldinfo(world)
+        worldname = worldinfo["name"]
+    except:
+        worldname = "Unknown"
+
     # Deploy bot
     data["bot"][bot].setdefault("deployer", "")
     data["bot"][bot]["deployer"] = account
@@ -540,12 +546,12 @@ def apideploybot():
     data["bot"][bot]["do"].setdefault("deploy", "")
     data["bot"][bot]["do"]["deploy"] = world
 
-    print(f"[app.py] {bot} deployed to {world} by {account}")
+    print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
     
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-    return jsonify({"success": True})
+    return jsonify({"success": True, value: {"name": worldname}})
 
 ## STORAGE API
 #
