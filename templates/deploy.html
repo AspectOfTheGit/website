@@ -152,7 +152,7 @@
         try {
             const res = await fetch("https://api.legiti.dev/top/0");
             allworlds = await res.json();
-            worldsLoaded = true;
+            //worldsLoaded = true;
         } catch (err) {
             console.error("Failed to fetch all worlds:", err);
         }
