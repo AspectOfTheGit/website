@@ -175,7 +175,7 @@
             listBox.innerHTML = "";
             list.slice(0, 10).forEach(w => {
                 const div = document.createElement("div");
-                div.className = "suggestion-item";
+                div.className = "world-suggestion";
                 div.textContent = `${w.name} — ${w.owner_uuid.slice(0, 8)}`;
                 div.addEventListener("click", () => {
                     worldBox.value = w.world_uuid;
