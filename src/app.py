@@ -278,33 +278,6 @@ def start_deploy():
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
         refreshbotinfo()
-        # Get all worlds
-        url = "https://api.legiti.dev/top/0"
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            allworlds = response.json()
-        except requests.HTTPError as http_err:
-            print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
-        except requests.RequestException as err:
-            print(f"[app.py] Request error occurred: {err}")
-        except ValueError:
-            print("[app.py] Response was not valid JSON")
-        # Get owned worlds
-        u = profile_uuid.replace("-", "").strip()
-        new_uuid = f"{u[0:8]}-{u[8:12]}-{u[12:16]}-{u[16:20]}-{u[20:32]}"
-        url = f"https://api.legiti.dev/owner/{new_uuid}"
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            ownedworlds = response.json()
-        except requests.HTTPError as http_err:
-            print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
-        except requests.RequestException as err:
-            print(f"[app.py] Request error occurred: {err}")
-        except ValueError:
-            print("[app.py] Response was not valid JSON")
-
         return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], allworlds=allworlds, ownedworlds=ownedworlds)
     else:
         return redirect("/login")
