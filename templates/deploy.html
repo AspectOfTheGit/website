@@ -98,6 +98,7 @@
     
         let allworlds = [];
         let ownedworlds = [];
+        let worldsLoaded = false;
     
         options.forEach(option => {
             if (option.dataset.status === "online") {
@@ -151,6 +152,7 @@
         try {
             const res = await fetch("https://api.legiti.dev/top/0");
             allworlds = await res.json();
+            worldsLoaded = true;
         } catch (err) {
             console.error("Failed to fetch all worlds:", err);
         }
@@ -163,8 +165,6 @@
         } catch (err) {
             console.error("Failed to fetch owned worlds:", err);
         }
-    
-        listBox.innerHTML = "";
     
         function showSuggestions(list) {
             if (!list.length) {
@@ -195,15 +195,21 @@
     
         worldBox.addEventListener("input", () => {
             const text = worldBox.value.trim().toLowerCase();
-    
+        
+            if (!worldsLoaded) {
+                listBox.innerHTML = `<div class="suggestion-item">Loading worlds…</div>`;
+                listBox.style.display = "block";
+                return;
+            }
+        
             if (text === "") {
                 showSuggestions(ownedworlds);
                 return;
             }
-    
+        
             const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i");
             const matches = allworlds.filter(w => regex.test(w.name));
-    
+        
             showSuggestions(matches);
         });
     
