@@ -288,6 +288,8 @@ code {
 }
 
 .world-input-wrapper {
+    display: flex;
+    flex-direction: column;
     position: relative;
     align-items: center;
     width: 100%;
@@ -297,7 +299,7 @@ code {
 .world-suggestions {
     display: none;
     position: absolute;
-    top: calc(44px + 8px);
+    top: calc(44px + 1rem);
     background: #031014;
     border: 1px solid #21505d;
     border-radius: 6px;
