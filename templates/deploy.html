@@ -75,7 +75,9 @@
             aria-label="World UUID"
         ></textarea>
     
-        <div id="world-suggestions" class="world-suggestions"></div>
+        <div id="world-suggestions" class="world-suggestions">
+            <div class="suggestion-item">Loading worlds…</div>
+        </div>
     </div>
 
     <div class="tokens-container">
@@ -89,18 +91,21 @@
     </div>
 
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
         const options = document.querySelectorAll("#bot-select option");
+        const worldBox = document.getElementById("world-uuid");
+        const listBox = document.getElementById("world-suggestions");
+    
+        let allworlds = [];
+        let ownedworlds = [];
     
         options.forEach(option => {
-            const status = option.getAttribute("data-status");
-    
-            if (status === "online") {
+            if (option.dataset.status === "online") {
                 option.style.background = "#240303";
                 option.style.color = "#f8e2e2";
             }
         });
-
+    
         // Spoiler toggles
         document.querySelectorAll('.toggle-token-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -117,7 +122,7 @@
     
                 try {
                     const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
-                    if(res.ok) {
+                    if (res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
                     }
@@ -128,12 +133,38 @@
                 }
             });
         });
-
-        // World UUID Autofill
-        const ownedWorlds = {{ ownedworlds|tojson }};
-        const allWorlds = {{ allworlds|tojson }};
-        const worldBox = document.getElementById("world-uuid");
-        const listBox = document.getElementById("world-suggestions");
+    
+        listBox.innerHTML = `<div class="suggestion-item">Loading worlds…</div>`;
+    
+        function formatUUID(u) {
+            u = u.replace(/-/g, "").trim();
+            return (
+                u.slice(0, 8) + "-" +
+                u.slice(8, 12) + "-" +
+                u.slice(12, 16) + "-" +
+                u.slice(16, 20) + "-" +
+                u.slice(20)
+            );
+        }
+    
+        // Fetch all worlds
+        try {
+            const res = await fetch("https://api.legiti.dev/top/0");
+            allworlds = await res.json();
+        } catch (err) {
+            console.error("Failed to fetch all worlds:", err);
+        }
+    
+        // Fetch owned worlds
+        try {
+            const formatted = formatUUID("{{ profile_uuid }}");
+            const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
+            ownedworlds = await res2.json();
+        } catch (err) {
+            console.error("Failed to fetch owned worlds:", err);
+        }
+    
+        listBox.innerHTML = "";
     
         function showSuggestions(list) {
             if (!list.length) {
@@ -144,7 +175,7 @@
             listBox.innerHTML = "";
             list.slice(0, 10).forEach(w => {
                 const div = document.createElement("div");
-                div.className = "world-suggestion";
+                div.className = "suggestion-item";
                 div.textContent = `${w.name} — ${w.owner_uuid.slice(0, 8)}`;
                 div.addEventListener("click", () => {
                     worldBox.value = w.world_uuid;
@@ -158,7 +189,7 @@
     
         worldBox.addEventListener("focus", () => {
             if (worldBox.value.trim() === "") {
-                showSuggestions(ownedWorlds);
+                showSuggestions(ownedworlds);
             }
         });
     
@@ -166,13 +197,13 @@
             const text = worldBox.value.trim().toLowerCase();
     
             if (text === "") {
-                showSuggestions(ownedWorlds);
+                showSuggestions(ownedworlds);
                 return;
             }
     
             const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i");
+            const matches = allworlds.filter(w => regex.test(w.name));
     
-            const matches = allWorlds.filter(w => regex.test(w.name));
             showSuggestions(matches);
         });
     
