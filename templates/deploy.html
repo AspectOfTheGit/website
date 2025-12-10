@@ -73,6 +73,7 @@
         placeholder="World UUID"
         aria-label="World UUID"
     ></textarea>
+    <div id="world-suggestions" class="world-suggestions"></div>
 
     <div class="tokens-container">
         <div class="token-spoiler">
@@ -123,6 +124,59 @@
                     btn.disabled = false;
                 }
             });
+        });
+
+        // World UUID Autofill
+        const ownedWorlds = {{ ownedworlds|tojson }};
+        const allWorlds = {{ allworlds|tojson }};
+        const worldBox = document.getElementById("world-uuid");
+        const listBox = document.getElementById("world-suggestions");
+    
+        function showSuggestions(list) {
+            if (!list.length) {
+                listBox.style.display = "none";
+                return;
+            }
+    
+            listBox.innerHTML = "";
+            list.slice(0, 10).forEach(w => {
+                const div = document.createElement("div");
+                div.className = "world-suggestion";
+                div.textContent = `${w.name} — ${w.owner_uuid.slice(0, 8)}`;
+                div.addEventListener("click", () => {
+                    worldBox.value = w.world_uuid;
+                    listBox.style.display = "none";
+                });
+                listBox.appendChild(div);
+            });
+    
+            listBox.style.display = "block";
+        }
+    
+        worldBox.addEventListener("focus", () => {
+            if (worldBox.value.trim() === "") {
+                showSuggestions(ownedWorlds);
+            }
+        });
+    
+        worldBox.addEventListener("input", () => {
+            const text = worldBox.value.trim().toLowerCase();
+    
+            if (text === "") {
+                showSuggestions(ownedWorlds);
+                return;
+            }
+    
+            const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i");
+    
+            const matches = allWorlds.filter(w => regex.test(w.name));
+            showSuggestions(matches);
+        });
+    
+        document.addEventListener("click", (e) => {
+            if (!worldBox.contains(e.target) && !listBox.contains(e.target)) {
+                listBox.style.display = "none";
+            }
         });
     });
     </script>
