@@ -278,7 +278,7 @@ def start_deploy():
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
         refreshbotinfo()
-        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], allworlds=allworlds, ownedworlds=ownedworlds)
+        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], profile_uuid=profile_uuid)
     else:
         return redirect("/login")
 
