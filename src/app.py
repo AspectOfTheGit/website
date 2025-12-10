@@ -278,8 +278,6 @@ def start_deploy():
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
         refreshbotinfo()
-        ### TODO - include owned worlds in template
-
         # Get all worlds
         url = f"https://api.legiti.dev/all" # change this to be correct endpoint (check it idk if its right)
         try:
@@ -292,7 +290,6 @@ def start_deploy():
             print(f"[app.py] Request error occurred: {err}")
         except ValueError:
             print("[app.py] Response was not valid JSON")
-
         # Get owned worlds
         url = f"https://api.legiti.dev/owned/{mc_username}" # change this to be correct endpoint (check it idk if its right)
         try:
@@ -550,7 +547,7 @@ def apideploybot():
     deployed = 0
     for botname in data["bot"]:
         botname.setdefault("deployer", "")
-        if botname["status"] == True and botname["deployer"] == account:
+        if botname["deployer"] == account:
             deployed += 1
     if deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
@@ -571,7 +568,18 @@ def apideploybot():
     data["bot"][bot]["deployer"] = account
     data["account"][account]["used"] += 1
     data["bot"][bot]["do"].setdefault("deploy", "")
-    data["bot"][bot]["do"]["deploy"] = world
+    data["bot"][bot]["do"]["deploy"]["world"] = world
+    try:
+        if data["account"][account]["abilities"]["abandoned"] == True:
+            data["bot"][bot]["do"]["deploy"]["abandoned"] = -999
+        else:
+            data["bot"][bot]["do"]["deploy"]["abandoned"] = 1
+    except:
+        data["bot"][bot]["do"]["deploy"]["abandoned"] = 1
+    try:
+        data["bot"][bot]["do"]["deploy"]["uptime"] = data["account"][account]["abilities"]["uptime"]
+    except:
+        data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
     
