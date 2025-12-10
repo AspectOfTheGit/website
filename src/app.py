@@ -279,7 +279,7 @@ def start_deploy():
         mcusername = session.get("mc_username")
         refreshbotinfo()
         # Get all worlds
-        url = f"https://api.legiti.dev/all" # change this to be correct endpoint (check it idk if its right)
+        url = f"https://api.legiti.dev/top/0"
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
@@ -291,7 +291,7 @@ def start_deploy():
         except ValueError:
             print("[app.py] Response was not valid JSON")
         # Get owned worlds
-        url = f"https://api.legiti.dev/owned/{mc_username}" # change this to be correct endpoint (check it idk if its right)
+        url = f"https://api.legiti.dev/owner/{profile_uuid}"
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()
