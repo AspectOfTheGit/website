@@ -279,7 +279,34 @@ def start_deploy():
         mcusername = session.get("mc_username")
         refreshbotinfo()
         ### TODO - include owned worlds in template
-        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername])
+
+        # Get all worlds
+        url = f"https://api.legiti.dev/all" # change this to be correct endpoint (check it idk if its right)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            allworlds = response.json()
+        except requests.HTTPError as http_err:
+            print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
+        except requests.RequestException as err:
+            print(f"[app.py] Request error occurred: {err}")
+        except ValueError:
+            print("[app.py] Response was not valid JSON")
+
+        # Get owned worlds
+        url = f"https://api.legiti.dev/owned/{mc_username}" # change this to be correct endpoint (check it idk if its right)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            ownedworlds = response.json()
+        except requests.HTTPError as http_err:
+            print(f"[app.py] HTTP error occurred: {http_err} — Status code: {response.status_code}")
+        except requests.RequestException as err:
+            print(f"[app.py] Request error occurred: {err}")
+        except ValueError:
+            print("[app.py] Response was not valid JSON")
+
+        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], allworlds=allworlds, ownedworlds=ownedworlds)
     else:
         return redirect("/login")
 
