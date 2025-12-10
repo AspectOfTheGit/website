@@ -51,45 +51,38 @@
             {% endif %}
         </div>
     </nav>
-    
-<head>
-    <meta charset="UTF-8">
-    <title>Bot list</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
 
-<div class="dashboard">
-    {% for bot_name, bot in bots.items() %}
-    <div class="bot-card">
-        <div class="bot-image">
-            <a href="https://aspectofthe.site/bots/status/{{ bot_name }}">
-                <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
-            </a>
-            <h2 class="bot-name">{{ bot_name }}</h2>
-        </div>
+    <div class="dashboard">
+        {% for bot_name, bot in bots.items() %}
+        <div class="bot-card">
+            <div class="bot-image">
+                <a href="https://aspectofthe.site/bots/status/{{ bot_name }}">
+                    <img src="https://crafatar.com/avatars/{{ bot.uuid }}?size=128&overlay" alt="?">
+                </a>
+                <h2 class="bot-name">{{ bot_name }}</h2>
+            </div>
         
-        <div class="world-info">
-            {% if bot.status %}
-            {% if bot.world.name == "Lobby" %}
-            <h3 class="world-name">{{ bot.world.name }}</h3>
-            {% else %}
-            <h3 class="world-name">
-                <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name | safe }}</a>
-            </h3>
-            <p class="owner">
-                <img class="owner-head" src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
-                <a href="https://legiti.dev/profile/{{ bot.world.owner.uuid }}">{{ bot.world.owner.name }}</a>
-            </p>
-            {% endif %}
-            {% endif %}
+            <div class="world-info">
+                {% if bot.status %}
+                {% if bot.world.name == "Lobby" %}
+                <h3 class="world-name">{{ bot.world.name }}</h3
+                {% else %}
+                <h3 class="world-name">
+                    <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name | safe }}</a>
+                </h3>
+                <p class="owner">
+                    <img class="owner-head" src="https://crafatar.com/avatars/{{ bot.world.owner.uuid }}?size=128&overlay" alt="?">
+                    <a href="https://legiti.dev/profile/{{ bot.world.owner.uuid }}">{{ bot.world.owner.name }}</a>
+                </p>
+                {% endif %}
+                {% endif %}
 
-            <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
-                {% if bot.status %}Online{% else %}Offline{% endif %}
-            </p>
+                <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
+                    {% if bot.status %}Online{% else %}Offline{% endif %}
+                </p>
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 </body>
 </html>
