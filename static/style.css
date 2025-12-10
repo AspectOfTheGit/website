@@ -255,11 +255,12 @@ code {
 .headerlabel {
     font-size: 1.1rem;
     font-weight: 600;
+    margin-top: 1.5rem;
     color: #d4fff3;
 }
 
 .world-uuid {
-    width: 60%
+    width: 60vw
     height: 44px;
     background: #031014;
     color: #f7fffc;
@@ -291,11 +292,11 @@ code {
     border: 1px solid #21505d;
     border-radius: 6px;
     margin-top: 4px;
-    width: 300px;
-    max-height: 200px;
+    width: 60vw;
+    max-height: 3rem;
     overflow-y: auto;
     padding: 6px 0;
-    z-index: 20;
+    /*z-index: 20;*/
 }
 
 .world-suggestion {
