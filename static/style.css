@@ -287,9 +287,8 @@ code {
 
 .world-suggestions {
     display: none;
-    position: absolute;
-    background: #1b1b1b;
-    border: 1px solid #333;
+    background: #031014;
+    border: 1px solid #21505d;
     border-radius: 6px;
     margin-top: 4px;
     width: 300px;
@@ -302,11 +301,11 @@ code {
 .world-suggestion {
     padding: 8px 12px;
     cursor: pointer;
-    color: #f0f0f0;
+    color: #f7fffc;
 }
 
 .world-suggestion:hover {
-    background: #2d2d2d;
+    background: #092630;
 }
 
 .dropdown {
