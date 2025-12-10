@@ -99,6 +99,7 @@
         let allworlds = [];
         let ownedworlds = [];
         let worldsLoaded = false;
+        let loadingWorlds = false;
     
         options.forEach(option => {
             if (option.dataset.status === "online") {
@@ -135,8 +136,6 @@
             });
         });
     
-        listBox.innerHTML = `<div class="suggestion-item">Loading worlds…</div>`;
-    
         function formatUUID(u) {
             u = u.replace(/-/g, "").trim();
             return (
@@ -146,24 +145,6 @@
                 u.slice(16, 20) + "-" +
                 u.slice(20)
             );
-        }
-    
-        // Fetch all worlds
-        try {
-            const res = await fetch("https://api.legiti.dev/top/0");
-            allworlds = await res.json();
-            //worldsLoaded = true;
-        } catch (err) {
-            console.error("Failed to fetch all worlds:", err);
-        }
-    
-        // Fetch owned worlds
-        try {
-            const formatted = formatUUID("{{ profile_uuid }}");
-            const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
-            ownedworlds = await res2.json();
-        } catch (err) {
-            console.error("Failed to fetch owned worlds:", err);
         }
     
         function showSuggestions(list) {
@@ -188,28 +169,31 @@
         }
     
         worldBox.addEventListener("focus", () => {
-            if (worldBox.value.trim() === "") {
+            if (!worldsLoaded) {
+                listBox.innerHTML = `<div class="suggestion-item">Loading worlds…</div>`;
+                listBox.style.display = "block";
+            } else if (worldBox.value.trim() === "") {
                 showSuggestions(ownedworlds);
             }
         });
     
         worldBox.addEventListener("input", () => {
             const text = worldBox.value.trim().toLowerCase();
-        
+    
             if (!worldsLoaded) {
                 listBox.innerHTML = `<div class="suggestion-item">Loading worlds…</div>`;
                 listBox.style.display = "block";
                 return;
             }
-        
+    
             if (text === "") {
                 showSuggestions(ownedworlds);
                 return;
             }
-        
+    
             const regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i");
             const matches = allworlds.filter(w => regex.test(w.name));
-        
+    
             showSuggestions(matches);
         });
     
@@ -218,8 +202,39 @@
                 listBox.style.display = "none";
             }
         });
+    
+        async function loadWorlds() {
+            loadingWorlds = true;
+    
+            try {
+                const res = await fetch("https://api.legiti.dev/top/0");
+                allworlds = await res.json();
+            } catch (err) {
+                console.error("Failed to fetch all worlds:", err);
+                if (document.activeElement === worldBox) {
+                    listBox.innerHTML = `<div class="suggestion-item">Failed to load worlds</div>`;
+                }
+            }
+    
+            try {
+                const formatted = formatUUID("{{ profile_uuid }}");
+                const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
+                ownedworlds = await res2.json();
+            } catch (err) {
+                console.error("Failed to fetch owned worlds:", err);
+            }
+    
+            worldsLoaded = true;
+            loadingWorlds = false;
+    
+            if (document.activeElement === worldBox && worldBox.value.trim() === "") {
+                showSuggestions(ownedworlds);
+            }
+        }
+    
+        loadWorlds();
     });
     </script>
-  
+    
 </body>
 </html>
