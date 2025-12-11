@@ -97,7 +97,7 @@ def refreshbotinfo():
         data["bot"][bot]["world"]["owner"].setdefault("name", "")
         data["bot"][bot]["world"]["owner"].setdefault("uuid", "")
         data["bot"][bot].setdefault("do", {})
-        if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
+        if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout and data["bot"][bot]["status"]:
             data["bot"][bot]["status"] = False
             data["bot"][bot]["deployer"] = ""
         else:
@@ -582,9 +582,8 @@ def apideploybot():
         worldname = "Unknown"
 
     # Deploy bot
-    data["bot"][bot].setdefault("deployer", "")
+    data["bot"][bot].setdefault("deployer", account)
     data["bot"][bot]["deployer"] = account
-    data["account"][account]["used"] += 1
     data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"]["world"] = world
 
@@ -602,6 +601,8 @@ def apideploybot():
         data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
+
+    data["account"][account]["used"] += 1
     
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
