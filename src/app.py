@@ -266,9 +266,9 @@ def accountpage():
         data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
         data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
         now = datetime.now()
-        try:
-            if data["account"][account]["last_deploy"] != now.date():
-                data["account"][account]["used"] = 0
+        data["account"][mcusername].setdefault("last_deploy", now.date())
+        if data["account"][mcusername]["last_deploy"] != now.date():
+            data["account"][mcusername]["used"] = 0
         return render_template("account.html", username=mcusername, account=data["account"][mcusername])
     else:
         return redirect("/login")
