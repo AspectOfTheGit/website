@@ -99,6 +99,7 @@
         const options = document.querySelectorAll("#bot-select option");
         const worldBox = document.getElementById("world-uuid");
         const listBox = document.getElementById("world-suggestions");
+        const username = {{ username|tojson }};
     
         let allworlds = [];
         let ownedworlds = [];
@@ -150,7 +151,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            account: 'deploy',
+                            account: username,
                             token: document.getElementById(`deploy-token`).textContent,
                             bot: document.getElementById(`bot-select`).textContent,
                             world: document.getElementById(`world-uuid`).textContent
