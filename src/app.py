@@ -711,7 +711,7 @@ def apirefreshtoken(token):
         return jsonify({"error": "Invalid Token Type"}), 400
 
     # generate new token
-    chars = string.ascii_letters + string.digits + string.punctuation
+    chars = string.ascii_letters + string.digits + ''.join(c for c in string.punctuation if c not in ('"', "'"))
     new_token = ''.join(secrets.choice(chars) for _ in range(24))
 
     data["account"][account].setdefault("token", {})
