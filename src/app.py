@@ -86,8 +86,11 @@ def refreshbotinfo():
         data["bot"].setdefault(bot, {})
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = False
+            data["bot"][bot]["deployer"] = ""
         else:
             data["bot"][bot]["uuid"] = get_uuid(bot)
+            if data["bot"][bot]["deployer"] == "":
+                data["bot"][bot]["do"]["disconnect"] == True # Disconnect bot if no deployer
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             #data["bot"][bot]["world"].setdefault("owner", {})
@@ -338,7 +341,7 @@ All POST routes relating to the bot will require headers:
 /ping (POST)
 Recieved every ~1 seconds from each bot account
 Sets status of bot to online
-If not recieved for 5 seconds (indicated by timeout variable), status is set offline
+If not recieved for 10 seconds (indicated by timeout variable), status is set offline
 
 /world (POST)
  - value (World UUID or 'lobby')
@@ -359,9 +362,14 @@ Sends the screenshot to the bot log
 /botwhat/<account>
 Requested every ~5 seconds by each bot account
 Tells each bot what to do (e.g. take a screenshot)
+
+/done/<action>
+Recieved whenever the bot completes a request
+(Doesnt include screenshot)
+When recieved, updates todo for bot.
 '''
 # check bot alive or somethi
-timeout = 5
+timeout = 10
 
 @app.route("/bots/ping", methods=["POST"])
 def alive():
@@ -465,6 +473,20 @@ def upload_screenshot():
 
     print(f"[app.py] Screenshot recieved from {account}: {file.filename}")
     return {"status": "success"}
+
+# Bot completes instruction
+@app.route("/bots/done/<action>")
+def botcompletes(action):
+    token = request.headers.get("Authorization")
+    if token != BOT_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = request.form.get("account")
+    if account not in data["bot"]:
+        return abort(404)
+        
+    data["bot"][account]["do"][action] = False
+    return jsonify({"success": True})
 
 ##
 ## API/Utilities
