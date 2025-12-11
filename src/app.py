@@ -750,6 +750,21 @@ def deletebotdata():
     refreshbotinfo()
 
     return jsonify({"success": True}), 200
+
+@app.route("/api/getdata", methods=["POST"])
+def debug_getdata():
+    global data
+    rdata = request.get_json()
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    refreshbotinfo()
+
+    return jsonify({"success": True, "value": data}), 200
+
+    
     
 #
 # socketio
