@@ -71,7 +71,7 @@
         <textarea
             id="world-uuid"
             class="world-uuid"
-            placeholder="World UUID"
+            placeholder="World UUID (or empty for Lobby)"
             aria-label="World UUID"
         ></textarea>
     
@@ -144,7 +144,18 @@
         document.querySelectorAll('.button').forEach(btn => {
             btn.addEventListener('click', async () => {
                 try {
-                    const res = await fetch(`/api/deploy`, { method: 'POST' });
+                    const res = await fetch('/api/deploy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            account: 'deploy',
+                            token: document.getElementById(`deploy-token`).textContent,
+                            bot: document.getElementById(`bot-select`).textContent,
+                            world: document.getElementById(`world-uuid`).textContent
+                        })
+                    });
                     if (res.ok) {
                         const bot = document.getElementById(`bot-select`).textContent;
                         window.location.href = `http://aspectofthe.site/bots/${bot}`;
