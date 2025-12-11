@@ -265,6 +265,7 @@ def accountpage():
         data["account"].setdefault(mcusername, {})
         data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
         data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
+        now = datetime.now()
         try:
             if data["account"][account]["last_deploy"] != now.date():
                 data["account"][account]["used"] = 0
@@ -563,6 +564,7 @@ def apideploybot():
             deployed += 1
     if deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
+    now = datetime.now()
     try:
         if data["account"][account]["last_deploy"] != now.date():
             data["account"][account]["last_deploy"] = now.date()
