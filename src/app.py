@@ -569,13 +569,15 @@ def apideploybot():
     data["account"][account]["used"] += 1
     data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"]["world"] = world
+
+    data["bot"][bot]["do"]["disconnect"] == False # failsafe
     try:
         if data["account"][account]["abilities"]["abandoned"] == True:
-            data["bot"][bot]["do"]["deploy"]["abandoned"] = -999
+            data["bot"][bot]["do"]["deploy"]["abandoned"] = False
         else:
-            data["bot"][bot]["do"]["deploy"]["abandoned"] = 1
+            data["bot"][bot]["do"]["deploy"]["abandoned"] = True
     except:
-        data["bot"][bot]["do"]["deploy"]["abandoned"] = 1
+        data["bot"][bot]["do"]["deploy"]["abandoned"] = True
     try:
         data["bot"][bot]["do"]["deploy"]["uptime"] = data["account"][account]["abilities"]["uptime"]
     except:
