@@ -583,7 +583,7 @@ def apideploybot():
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-    return jsonify({"success": True, value: {"name": worldname}})
+    return jsonify({"success": True, "value": {"name": worldname}})
 
 ## STORAGE API
 #
