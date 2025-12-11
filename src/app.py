@@ -561,13 +561,17 @@ def apideploybot():
     if deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
     try:
+        if data["account"][account]["last_deploy"] != now.date():
+            data["account"][account]["last_deploy"] = now.date()
+            data["account"][account]["used"] = 0
         if data["account"][account]["used"] >= dlimitu:
             return jsonify({"error": f"Deploy uses spent ({dlimitu})"}), 400
     except:
+        data["account"][account].setdefault("last_deploy", now.date())
         data["account"][account].setdefault("used", 0)
 
     try:
-        worldinfo = getworldinfo(world)
+        worldinfo = get_world_info(world)
         worldname = worldinfo["name"]
     except:
         worldname = "Unknown"
