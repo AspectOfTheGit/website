@@ -153,8 +153,8 @@
                         body: JSON.stringify({
                             account: username,
                             token: document.getElementById(`deploy-token`).textContent,
-                            bot: document.getElementById(`bot-select`).textContent,
-                            world: document.getElementById(`world-uuid`).textContent
+                            bot: document.getElementById(`bot-select`).value,
+                            world: worldBox.textContent
                         })
                     });
                     if (res.ok) {
