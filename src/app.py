@@ -91,6 +91,7 @@ def refreshbotinfo():
             data["bot"][bot]["deployer"] = ""
         else:
             data["bot"][bot]["uuid"] = get_uuid(bot)
+            data["bot"][bot].setdefault("deployer", "")
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot]["do"]["disconnect"] == True # Disconnect bot if no deployer
             #data["bot"][bot].setdefault("world", {})
@@ -98,8 +99,8 @@ def refreshbotinfo():
             #data["bot"][bot]["world"].setdefault("owner", {})
             #data["bot"][bot]["world"]["owner"]["name"] = "WorldOwnerPlaceholder"
             #data["bot"][bot]["world"]["owner"]["uuid"] = get_uuid(data["bot"][bot]["world"]["owner"]["name"])
-        with open(DATA_FILE, "w") as f:
-                json.dump(data, f, indent=4)
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # Use legitidevs to get world info
 def get_world_info(uuid: str):
@@ -744,9 +745,6 @@ def deletebotdata():
         data["bot"][bot] = {}
 
     refreshbotinfo()
-
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
 
     return jsonify({"success": True}), 200
     
