@@ -94,7 +94,7 @@ def refreshbotinfo():
             data["bot"][bot].setdefault("deployer", "")
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot].setdefault("do", {})
-                data["bot"][bot]["do"]["disconnect"] == True # Disconnect bot if no deployer
+                data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             #data["bot"][bot]["world"].setdefault("owner", {})
