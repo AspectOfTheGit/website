@@ -159,7 +159,7 @@
                     });
                     const resdata = await res.json();
                     if (res.ok) {
-                        const bot = document.getElementById(`bot-select`).textContent;
+                        const bot = document.getElementById(`bot-select`).value;
                         window.location.href = `http://aspectofthe.site/bots/${bot}`;
                     } else {// Invalid deploy request (Invalid bot, bot in use, token problems, no uses left, etc.)
                         btn.textContent = resdata.error;// todo Display error given (until something is changed)
