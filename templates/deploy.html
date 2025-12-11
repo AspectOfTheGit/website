@@ -160,13 +160,19 @@
                     const resdata = await res.json();
                     if (res.ok) {
                         const bot = document.getElementById(`bot-select`).value;
-                        window.location.href = `http://aspectofthe.site/bots/${bot}`;
+                        window.location.href = `http://aspectofthe.site/bots/status/${bot}`;
                     } else {// Invalid deploy request (Invalid bot, bot in use, token problems, no uses left, etc.)
                         // todo Change back when something is changed
                         btn.textContent = resdata.error;
                         btn.style.background = "#631b1b";
                         btn.style.color = "#f8e2e2";
                         btn.style.boxShadow = "0 4px 0 #240303";
+                        setTimeout(() => {
+                            btn.textContent = "Deploy";
+                            btn.style.background = "#2fa08c";
+                            btn.style.color = "white";
+                            btn.style.boxShadow = "0 4px 0 #1b6359";
+                        }, 3000);
                     }
                 } catch (e) {
                     console.error(e);
