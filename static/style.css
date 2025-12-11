@@ -126,6 +126,7 @@ code {
 }
 
 .button {
+    cursor: pointer;
     background-color: #2fa08c;
     color: white;
     padding: 0.75rem 2rem;
@@ -140,6 +141,18 @@ code {
     background: #3dc9b0;
     transform: translateY(2px);
     box-shadow: 0 2px 0 #1b6359;
+}
+
+.button.pressed {
+    background: #217373;
+    color: white;
+    box-shadow: 0 4px 0 #10363d;
+}
+
+.button.error {
+    background: #631b1b;
+    color: #f8e2e2;
+    box-shadow: 0 4px 0 #240303;
 }
 
 .dashboard {
