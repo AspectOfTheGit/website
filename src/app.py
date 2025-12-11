@@ -542,9 +542,9 @@ def apideploybot():
     except:
         dlimits = 1
     deployed = 0
-    for botname in data["bot"]:
-        botname.setdefault("deployer", "")
-        if botname["deployer"] == account:
+    for botname, botdata in data["bot"].items():
+        botdata.setdefault("deployer", "")
+        if botdata["deployer"] == account:
             deployed += 1
     if deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
