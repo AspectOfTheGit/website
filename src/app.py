@@ -84,16 +84,24 @@ def refreshbotinfo():
     global data, timeout
     bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
     for bot in bots:
+        # Set Defaults
         data["bot"].setdefault(bot, {})
+        data["bot"][bot]["uuid"] = get_uuid(bot)
         data["bot"][bot].setdefault("last_ping", 0)
+        data["bot"][bot].setdefault("status", False)
+        data["bot"][bot].setdefault("deployer", "")
+        data["bot"][bot].setdefault("world", {})
+        data["bot"][bot]["world"].setdefault("name", "")
+        data["bot"][bot]["world"].setdefault("uuid", "")
+        data["bot"][bot]["world"].setdefault("owner", {})
+        data["bot"][bot]["world"]["owner"].setdefault("name", "")
+        data["bot"][bot]["world"]["owner"].setdefault("uuid", "")
+        data["bot"][bot].setdefault("do", {})
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout:
             data["bot"][bot]["status"] = False
             data["bot"][bot]["deployer"] = ""
         else:
-            data["bot"][bot]["uuid"] = get_uuid(bot)
-            data["bot"][bot].setdefault("deployer", "")
             if data["bot"][bot]["deployer"] == "":
-                data["bot"][bot].setdefault("do", {})
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
