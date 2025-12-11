@@ -70,7 +70,7 @@
             <tbody>
                 <tr data-tip="How many times you can deploy a bot each day">
                     <td>Uses per day</td>
-                    <td class="plaintext">{{ account.abilities.uses if account.abilities.uses is defined else 10 }}</td>
+                    <td class="plaintext">{{ account.used if account.used is defined else 0 }}/{{ account.abilities.uses if account.abilities.uses is defined else 10 }}</td>
                 </tr>
                 <tr data-tip="How many bots you can have at the same time">
                     <td>Simultaneous Bots</td>
