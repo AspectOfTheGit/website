@@ -90,7 +90,9 @@
         </div>
     </div>
 
-    <button class="deploy-btn">Deploy</button>
+    <div class="buttons">
+            <a id="deploy-btn" class="button">Deploy</a>
+    </div>
 
     <script>
     document.addEventListener("DOMContentLoaded", async () => {
@@ -137,7 +139,23 @@
                 }
             });
         });
-    
+
+        // Deploy Button
+        document.querySelectorAll('.button').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch(`/api/deploy`, { method: 'POST' });
+                    if (res.ok) {
+                        const bot = document.getElementById(`bot-select`).textContent;
+                        window.location.href = "http://aspectofthe.site/bots/$(bot)";
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        });
+        
+        // Other
         function formatUUID(u) {
             u = u.replace(/-/g, "").trim();
             return (
