@@ -564,7 +564,7 @@ def apideploybot():
     data["bot"][bot].setdefault("deployer", "")
     data["bot"][bot]["deployer"] = account
     data["account"][account]["used"] += 1
-    data["bot"][bot]["do"].setdefault("deploy", "")
+    data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"]["world"] = world
     try:
         if data["account"][account]["abilities"]["abandoned"] == True:
