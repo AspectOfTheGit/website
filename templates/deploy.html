@@ -157,11 +157,12 @@
                             world: worldBox.value
                         })
                     });
+                    const resdata = await res.json();
                     if (res.ok) {
                         const bot = document.getElementById(`bot-select`).textContent;
                         window.location.href = `http://aspectofthe.site/bots/${bot}`;
                     } else {// Invalid deploy request (Invalid bot, bot in use, token problems, no uses left, etc.)
-                        btn.textContent = res.error;// todo Display error given (until something is changed)
+                        btn.textContent = resdata.error;// todo Display error given (until something is changed)
                         // todo Make button red (until something is changed)
                         btn.style.background = "#240303";
                         btn.style.color = "#f8e2e2";
