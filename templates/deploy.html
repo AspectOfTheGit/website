@@ -147,7 +147,7 @@
                     const res = await fetch(`/api/deploy`, { method: 'POST' });
                     if (res.ok) {
                         const bot = document.getElementById(`bot-select`).textContent;
-                        window.location.href = "http://aspectofthe.site/bots/$(bot)";
+                        window.location.href = `http://aspectofthe.site/bots/${bot}`;
                     }
                 } catch (e) {
                     console.error(e);
