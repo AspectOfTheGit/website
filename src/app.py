@@ -701,7 +701,7 @@ def apirefreshtoken(token):
 
     return jsonify({"token": new_token}), 200
 
-## change account permissions
+## debug or other stuff
 
 @app.route("/api/permission", methods=["POST"])
 def changeaccountpermission():
@@ -722,7 +722,32 @@ def changeaccountpermission():
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-    return 200
+    return jsonify({"success": True}), 200
+
+@app.route("/api/deletebotdata", methods=["POST"])
+def deletebotdata():
+    global data
+    rdata = request.get_json()
+    bot = rdata.get("bot", "")
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if bot not in data["bot"] and bot != "*":
+        return jsonify({"error": "Bot doesn't exist"}), 400
+        
+    if bot == "*":
+        data["bot"] = {}
+    else:
+        data["bot"][bot] = {}
+
+    refreshbotinfo()
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True}), 200
     
 #
 # socketio
