@@ -137,7 +137,7 @@ code {
     transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
-.button:hover {
+.button:hover:not(.pressed):not(.error) {
     background: #3dc9b0;
     transform: translateY(2px);
     box-shadow: 0 2px 0 #1b6359;
