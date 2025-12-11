@@ -141,49 +141,46 @@
             });
         });
 
-        // Deploy Button
+        // Deploy button
         document.querySelectorAll('.button').forEach(btn => {
             btn.addEventListener('click', async () => {
+                btn.classList.add("pressed");
+                const originalText = btn.textContent;
+        
                 try {
                     const res = await fetch('/api/deploy', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             account: username,
-                            token: document.getElementById(`deploy-token`).textContent,
-                            bot: document.getElementById(`bot-select`).value,
+                            token: document.getElementById('deploy-token').textContent,
+                            bot: document.getElementById('bot-select').value,
                             world: worldBox.value
                         })
                     });
+                    
                     const resdata = await res.json();
+        
                     if (res.ok) {
-                        const bot = document.getElementById(`bot-select`).value;
+                        const bot = document.getElementById('bot-select').value;
                         window.location.href = `http://aspectofthe.site/bots/status/${bot}`;
-                    } else {// Invalid deploy request (Invalid bot, bot in use, token problems, no uses left, etc.)
+                    } else {
                         btn.textContent = resdata.error;
-                        btn.style.background = "#631b1b";
-                        btn.style.color = "#f8e2e2";
-                        btn.style.boxShadow = "0 4px 0 #240303";
+                        btn.classList.add("error");
+        
                         setTimeout(() => {
-                            btn.textContent = "Deploy";
-                            btn.style.background = "#2fa08c";
-                            btn.style.color = "white";
-                            btn.style.boxShadow = "0 4px 0 #1b6359";
+                            btn.textContent = originalText;
+                            btn.classList.remove("error", "pressed");
                         }, 3000);
                     }
                 } catch (e) {
                     console.error(e);
                     btn.textContent = "Unknown Error??";
-                    btn.style.background = "#631b1b";
-                    btn.style.color = "#f8e2e2";
-                    btn.style.boxShadow = "0 4px 0 #240303";
+                    btn.classList.add("error");
+        
                     setTimeout(() => {
-                        btn.textContent = "Deploy";
-                        btn.style.background = "#2fa08c";
-                        btn.style.color = "white";
-                        btn.style.boxShadow = "0 4px 0 #1b6359";
+                        btn.textContent = originalText;
+                        btn.classList.remove("error", "pressed");
                     }, 3000);
                 }
             });
