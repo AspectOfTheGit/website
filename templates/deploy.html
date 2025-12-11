@@ -148,6 +148,9 @@
                     if (res.ok) {
                         const bot = document.getElementById(`bot-select`).textContent;
                         window.location.href = `http://aspectofthe.site/bots/${bot}`;
+                    } else {// Invalid deploy request (Invalid bot, bot in use, token problems, no uses left, etc.)
+                        btn.textContent = "Error";// todo Display error given (until something is changed)
+                        // todo Make button red (until something is changed)
                     }
                 } catch (e) {
                     console.error(e);
