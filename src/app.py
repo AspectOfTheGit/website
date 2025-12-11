@@ -17,6 +17,7 @@ import string
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+OTHER_TOKEN = os.environ.get("OTHER_TOKEN")
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
@@ -700,6 +701,29 @@ def apirefreshtoken(token):
 
     return jsonify({"token": new_token}), 200
 
+## change account permissions
+
+@app.route("/api/permission", methods=["POST"])
+def changeaccountpermission():
+    global data
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    permission = rdata.get("permission", "")
+    value = rdata.get("value", "")
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data["account"].setdefault(account, {})
+    data["account"][account].setdefault("abilities", {})
+    data["account"][account]["abilities"][permission] = value
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return 200
+    
 #
 # socketio
 #
