@@ -493,6 +493,8 @@ def upload_screenshot():
 # Bot completes instruction
 @app.route("/bots/done/<action>", methods=["POST"])
 def botcompletes(action):
+    global data
+    
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
