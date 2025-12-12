@@ -454,7 +454,7 @@ def bot_instruct(bot):
     global data
     bot = bot.strip()
     if bot not in data["bot"]:
-        return abort(404)
+        return abort(400)
         
     try:
         return jsonify(data["bot"][bot]["do"])
@@ -470,7 +470,7 @@ def upload_screenshot():
 
     account = request.form.get("account")
     if account not in data["bot"]:
-        return abort(404)
+        return abort(400)
 
     if "file" not in request.files:
         abort(400, "No file uploaded")
@@ -501,7 +501,7 @@ def botcompletes(action):
 
     account = request.form.get("account")
     if account not in data["bot"]:
-        return abort(404)
+        return abort(400)
         
     data["bot"][account]["do"][action] = False
     return jsonify({"success": True})
@@ -804,7 +804,7 @@ def handle_join(room):
 def screenshot_request(bot):
     bot_name = bot.get("bot").strip()
     if bot_name not in data["bot"]:
-        return abort(404)
+        return abort(400)
 
     print(f"[app.py] Screenshot requested for {bot_name}")
 
