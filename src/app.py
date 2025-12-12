@@ -499,9 +499,7 @@ def botcompletes(action):
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
 
-    account = request.form.get("account")
-    print(account) # debug
-    print(data["bot"]) # debug
+    account = request.json.get("account")
     if account not in data["bot"]:
         return abort(400)
         
