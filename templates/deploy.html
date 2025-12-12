@@ -146,6 +146,7 @@
             btn.addEventListener('click', async () => {
                 btn.classList.add("pressed");
                 const originalText = btn.textContent;
+                canPress = false;
         
                 try {
                     const res = await fetch('/api/deploy', {
@@ -171,6 +172,7 @@
                         setTimeout(() => {
                             btn.textContent = originalText;
                             btn.classList.remove("error", "pressed");
+                            canPress = true;
                         }, 3000);
                     }
                 } catch (e) {
@@ -181,6 +183,7 @@
                     setTimeout(() => {
                         btn.textContent = originalText;
                         btn.classList.remove("error", "pressed");
+                        canPress = true;
                     }, 3000);
                 }
             });
