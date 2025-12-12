@@ -586,6 +586,7 @@ def apideploybot():
     data["bot"][bot]["deployer"] = account
     data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"]["world"] = world
+    data["bot"][bot]["do"]["deploy"]["deployer"] = account
 
     data["bot"][bot]["do"]["disconnect"] = False # failsafe
     try:
