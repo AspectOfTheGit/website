@@ -147,12 +147,14 @@ code {
     background: #217373;
     color: white;
     box-shadow: 0 4px 0 #10363d;
+    cursor: not-allowed;
 }
 
 .button.error {
     background: #631b1b;
     color: #f8e2e2;
     box-shadow: 0 4px 0 #240303;
+    cursor: not-allowed;
 }
 
 .dashboard {
@@ -268,7 +270,7 @@ code {
 .headerlabel {
     font-size: 1.1rem;
     font-weight: 600;
-    margin-top: 4.5rem;
+    margin-top: 1rem;
     color: #d4fff3;
 }
 
@@ -590,11 +592,11 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.tab-button:hover {
+.tab-:hover {
     background: #21505d;
 }
 
-.tab-button.active {
+.tab-.active {
     background: #2fa08c;
     color: #fff;
 }
@@ -614,7 +616,7 @@ code {
     margin: 0 auto 1rem auto;
 }
 
-.screenshot-button {
+.screenshot- {
     background: #031014;
     border: none;
     padding: 0.5rem 1rem;
@@ -627,7 +629,7 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.screenshot-button:hover {
+.screenshot-:hover {
     background: #092630;
 }
 
