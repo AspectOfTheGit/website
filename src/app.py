@@ -491,7 +491,7 @@ def upload_screenshot():
     return {"status": "success"}
 
 # Bot completes instruction
-@app.route("/bots/done/<action>")
+@app.route("/bots/done/<action>", methods=["POST"])
 def botcompletes(action):
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
