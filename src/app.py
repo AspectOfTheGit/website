@@ -550,11 +550,11 @@ def apideploybot():
         return ({"error": "Bot is unavailable"}), 400
     # Can account deploy?
     try:
-        dlimitu = data["account"][account]["abilities"]["uses"]
+        dlimitu = int(data["account"][account]["abilities"]["uses"])
     except:
         dlimitu = 10
     try:
-        dlimits = data["account"][account]["abilities"]["simultaneous"]
+        dlimits = int(data["account"][account]["abilities"]["simultaneous"])
     except:
         dlimits = 1
     deployed = 0
