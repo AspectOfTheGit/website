@@ -142,49 +142,52 @@
         });
 
         // Deploy button
+        canPress = true;
         document.querySelectorAll('.button').forEach(btn => {
             btn.addEventListener('click', async () => {
-                btn.classList.add("pressed");
-                const originalText = btn.textContent;
-                canPress = false;
-        
-                try {
-                    const res = await fetch('/api/deploy', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            account: username,
-                            token: document.getElementById('deploy-token').textContent,
-                            bot: document.getElementById('bot-select').value,
-                            world: worldBox.value
-                        })
-                    });
-                    
-                    const resdata = await res.json();
-        
-                    if (res.ok) {
-                        const bot = document.getElementById('bot-select').value;
-                        window.location.href = `http://aspectofthe.site/bots/status/${bot}`;
-                    } else {
-                        btn.textContent = resdata.error;
+                if (canPress) {
+                    btn.classList.add("pressed");
+                    const originalText = btn.textContent;
+                    canPress = false;
+            
+                    try {
+                        const res = await fetch('/api/deploy', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                account: username,
+                                token: document.getElementById('deploy-token').textContent,
+                                bot: document.getElementById('bot-select').value,
+                                world: worldBox.value
+                            })
+                        });
+                        
+                        const resdata = await res.json();
+            
+                        if (res.ok) {
+                            const bot = document.getElementById('bot-select').value;
+                            window.location.href = `http://aspectofthe.site/bots/status/${bot}`;
+                        } else {
+                            btn.textContent = resdata.error;
+                            btn.classList.add("error");
+            
+                            setTimeout(() => {
+                                btn.textContent = originalText;
+                                btn.classList.remove("error", "pressed");
+                                canPress = true;
+                            }, 3000);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        btn.textContent = "Unknown Error??";
                         btn.classList.add("error");
-        
+            
                         setTimeout(() => {
                             btn.textContent = originalText;
                             btn.classList.remove("error", "pressed");
                             canPress = true;
                         }, 3000);
                     }
-                } catch (e) {
-                    console.error(e);
-                    btn.textContent = "Unknown Error??";
-                    btn.classList.add("error");
-        
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.classList.remove("error", "pressed");
-                        canPress = true;
-                    }, 3000);
                 }
             });
         });
