@@ -500,6 +500,8 @@ def botcompletes(action):
         return jsonify({"error": "Unauthorized"}), 401
 
     account = request.form.get("account")
+    print(account) # debug
+    print(data["bot"]) # debug
     if account not in data["bot"]:
         return abort(400)
         
