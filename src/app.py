@@ -148,20 +148,14 @@ def mc_to_html(message):
         except json.JSONDecodeError:
             return html.escape(message)
 
-    html_output = ""
-
     def render_part(part):
         if not isinstance(part, dict):
             return html.escape(str(part))
 
         text = html.escape(part.get("text", ""))
 
-        style_info = part.get("style", {})
-        color = None
-        if "field_11855" in style_info:
-            color_data = style_info["field_11855"]
-            color = color_data.get("field_24364")
-
+        style_info = part.get("style", {}).get("field_11855", {})
+        color = style_info.get("field_24364")
         color_hex = f"#{color:06x}" if color is not None else None
 
         bold = part.get("bold") or False
@@ -184,17 +178,28 @@ def mc_to_html(message):
             else:
                 styles.append("text-decoration:line-through")
 
+        if part.get("field_11851"):
+            styles.append("background-color:#ffff99")
+        if part.get("field_11852"):
+            styles.append("background-color:#99ffcc")
+
         span_start = f'<span style="{";".join(styles)}">' if styles else ""
         span_end = "</span>" if styles else ""
+
+        command_attr = ""
+        if "field_11853" in part and "comp_3507" in part["field_11853"]:
+            command_attr = f' data-command="{html.escape(part["field_11853"]["comp_3507"])}"'
 
         extra_html = ""
         for e in part.get("extra", []):
             extra_html += render_part(e)
 
-        return f"{span_start}{text}{extra_html}{span_end}"
+        if command_attr:
+            return f'<span{command_attr}>{span_start}{text}{extra_html}{span_end}</span>'
+        else:
+            return f'{span_start}{text}{extra_html}{span_end}'
 
-    for part in message:
-        html_output += render_part(part)
+    html_output = "".join(render_part(part) for part in message)
 
     return html_output.replace("\n", "<br>")
 
