@@ -438,6 +438,7 @@ def update_log():
         return jsonify({"error": "Unauthorized"}), 401
 
     msg = request.json.get('value')
+    print(msg)
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
 
