@@ -184,12 +184,14 @@ def mc_to_html(message):
 
         extra_html = "".join(render_part(e) for e in part.get("extra", []))
 
+        print(f"{span_start}{text}{extra_html}{span_end}") # debug
+
         return f"{span_start}{text}{extra_html}{span_end}"
 
     if isinstance(message, dict) and "components" in message:
         html_output = "".join(render_part(part) for part in message["components"])
     else:
-        html_output = render_part(message)
+        html_output = message
 
     return html_output.replace("\n", "<br>")
     
