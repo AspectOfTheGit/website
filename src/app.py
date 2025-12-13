@@ -142,8 +142,10 @@ def get_username(uuid: str) -> str | None:
 
 # Minecraft's annoying styled messages to HTML
 def mc_to_html(message):
-    if isinstance(message, str) and message.strip():
-        import json
+    if isinstance(message, str):
+        message = message.strip()
+        if not message:
+            return ""
         try:
             message = json.loads(message)
         except json.JSONDecodeError:
@@ -183,7 +185,7 @@ def mc_to_html(message):
 
         span_start = f'<span style="{";".join(styles)}">' if styles else ""
         span_end = "</span>" if styles else ""
-        
+
         extra_html = ""
         if "extra" in part:
             for e in part["extra"]:
@@ -194,8 +196,7 @@ def mc_to_html(message):
     for part in message:
         html_output += render_part(part)
 
-    html_output = html_output.replace("\n", "<br>")
-    return html_output
+    return html_output.replace("\n", "<br>")
 
 # Get HTML from raw json text
 def raw_to_html(component):
