@@ -498,6 +498,7 @@ def update_log():
     try:
         msg = mc_to_html(msg)
         if '[{"text":"' in msg:
+            print("Error, using fallback:", fallback)
             msg = fallback
     except:
         msg = fallback
@@ -506,7 +507,7 @@ def update_log():
 
     contents = [time, msg]
 
-    #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
+    print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
