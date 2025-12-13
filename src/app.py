@@ -143,9 +143,6 @@ def get_username(uuid: str) -> str | None:
 # Minecraft's annoying styled messages to HTML
 def mc_to_html(message):
     if isinstance(message, str):
-        message = message.strip()
-        if not message:
-            return ""
         try:
             message = json.loads(message)
         except json.JSONDecodeError:
@@ -159,8 +156,12 @@ def mc_to_html(message):
 
         text = html.escape(part.get("text", ""))
 
-        style_info = part.get("style", {}).get("field_11855", {})
-        color = style_info.get("field_24364")
+        style_info = part.get("style", {})
+        color = None
+        if "field_11855" in style_info:
+            color_data = style_info["field_11855"]
+            color = color_data.get("field_24364")
+
         color_hex = f"#{color:06x}" if color is not None else None
 
         bold = part.get("bold") or False
@@ -187,9 +188,8 @@ def mc_to_html(message):
         span_end = "</span>" if styles else ""
 
         extra_html = ""
-        if "extra" in part:
-            for e in part["extra"]:
-                extra_html += render_part(e)
+        for e in part.get("extra", []):
+            extra_html += render_part(e)
 
         return f"{span_start}{text}{extra_html}{span_end}"
 
