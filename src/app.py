@@ -13,6 +13,7 @@ import threading
 import base64
 import secrets
 import string
+import html
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
@@ -138,6 +139,20 @@ def get_username(uuid: str) -> str | None:
         return data.get("username") # username is this
     except requests.RequestException:
         return None
+
+def mc_to_html(message):
+    html_output = ""
+    for part in message:
+        text = html.escape(part.get("text", ""))
+        style_info = part.get("style", {}).get("field_11855", {})
+        color = style_info.get("field_24364")
+        # Colors
+        if color is not None:
+            color_hex = f"#{color:06x}"
+            html_output += f'<span style="color:{color_hex}">{text}</span>'
+        else:
+            html_output += text
+    return html_output
 
 # Get HTML from raw json text
 def raw_to_html(component):
@@ -436,22 +451,16 @@ def update_log():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
-
-    print("[app.py] debug - log recieved") # debug
     
     msg = request.json.get('value')
-    print("value:",str(msg))
+    msg = mc_to_html(msg)
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
-
-    print("[app.py] debug - log continuing") # debug
 
     contents = [time, msg]
 
     #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
-
-    print("[app.py] debug - log complete") # debug
 
     return jsonify({"success": True, "value": contents})
 
