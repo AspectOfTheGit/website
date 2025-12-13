@@ -493,11 +493,11 @@ def update_log():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
     
-    msg = request.json.get('value')
     fallback = request.json.get('fallback')
     try:
+        msg = request.json.get('value')
         msg = mc_to_html(msg)
-        if '[{"text":"' in msg:
+        if '[{&quot;text&quot;:&quot;' in msg:
             print("Error, using fallback:", fallback)
             msg = fallback
     except:
@@ -507,7 +507,7 @@ def update_log():
 
     contents = [time, msg]
 
-    print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
+    #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
