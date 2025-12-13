@@ -141,6 +141,12 @@ def get_username(uuid: str) -> str | None:
         return None
 
 def mc_to_html(message):
+    if isinstance(message, str) and message.strip():
+        import json
+        try:
+            message = json.loads(message)
+        except json.JSONDecodeError:
+            return html.escape(message)  # fallback
     html_output = ""
     for part in message:
         if isinstance(part, dict):
@@ -454,7 +460,7 @@ def update_log():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
     
-    msg = json.loads(request.json.get('value'))
+    msg = request.json.get('value')
     msg = mc_to_html(msg)
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
