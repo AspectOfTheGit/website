@@ -141,6 +141,7 @@ def get_username(uuid: str) -> str | None:
         return None
 
 # Minecraft's annoying styled messages to HTML
+# is what I would've said if I didnt decide to use a json serializer specific for ts
 def mc_to_html(message):
     if isinstance(message, str):
         try:
@@ -152,47 +153,41 @@ def mc_to_html(message):
         if not isinstance(part, dict):
             return html.escape(str(part))
 
-        # Escape text
         text = html.escape(part.get("text", ""))
 
-        # Style handling
-        style_info = part.get("style", {}).get("field_11855", {})
-        color = style_info.get("field_24364")
-        color_hex = f"#{color:06x}" if color is not None else None
-
-        bold = part.get("bold") or False
-        italic = part.get("italic") or False
-        underline = part.get("underlined") or False
-        strikethrough = part.get("strikethrough") or False
+        style_info = part.get("style", {})
+        color = style_info.get("color")
+        bold = style_info.get("isBold", False)
+        italic = style_info.get("isItalic", False)
+        underline = style_info.get("isUnderlined", False)
+        strikethrough = style_info.get("isStrikethrough", False)
 
         styles = []
-        if color_hex:
-            styles.append(f"color:{color_hex}")
+        if color:
+            styles.append(f"color:{color}")
         if bold:
             styles.append("font-weight:bold")
         if italic:
             styles.append("font-style:italic")
-        if underline:
+        if underline and strikethrough:
+            styles.append("text-decoration:underline line-through")
+        elif underline:
             styles.append("text-decoration:underline")
-        if strikethrough:
-            if underline:
-                styles[-1] = "text-decoration:underline line-through"
-            else:
-                styles.append("text-decoration:line-through")
+        elif strikethrough:
+            styles.append("text-decoration:line-through")
 
         span_start = f'<span style="{";".join(styles)}">' if styles else ""
         span_end = "</span>" if styles else ""
 
-        # Recursively handle extra parts
-        extra_html = ""
-        for e in part.get("extra", []):
-            extra_html += render_part(e)
+        extra_html = "".join(render_part(e) for e in part.get("extra", []))
 
         return f"{span_start}{text}{extra_html}{span_end}"
+        
+    if isinstance(message, dict) and "components" in message:
+        html_output = "".join(render_part(part) for part in message["components"])
+    else:
+        html_output = render_part(message)
 
-    html_output = "".join(render_part(part) for part in message)
-
-    # Convert newlines to <br>
     return html_output.replace("\n", "<br>")
     
 # Get HTML from raw json text
