@@ -143,15 +143,17 @@ def get_username(uuid: str) -> str | None:
 def mc_to_html(message):
     html_output = ""
     for part in message:
-        text = html.escape(part.get("text", ""))
-        style_info = part.get("style", {}).get("field_11855", {})
-        color = style_info.get("field_24364")
-        # Colors
-        if color is not None:
-            color_hex = f"#{color:06x}"
-            html_output += f'<span style="color:{color_hex}">{text}</span>'
+        if isinstance(part, dict):
+            text = html.escape(part.get("text", ""))
+            style_info = part.get("style", {}).get("field_11855", {})
+            color = style_info.get("field_24364")
+            if color is not None:
+                color_hex = f"#{color:06x}"
+                html_output += f'<span style="color:{color_hex}">{text}</span>'
+            else:
+                html_output += text
         else:
-            html_output += text
+            html_output += html.escape(str(part))
     return html_output
 
 # Get HTML from raw json text
@@ -452,7 +454,7 @@ def update_log():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
     
-    msg = request.json.get('value')
+    msg = json.loads(request.json.get('value'))
     msg = mc_to_html(msg)
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
