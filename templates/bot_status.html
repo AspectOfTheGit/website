@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.on("log", (contents) => {
         const time = contents[0];
         const msg = contents[1];
-        logContainer.textContent += `[${time}] ${msg}\n`;
+        logContainer.innerHTML += `[${time}] ${msg}<br>`;
         logContainer.scrollTop = logContainer.scrollHeight;
     });
 
