@@ -494,7 +494,13 @@ def update_log():
         return jsonify({"error": "Unauthorized"}), 401
     
     msg = request.json.get('value')
-    msg = mc_to_html(msg)
+    fallback = request.json.get('fallback')
+    try:
+        msg = mc_to_html(msg)
+        if '[{"text":"' in msg:
+            msg = fallback
+    except:
+        msg = fallback
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
 
