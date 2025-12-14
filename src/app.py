@@ -491,15 +491,15 @@ def update_log():
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
     
-    fallback = request.json.get('fallback')
     try:
         msg = request.json.get('value')
         msg = mc_to_html(msg)
         if '[{&quot;text&quot;:&quot;' in msg:
-            print("Error, using fallback:", fallback)
-            msg = fallback
+            print("Error during bot log (parsing issue) msg:", msg)
+            return 500
     except:
-        msg = fallback
+        print("Error during bot log (Unknown)")
+        return 500
     room_name = request.json.get('account')
     time = time.strftime('%H:%M:%S')
 
