@@ -151,20 +151,20 @@ def mc_to_html(message):
 
     def render_part(part):
         if not isinstance(part, dict):
-            return html.escape(str(part))
-
-        text = html.escape(part.get("text", ""))
-
+            return html.escape(str(part)).replace("\n", "<br>")
+    
+        text = html.escape(part.get("text", "")).replace("\n", "<br>")
+    
         style_info = part.get("style", {})
         color = style_info.get("color")
         if isinstance(color, int):
             color = f"#{color:06X}"
-
+    
         bold = style_info.get("isBold", False)
         italic = style_info.get("isItalic", False)
         underline = style_info.get("isUnderlined", False)
         strikethrough = style_info.get("isStrikethrough", False)
-
+    
         styles = []
         if color:
             styles.append(f"color:{color}")
@@ -178,12 +178,12 @@ def mc_to_html(message):
             styles.append("text-decoration:underline")
         elif strikethrough:
             styles.append("text-decoration:line-through")
-
+    
         span_start = f'<span style="{";".join(styles)}">' if styles else ""
         span_end = "</span>" if styles else ""
-
+    
         extra_html = "".join(render_part(e) for e in part.get("extra", []))
-
+    
         return f"{span_start}{text}{extra_html}{span_end}"
 
     if isinstance(message, dict) and "components" in message:
