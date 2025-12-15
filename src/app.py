@@ -112,8 +112,8 @@ def refreshbotinfo():
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Add account to disk
-def setupaccount():
+# Refreshes account information for the current session
+def refreshaccountinfo():
     global data
     mcusername = session.get("mc_username")
     data.setdefault("account", {})
@@ -328,7 +328,7 @@ def accountpage():
     if session_token and profile_uuid:
         global data
         mcusername = session.get("mc_username")
-        setupaccount()
+        refreshaccountinfo()
         return render_template("account.html", username=mcusername, account=data["account"][mcusername])
     else:
         return redirect("/login")
@@ -356,7 +356,7 @@ def start_deploy():
     
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
-        setupaccount()
+        refreshaccountinfo()
         refreshbotinfo()
         return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], profile_uuid=profile_uuid)
     else:
