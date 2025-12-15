@@ -424,6 +424,22 @@ code {
     border-radius: 4px;
 }
 
+.toggle-token-btn {
+    cursor: pointer;
+    background-color: #2fa08c;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+}
+
+.refresh-token-btn {
+    cursor: pointer;
+    background-color: #2fa08c;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+}
+
 .account-table {
     width: 100%;
     border-collapse: collapse;
