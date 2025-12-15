@@ -578,6 +578,7 @@ code {
     margin: 20px auto 0 auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    font-family: 'MinecraftDefault';
 }
 
 #log-container::-webkit-scrollbar {
@@ -673,8 +674,8 @@ main {
 }
 
 body {
-  margin: 0;
-  padding-bottom: 100px;
+    margin: 0;
+    padding-bottom: 100px;
 }
 
 .site-footer {
