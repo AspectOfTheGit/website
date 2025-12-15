@@ -112,6 +112,19 @@ def refreshbotinfo():
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+# Add account to disk
+def setupaccount():
+    global data
+    mcusername = session.get("mc_username")
+    data.setdefault("account", {})
+    data["account"].setdefault(mcusername, {})
+    data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
+    data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
+    today = datetime.now().date().isoformat()
+    data["account"][mcusername].setdefault("last_deploy", today)
+    if data["account"][mcusername]["last_deploy"] != today:
+        data["account"][mcusername]["used"] = 0
+
 # Use legitidevs to get world info
 def get_world_info(uuid: str):
     url = f"https://api.legiti.dev/world/{uuid}"
@@ -315,14 +328,7 @@ def accountpage():
     if session_token and profile_uuid:
         global data
         mcusername = session.get("mc_username")
-        data.setdefault("account", {})
-        data["account"].setdefault(mcusername, {})
-        data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
-        data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
-        today = datetime.now().date().isoformat()
-        data["account"][mcusername].setdefault("last_deploy", today)
-        if data["account"][mcusername]["last_deploy"] != today:
-            data["account"][mcusername]["used"] = 0
+        setupaccount()
         return render_template("account.html", username=mcusername, account=data["account"][mcusername])
     else:
         return redirect("/login")
@@ -350,6 +356,7 @@ def start_deploy():
     
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
+        setupaccount()
         refreshbotinfo()
         return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], profile_uuid=profile_uuid)
     else:
@@ -395,6 +402,8 @@ def mc_login():
     session['mc_access_token'] = mc_auth_response["access_token"]
     session['mc_username'] = mc_auth_response["data"]["profile"]["name"]
     session['mc_uuid'] = mc_auth_response["data"]["profile"]["id"]
+
+    setupaccount()
 
     return redirect("/")
 
