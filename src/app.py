@@ -125,6 +125,24 @@ def refreshaccountinfo():
     if data["account"][mcusername]["last_deploy"] != today:
         data["account"][mcusername]["used"] = 0
 
+# Re-evaluate user storage size
+def storagesize(account: str):
+    global data
+    data["account"][account]["storage"].setdefault("capacity", {})
+    total = 0
+    try:
+        for i in data["account"][account]["storage"]["capacity"].keys():
+            total += data["account"][account]["storage"]["capacity"][i]
+    except:
+        try:
+            total = data["account"][account]["abilities"]["capacity"]
+        except:
+            total = 10000000
+    data["account"][account]["storage"]["size"] = total
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
 # Use legitidevs to get world info
 def get_world_info(uuid: str):
     url = f"https://api.legiti.dev/world/{uuid}"
@@ -719,7 +737,11 @@ def apistoragewrite():
     data["account"][account].setdefault("abilities", {})
     capacity = data["account"][account]["abilities"].get("capacity", 1)
     size = len(content.encode('utf-8'))
-    if size > capacity * 1024 * 1024:
+    data["account"][account].setdefault("storage", {})
+    storagesize()
+    total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"]["main"] + size
+    # total is in bytes, capacity is in MB
+    if total > capacity * 1024 * 1024:
         if world_id:
             contents = [time, f"[World {world_id}] Write request attempted with large data of {size} bytes"]
         else:
@@ -728,8 +750,8 @@ def apistoragewrite():
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # Save content
-    data["account"][account].setdefault("storage", {})
-    data["account"][account]["storage"].setdefault("contents", "")
+    data["account"][account]["storage"]["capacity"]["main"] = size
+    storagesize()
     data["account"][account]["storage"]["contents"] = content
 
     # Emit to logs
