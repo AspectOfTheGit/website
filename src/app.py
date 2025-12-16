@@ -422,7 +422,7 @@ def mc_login():
     session['mc_username'] = mc_auth_response["data"]["profile"]["name"]
     session['mc_uuid'] = mc_auth_response["data"]["profile"]["id"]
 
-    setupaccount()
+    refreshaccountinfo()
 
     return redirect("/")
 
