@@ -752,7 +752,7 @@ def apistoragewrite():
 
     # Save content
     data["account"][account]["storage"]["capacity"]["main"] = size
-    storagesize()
+    storagesize(account)
     data["account"][account]["storage"]["contents"] = content
 
     # Emit to logs
