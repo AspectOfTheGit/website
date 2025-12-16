@@ -739,6 +739,8 @@ def apistoragewrite():
     capacity = data["account"][account]["abilities"].get("capacity", 1)
     size = len(content.encode('utf-8'))
     data["account"][account].setdefault("storage", {})
+    data["account"][account]["storage"].setdefault("capacity", {})
+    data["account"][account]["storage"]["capacity"].setdefault("main", 0)
     storagesize(account)
     total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"]["main"] + size
     # total is in bytes, capacity is in MB
