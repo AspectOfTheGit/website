@@ -128,6 +128,7 @@ def refreshaccountinfo():
 # Re-evaluate user storage size
 def storagesize(account: str):
     global data
+    data["account"][account].setdefault("storage", {})
     data["account"][account]["storage"].setdefault("capacity", {})
     total = 0
     try:
@@ -135,7 +136,7 @@ def storagesize(account: str):
             total += data["account"][account]["storage"]["capacity"][i]
     except:
         try:
-            total = data["account"][account]["abilities"]["capacity"]
+            total = data["account"][account]["abilities"]["capacity"] * 1024 * 1024
         except:
             total = 10000000
     data["account"][account]["storage"]["size"] = total
