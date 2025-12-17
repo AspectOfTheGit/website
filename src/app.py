@@ -797,6 +797,7 @@ def apistoragereadkey():
     rdata = request.get_json()
     account = rdata.get("account", "")
     token = rdata.get("token", "")
+    key = rdata.get("key", "")
     # Does account exist?
     if account not in data["account"]:
         #print("Account doesn't exist") # debug
@@ -810,12 +811,13 @@ def apistoragereadkey():
         #print("No token generated") # debug
         return jsonify({"error": "No Token Generated"}), 400
         
-    # return storage from key
-    return None # wip
+    # return storage value from key
     try:
         storagedict = json.loads(data["account"][account]["storage"]["contents"])
         try:
-            return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]}) # wip
+            return jsonify({"success": True, "value": storagedict[key]})
+        except:
+            return jsonify({"error": f"Key '{key}' not found"}), 500
     except:
         return jsonify({"error": "Could not convert to dictionary"}), 500
 
