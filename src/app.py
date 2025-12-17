@@ -791,6 +791,34 @@ def apistorageread():
     # return storage
     return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
 
+@app.route("/api/storage/readkey", methods=["POST"])
+def apistoragereadkey():
+    global data
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+    # Does account exist?
+    if account not in data["account"]:
+        #print("Account doesn't exist") # debug
+        return jsonify({"error": "Account doesn't exist"}), 400
+    # Does token match?
+    try:
+        if token != data["account"][account]["token"]["read"]:
+            #print("Incorrect token") # debug
+            return jsonify({"error": "Unauthorized"}), 401
+    except:
+        #print("No token generated") # debug
+        return jsonify({"error": "No Token Generated"}), 400
+        
+    # return storage from key
+    return None # wip
+    try:
+        storagedict = json.loads(data["account"][account]["storage"]["contents"])
+        try:
+            return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]}) # wip
+    except:
+        return jsonify({"error": "Could not convert to dictionary"}), 500
+
 ## TOKENS
 
 @app.post("/api/refresh-token/<token>")
