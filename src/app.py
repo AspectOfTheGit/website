@@ -104,8 +104,7 @@ def refreshbotinfo():
         else:
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
-                time = time.strftime('%H:%M:%S')
-                contents = [time, f"Disconnect requested for {bot}"]
+                contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}"]
                 socketio.emit('log', contents, room=bot)
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
