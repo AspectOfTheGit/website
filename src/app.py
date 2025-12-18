@@ -104,8 +104,9 @@ def refreshbotinfo():
         else:
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
+                time = time.strftime('%H:%M:%S')
                 contents = [time, f"Disconnect requested for {bot}"]
-                socketio.emit('log', contents, room=bot)
+                ('log', contents, room=bot)
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             #data["bot"][bot]["world"].setdefault("owner", {})
@@ -479,6 +480,7 @@ def alive():
     
     global data
     if data["bot"][request.json.get("account")]["status"] == False:
+        time = time.strftime('%H:%M:%S')
         contents = [time, f"Bot successfully online"]
         socketio.emit('log', contents, room=request.json.get("account"))
     data["bot"][request.json.get("account")]["status"] = True  # mark as online
@@ -539,7 +541,7 @@ def update_log():
     contents = [time, msg]
 
     #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
-    socketio.emit('log', contents, room=room_name)
+    ('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
 
@@ -700,6 +702,7 @@ def apideploybot():
         data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
+    time = time.strftime('%H:%M:%S')
     contents = [time, f"{bot} deployed to {world} ({worldname}) by {account}"]
     socketio.emit('log', contents, room=bot)
 
