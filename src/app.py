@@ -624,6 +624,7 @@ def apibotstatus(bot):
 
 @app.route("/api/deploy", methods=["POST"]) # WORK IN PROGRESS
 def apideploybot():
+    import time
     global data
     
     rdata = request.get_json()
@@ -702,8 +703,7 @@ def apideploybot():
         data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
-    time = time.strftime('%H:%M:%S')
-    contents = [time, f"{bot} deployed to {world} ({worldname}) by {account}"]
+    contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {account}"]
     socketio.emit('log', contents, room=bot)
 
     data["account"][account]["used"] += 1
