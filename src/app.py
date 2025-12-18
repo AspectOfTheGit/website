@@ -106,7 +106,7 @@ def refreshbotinfo():
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
                 time = time.strftime('%H:%M:%S')
                 contents = [time, f"Disconnect requested for {bot}"]
-                ('log', contents, room=bot)
+                socketio.emit('log', contents, room=bot)
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             #data["bot"][bot]["world"].setdefault("owner", {})
@@ -541,7 +541,7 @@ def update_log():
     contents = [time, msg]
 
     #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
-    ('log', contents, room=room_name)
+    socketio.emit('log', contents, room=room_name)
 
     return jsonify({"success": True, "value": contents})
 
