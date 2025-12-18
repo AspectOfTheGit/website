@@ -82,6 +82,7 @@ except:
 # Refresh the bot information for all bots:
 # Bot array, Status, uuid
 def refreshbotinfo():
+    import time
     global data, timeout
     bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
     for bot in bots:
