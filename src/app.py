@@ -104,6 +104,8 @@ def refreshbotinfo():
         else:
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
+                contents = [time, f"Disconnect requested for {bot}"]
+                socketio.emit('log', contents, room=bot)
             #data["bot"][bot].setdefault("world", {})
             #data["bot"][bot]["world"]["name"] = "WorldNamePlaceholder"
             #data["bot"][bot]["world"].setdefault("owner", {})
@@ -476,6 +478,9 @@ def alive():
         return jsonify({"error": "Unauthorized"}), 401
     
     global data
+    if data["bot"][request.json.get("account")]["status"] == False:
+        contents = [time, f"Bot successfully online"]
+        socketio.emit('log', contents, room=request.json.get("account"))
     data["bot"][request.json.get("account")]["status"] = True  # mark as online
     data["bot"][request.json.get("account")]["last_ping"] = time.time()
     with open(DATA_FILE, "w") as f:
@@ -695,6 +700,8 @@ def apideploybot():
         data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
+    contents = [time, f"{bot} deployed to {world} ({worldname}) by {account}"]
+    socketio.emit('log', contents, room=bot)
 
     data["account"][account]["used"] += 1
     
