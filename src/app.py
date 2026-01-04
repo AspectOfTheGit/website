@@ -413,7 +413,8 @@ def bot_status(bot):
 def world_edit(world):
     world = world.strip()
     global data
-    
+
+    data.setdefault("world", {})
     if world not in data["world"]:
         mcusername = session.get("mc_username")
         if mc_username != data["world"][world]["owner"]:# Check if user owns the world
@@ -427,7 +428,6 @@ def world_edit(world):
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
                 return jsonify({"error": "Unauthorized"}), 401
 
-            data.setdefault("world", {})
             data["world"].setdefault(world, {})
             data["world"][world]["owner"] = mc_username
             data["world"][world]["elements"] = {}
