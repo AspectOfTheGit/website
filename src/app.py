@@ -950,7 +950,7 @@ def deletebotdata():
 
     return jsonify({"success": True}), 200
 
-@app.route("/api/deletebotdata", methods=["POST"])
+@app.route("/api/deleteworlddata", methods=["POST"])
 def deleteworldpage():
     global data
     rdata = request.get_json()
