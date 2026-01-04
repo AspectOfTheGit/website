@@ -429,6 +429,7 @@ def world_edit(world):
             data["world"][world] = {}
             data["world"][world]["owner"] = mcusername
             data["world"][world]["elements"] = {}
+            data["world"][world]["title"] = worlddata["name"]
 
             with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
@@ -436,7 +437,7 @@ def world_edit(world):
             return abort(500)
             
     # Load world page editor
-    return render_template("world_edit.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"])
+    return render_template("world_edit.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"], title=data["world"][world]["title"])
 
 @app.route("/login")
 def mc_login():
