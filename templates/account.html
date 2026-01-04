@@ -454,17 +454,13 @@
         
                 opt.addEventListener("click", () => {
                     selected.innerHTML = opt.innerHTML;
-                    selected.dataset.value = world.world_uuid;
                     options.style.display = "none";
+                    window.location.href = `/world/${world.world_uuid}/edit`;
                 });
-        
-                options.appendChild(opt);
-        
-                if (index === 0) {
-                    selected.innerHTML = opt.innerHTML;
-                    selected.dataset.value = world.world_uuid;
-                }
-            });
+            }
+                                
+            selected.innerHTML = "Select a world";
+            selected.dataset.value = "";
         }
 
         // Custom dropdown logic
