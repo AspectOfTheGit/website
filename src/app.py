@@ -69,7 +69,7 @@ try:
         data = json.load(f)
         #print(data)
 except:
-    data = {"bot": {}, "account": {}}
+    data = {"bot": {}, "account": {}, "world": {}}
     os.makedirs("/data", exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -174,6 +174,17 @@ def get_username(uuid: str) -> str | None:
         return data.get("username") # username is this
     except requests.RequestException:
         return None
+
+def formatUUID(u):
+    u = u.replace("-", "").strip()
+    u = (
+        u[:8] + "-" +
+        u[8:12] + "-" +
+        u[12:16] + "-" +
+        u[16:20] + "-" +
+        u[20:]
+    )
+    return u
 
 # Minecraft's annoying styled messages to HTML
 # is what I would've said if I didnt decide to use a json serializer specific for ts
@@ -397,6 +408,35 @@ def bot_status(bot):
         return abort(400)
     mcusername = session.get("mc_username")
     return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
+
+@app.route("/bots/<world>/edit")
+def world_edit(world):
+    world = world.strip()
+    global data
+    
+    if world not in data["world"]:
+        mcusername = session.get("mc_username")
+        if mc_username != data["world"][world]["owner"]:# Check if user owns the world
+            return jsonify({"error": "Unauthorized"}), 401
+        else:
+            return jsonify({"success": 1}), 200
+    else:
+        try:# World page doesn't yet exist, so create it
+            # Legitidev Request
+            worlddata = get_world_info(world)
+            if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
+                return jsonify({"error": "Unauthorized"}), 401
+            
+            data["world"].setdefault(world, {})
+            data["world"][world]["owner"] = mc_username
+            data["world"][world]["elements"] = {}
+
+            with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
+
+            return 200
+        except:
+            return abort(500)
 
 @app.route("/login")
 def mc_login():
