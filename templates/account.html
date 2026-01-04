@@ -57,6 +57,7 @@
       <div class="sidebar-top">
         <button class="sidebar-btn active" data-tab="account-status">Account Status</button>
         <button class="sidebar-btn" data-tab="user-storage">User Storage</button>
+        <button class="sidebar-btn" data-tab="world-pages">World Pages</button>
         <button class="sidebar-btn logout-btn" id="logout-btn" style="margin-top: 20px;">Logout</button>
       </div>
     </aside>
@@ -150,6 +151,17 @@
               </code>
           </p>
       </div>
+      <div id="world-pages" class="tab-content">
+          <div id="world-pages" class="tab-content">
+            <h2>Your Worlds</h2>
+            <div class="dropdown-wrapper">
+                <label for="world-select" class="headerlabel">Choose a world:</label>
+                <select id="world-select" class="dropdown">
+                    <option disabled selected>Loading…</option>
+                </select>
+            </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -159,6 +171,8 @@
         const accountName = "{{ username }}"
         const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
         const logContainer = document.getElementById("logs-output");
+
+        let ownedworlds = [];
 
         // socket.io
         socket.emit('join', accountName);
@@ -261,6 +275,181 @@
                 }
             });
         });
+
+        function formatUUID(u) {
+            u = u.replace(/-/g, "").trim();
+            return (
+                u.slice(0, 8) + "-" +
+                u.slice(8, 12) + "-" +
+                u.slice(12, 16) + "-" +
+                u.slice(16, 20) + "-" +
+                u.slice(20)
+            );
+        }
+
+        const COLOURS = {
+            black: "#000000",
+            dark_blue: "#0000AA",
+            dark_green: "#00AA00",
+            dark_aqua: "#00AAAA",
+            dark_red: "#AA0000",
+            dark_purple: "#AA00AA",
+            gold: "#FFAA00",
+            gray: "#AAAAAA",
+            dark_gray: "#555555",
+            blue: "#5555FF",
+            green: "#55FF55",
+            aqua: "#55FFFF",
+            red: "#FF5555",
+            light_purple: "#FF55FF",
+            yellow: "#FFFF55",
+            white: "#FFFFFF"
+        };
+        
+        const HEX_COLOUR = /^[0-9a-fA-F]{6}$/;
+        
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function rawToHtml(component) {
+            if (typeof component === "string") {
+                try {
+                    component = JSON.parse(component);
+                } catch {
+                    return escapeHtml(component);
+                }
+            }
+        
+            const segments = [];
+        
+            function collect(c, inherited = null) {
+                if (typeof c === "string") {
+                    const styleStr = inherited?._style_str || "";
+                    segments.push([c, styleStr]);
+                    return;
+                }
+        
+                if (!inherited) inherited = {};
+        
+                const text = c.text || "";
+                const color = c.color ?? inherited.color;
+                const italic = c.italic ?? inherited.italic ?? false;
+                const bold = c.bold ?? inherited.bold ?? false;
+                const underlined = c.underlined ?? inherited.underlined ?? false;
+                const strikethrough = c.strikethrough ?? inherited.strikethrough ?? false;
+        
+                let resolvedColor = null;
+                if (color) {
+                    if (COLOURS[color]) {
+                        resolvedColor = COLOURS[color];
+                    } else if (HEX_COLOUR.test(color)) {
+                        resolvedColor = color.startsWith("#") ? color : `#${color}`;
+                    }
+                }
+        
+                const styleParts = [];
+                if (resolvedColor) styleParts.push(`color:${resolvedColor}`);
+                if (italic) styleParts.push("font-style:italic");
+                if (bold) styleParts.push("font-weight:bold");
+        
+                const decorations = [];
+                if (underlined) decorations.push("underline");
+                if (strikethrough) decorations.push("line-through");
+                if (decorations.length) {
+                    styleParts.push(`text-decoration:${decorations.join(" ")}`);
+                }
+        
+                const styleStr = styleParts.join(";");
+        
+                const newInherited = {
+                    color: resolvedColor || color,
+                    italic,
+                    bold,
+                    underlined,
+                    strikethrough,
+                    _style_str: styleStr
+                };
+        
+                if (text) {
+                    segments.push([text, styleStr]);
+                }
+        
+                for (const e of c.extra || []) {
+                    collect(e, newInherited);
+                }
+            }
+        
+            collect(component);
+        
+            if (!segments.length) return "";
+        
+            const merged = [];
+            let [curText, curStyle] = segments[0];
+        
+            for (let i = 1; i < segments.length; i++) {
+                const [t, s] = segments[i];
+                if (s === curStyle) {
+                    curText += t;
+                } else {
+                    merged.push([curText, curStyle]);
+                    curText = t;
+                    curStyle = s;
+                }
+            }
+            merged.push([curText, curStyle]);
+        
+            return merged.map(([text, style]) => {
+                const escaped = escapeHtml(text);
+                if (style) {
+                    return `<span style="${style}">${escaped}</span>`;
+                }
+                return escaped;
+            }).join("");
+        }
+
+        // Get owned worlds
+        async function loadWorlds() {
+            loadingWorlds = true;
+        
+            try {
+                const formatted = formatUUID("{{ profile_uuid }}");
+                const res = await fetch(`https://api.legiti.dev/owner/${formatted}`);
+                ownedworlds = await res.json();
+                populateWorldDropdown();
+            } catch (err) {
+                console.error("Failed to fetch owned worlds:", err);
+            }
+        
+            loadingWorlds = false;
+        }
+        
+        function populateWorldDropdown() {
+            const select = document.getElementById("world-select");
+            select.innerHTML = "";
+        
+            if (!Array.isArray(ownedworlds) || !ownedworlds.length) {
+                select.innerHTML = `<option disabled>No worlds found</option>`;
+                return;
+            }
+        
+            for (const world of ownedworlds) {
+                const option = document.createElement("option");
+                option.value = world.world_uuid;
+        
+                if (world.raw_name) {
+                    option.innerHTML = rawToHtml(world.raw_name);
+                } else {
+                    option.textContent = world.name ?? "Unnamed world";
+                }
+        
+                select.appendChild(option);
+            }
+        }
+
+        loadworlds();
     });
     </script>
   
