@@ -415,8 +415,8 @@ def world_edit(world):
     global data
 
     data.setdefault("world", {})
+    mcusername = session.get("mc_username")
     if world in data["world"]:
-        mcusername = session.get("mc_username")
         if mcusername != data["world"][world]["owner"]:# Check if user owns the world
             return jsonify({"error": "Unauthorized"}), 401
         else:
