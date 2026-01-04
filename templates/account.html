@@ -154,10 +154,16 @@
       <div id="world-pages" class="tab-content">
         <h2>Your Worlds</h2>
         <div class="dropdown-wrapper">
-            <label for="world-select" class="headerlabel">Choose a world:</label>
-            <select id="world-select" class="dropdown">
-                <option disabled selected>Loading…</option>
-            </select>
+            <div class="dropdown-wrapper">
+                <label class="headerlabel">Choose a world:</label>
+            
+                <div id="world-dropdown" class="custom-dropdown">
+                    <div id="world-selected" class="dropdown-selected">
+                        Loading…
+                    </div>
+                    <div id="world-options" class="dropdown-options"></div>
+                </div>
+            </div>
         </div>
       </div>
     </main>
@@ -425,27 +431,57 @@
         }
         
         function populateWorldDropdown() {
-            const select = document.getElementById("world-select");
-            select.innerHTML = "";
+            const selected = document.getElementById("world-selected");
+            const options = document.getElementById("world-options");
+        
+            options.innerHTML = "";
         
             if (!Array.isArray(ownedworlds) || !ownedworlds.length) {
-                select.innerHTML = `<option disabled>No worlds found</option>`;
+                selected.textContent = "No worlds found";
                 return;
             }
         
-            for (const world of ownedworlds) {
-                const option = document.createElement("option");
-                option.value = world.world_uuid;
+            ownedworlds.forEach((world, index) => {
+                const opt = document.createElement("div");
+                opt.className = "dropdown-option";
+                opt.dataset.value = world.world_uuid;
         
                 if (world.raw_name) {
-                    option.innerHTML = rawToHtml(world.raw_name);
+                    opt.innerHTML = rawToHtml(world.raw_name);
                 } else {
-                    option.textContent = world.name ?? "Unnamed world";
+                    opt.textContent = world.name ?? "Unnamed world";
                 }
         
-                select.appendChild(option);
-            }
+                opt.addEventListener("click", () => {
+                    selected.innerHTML = opt.innerHTML;
+                    selected.dataset.value = world.world_uuid;
+                    options.style.display = "none";
+                });
+        
+                options.appendChild(opt);
+        
+                if (index === 0) {
+                    selected.innerHTML = opt.innerHTML;
+                    selected.dataset.value = world.world_uuid;
+                }
+            });
         }
+
+        // Custom dropdown logic
+        const dropdown = document.getElementById("world-dropdown");
+        const selected = document.getElementById("world-selected");
+        const options = document.getElementById("world-options");
+        
+        selected.addEventListener("click", () => {
+            options.style.display =
+                options.style.display === "block" ? "none" : "block";
+        });
+        
+        document.addEventListener("click", e => {
+            if (!dropdown.contains(e.target)) {
+                options.style.display = "none";
+            }
+        });
 
         loadWorlds();
     });
