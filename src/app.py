@@ -966,7 +966,7 @@ def deleteworldpage():
     if world == "*":
         data["world"] = {}
     else:
-        data["world"][world] = {}
+        del data["world"][world]
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
