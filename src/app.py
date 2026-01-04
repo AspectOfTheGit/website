@@ -426,7 +426,8 @@ def world_edit(world):
             worlddata = get_world_info(world)
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
                 return jsonify({"error": "Unauthorized"}), 401
-            
+
+            data.setdefault("world", {})
             data["world"].setdefault(world, {})
             data["world"][world]["owner"] = mc_username
             data["world"][world]["elements"] = {}
@@ -436,9 +437,6 @@ def world_edit(world):
 
             return 200
         except:
-            data.setdefault("world", {})
-            with open(DATA_FILE, "w") as f:
-                json.dump(data, f, indent=4)
             return abort(500)
 
 @app.route("/login")
