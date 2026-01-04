@@ -419,8 +419,6 @@ def world_edit(world):
     if world in data["world"]:
         if mcusername != data["world"][world]["owner"]:# Check if user owns the world
             return jsonify({"error": "Unauthorized"}), 401
-        else:
-            return jsonify({"success": 1}), 200
     else:
         try:# World page doesn't yet exist, so create it
             # Legitidev Request
@@ -434,10 +432,11 @@ def world_edit(world):
 
             with open(DATA_FILE, "w") as f:
                 json.dump(data, f, indent=4)
-
-            return 200
         except:
             return abort(500)
+            
+    # Load world page editor
+    return render_template("world_edit.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"])
 
 @app.route("/login")
 def mc_login():
