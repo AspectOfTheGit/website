@@ -429,7 +429,7 @@ def world_edit(world):
                 return jsonify({"error": "Unauthorized"}), 401
 
             data["world"][world] = {}
-            data["world"][world]["owner"] = mc_username
+            data["world"][world]["owner"] = mcusername
             data["world"][world]["elements"] = {}
 
             with open(DATA_FILE, "w") as f:
