@@ -409,7 +409,7 @@ def bot_status(bot):
     mcusername = session.get("mc_username")
     return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
 
-@app.route("/bots/<world>/edit")
+@app.route("/world/<world>/edit")
 def world_edit(world):
     world = world.strip()
     global data
