@@ -351,7 +351,7 @@ def accountpage():
         global data
         mcusername = session.get("mc_username")
         refreshaccountinfo()
-        return render_template("account.html", username=mcusername, account=data["account"][mcusername])
+        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid)
     else:
         return redirect("/login")
 
