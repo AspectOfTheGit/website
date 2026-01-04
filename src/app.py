@@ -436,6 +436,9 @@ def world_edit(world):
 
             return 200
         except:
+            data.setdefault("world", {})
+            with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=4)
             return abort(500)
 
 @app.route("/login")
