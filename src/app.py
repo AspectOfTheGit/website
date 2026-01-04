@@ -410,7 +410,7 @@ def bot_status(bot):
     return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
 
 @app.route("/world/<world>")
-def world(world):
+def world_page(world):
     world = world.strip()
     global data
 
