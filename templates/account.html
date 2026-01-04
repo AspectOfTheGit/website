@@ -457,8 +457,10 @@
                     options.style.display = "none";
                     window.location.href = `/world/${world.world_uuid}/edit`;
                 });
+        
+                options.appendChild(opt);
             });
-                                
+        
             selected.innerHTML = "Select a world";
             selected.dataset.value = "";
         }
