@@ -428,7 +428,7 @@ def world_edit(world):
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
                 return jsonify({"error": "Unauthorized"}), 401
 
-            data["world"].setdefault(world, {})
+            data["world"][world] = {}
             data["world"][world]["owner"] = mc_username
             data["world"][world]["elements"] = {}
 
@@ -947,6 +947,29 @@ def deletebotdata():
         data["bot"][bot] = {}
 
     refreshbotinfo()
+
+    return jsonify({"success": True}), 200
+
+@app.route("/api/deletebotdata", methods=["POST"])
+def deleteworldpage():
+    global data
+    rdata = request.get_json()
+    world = rdata.get("world", "")
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if world not in data["world"] and world != "*":
+        return jsonify({"error": "World page doesn't exist"}), 400
+        
+    if world == "*":
+        data["world"] = {}
+    else:
+        data["world"][world] = {}
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
     return jsonify({"success": True}), 200
 
