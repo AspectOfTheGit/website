@@ -634,9 +634,11 @@ code {
 
 .dropdown-selected {
     padding: 8px 10px;
-    background: #1e1e1e;
-    border: 1px solid #333;
     cursor: pointer;
+    background: #031014;
+    color: #e9f8f2;
+    border: 1px solid #21505d;
+    border-radius: 8px;
 }
 
 .dropdown-options {
@@ -644,8 +646,9 @@ code {
     top: 100%;
     left: 0;
     right: 0;
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: #031014;
+    color: #e9f8f2;
+    border: 1px solid #21505d;
     max-height: 240px;
     overflow-y: auto;
     display: none;
@@ -658,7 +661,8 @@ code {
 }
 
 .dropdown-option:hover {
-    background: #2a2a2a;
+    background: #092630;
+    border-color: #2fa08c;
 }
 
 .controls {
