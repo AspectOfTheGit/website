@@ -409,6 +409,21 @@ def bot_status(bot):
     mcusername = session.get("mc_username")
     return render_template("bot_status.html", bot=data["bot"][bot], bot_name=bot, username=mcusername)
 
+@app.route("/world/<world>")
+def world(world):
+    world = world.strip()
+    global data
+
+    data.setdefault("world", {})
+    mcusername = session.get("mc_username")
+    if world not in data["world"]:
+        return jsonify({"error": "World does not exist or does not have a page"}), 404
+    if not mcusername:
+        mcusername = ".anonymous"
+            
+    # Load world page
+    return render_template("world.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"], title=data["world"][world]["title"])
+
 @app.route("/world/<world>/edit")
 def world_edit(world):
     world = world.strip()
@@ -423,6 +438,8 @@ def world_edit(world):
         try:# World page doesn't yet exist, so create it
             # Legitidev Request
             worlddata = get_world_info(world)
+            if worlddata == "null":
+                return jsonify({"error": "World does not exist"}), 404
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
                 return jsonify({"error": "Unauthorized"}), 401
 
