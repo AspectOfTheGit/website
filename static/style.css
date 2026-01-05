@@ -428,6 +428,39 @@ code {
     background: #06313a;
 }
 
+.editor-element {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: #041a1f;
+  border: 1px solid #2fa08c;
+  border-radius: 8px;
+  cursor: grab;
+  user-select: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.editor-element:hover {
+  background: #06313a;
+  transform: translateY(-1px);
+}
+
+.editor-element:active {
+  cursor: grabbing;
+}
+
+.editor-element-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e9f8f2;
+}
+
+.editor-element-desc {
+  font-size: 12px;
+  color: #9fd8cc;
+}
+
 .storage-container, .logs-container, .tokens-container {
     margin-bottom: 2rem;
     text-align: left;
