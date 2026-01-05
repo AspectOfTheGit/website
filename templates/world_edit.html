@@ -69,7 +69,8 @@
             offsetY = e.clientY - rect.top;
         
             moveDragged(e.clientX, e.clientY);
-        
+
+            sidebar.classList.add("collapsed");
             sidebar.classList.remove("expanded");
         
             dragged.setPointerCapture(e.pointerId);
@@ -87,6 +88,7 @@
                 e.clientY > handleRect.top - 40 &&
                 e.clientY < handleRect.bottom + 40
             ) {
+                sidebar.classList.remove("collapsed");
                 sidebar.classList.add("expanded");
             }
         });
@@ -94,9 +96,9 @@
         document.addEventListener("pointerup", e => {
             if (!dragged) return;
         
-            const panelRect = panel.getBoundingClientRect();
+            const sidebarRect = sidebar.getBoundingClientRect();
         
-            if (e.clientY > panelRect.top && e.clientY < panelRect.bottom) {
+            if (e.clientY > sidebarRect.top && e.clientY < sidebarRect.bottom) {
                 dragged.remove();
             } else {
                 dragged.classList.remove("dragging");
@@ -107,6 +109,7 @@
             }
         
             dragged = null;
+            sidebar.classList.add("collapsed");
             sidebar.classList.remove("expanded");
         });
         
