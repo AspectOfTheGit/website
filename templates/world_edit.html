@@ -55,7 +55,7 @@
         let offsetX = 0;
         let offsetY = 0;
         
-        document.addEventListener("mousedown", e => {
+        document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
             if (!el) return;
         
@@ -71,14 +71,17 @@
         
             sidebar.classList.remove("expanded");
         
+            dragged.setPointerCapture(e.pointerId);
+        
             e.preventDefault();
         });
         
-        document.addEventListener("mousemove", e => {
+        document.addEventListener("pointermove", e => {
             if (!dragged) return;
             moveDragged(e.clientX, e.clientY);
         
             const handleRect = handle.getBoundingClientRect();
+        
             if (
                 e.clientY > handleRect.top - 40 &&
                 e.clientY < handleRect.bottom + 40
@@ -87,7 +90,7 @@
             }
         });
         
-        document.addEventListener("mouseup", e => {
+        document.addEventListener("pointerup", e => {
             if (!dragged) return;
         
             const panelRect = panel.getBoundingClientRect();
