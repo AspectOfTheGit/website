@@ -58,30 +58,27 @@
         document.addEventListener("mousedown", e => {
             const el = e.target.closest(".editor-element");
             if (!el) return;
-            
+        
             dragged = el.cloneNode(true);
             dragged.classList.add("dragging");
-            
             document.body.appendChild(dragged);
-            
+        
             const rect = el.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
             offsetY = e.clientY - rect.top;
-            
+        
             moveDragged(e.clientX, e.clientY);
-            
+        
             sidebar.classList.remove("expanded");
-            
+        
             e.preventDefault();
         });
         
         document.addEventListener("mousemove", e => {
             if (!dragged) return;
-            
             moveDragged(e.clientX, e.clientY);
-            
+        
             const handleRect = handle.getBoundingClientRect();
-            
             if (
                 e.clientY > handleRect.top - 40 &&
                 e.clientY < handleRect.bottom + 40
@@ -92,13 +89,10 @@
         
         document.addEventListener("mouseup", e => {
             if (!dragged) return;
-            
+        
             const panelRect = panel.getBoundingClientRect();
-            
-            if (
-            e.clientY > panelRect.top &&
-            e.clientY < panelRect.bottom
-            ) {
+        
+            if (e.clientY > panelRect.top && e.clientY < panelRect.bottom) {
                 dragged.remove();
             } else {
                 dragged.classList.remove("dragging");
@@ -107,7 +101,7 @@
                 dragged.style.top = `${e.pageY - offsetY}px`;
                 dragged.style.cursor = "default";
             }
-            
+        
             dragged = null;
             sidebar.classList.remove("expanded");
         });
