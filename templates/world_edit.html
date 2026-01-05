@@ -102,6 +102,7 @@
                 dragged.remove();
             } else {
                 dragged.classList.remove("dragging");
+                dragged.classList.add("placed");
                 dragged.style.position = "absolute";
                 dragged.style.left = `${e.pageX - offsetX}px`;
                 dragged.style.top = `${e.pageY - offsetY}px`;
