@@ -410,6 +410,9 @@ code {
 .editor-sidebar-content {
     height: calc(100% - 16px);
     padding: 20px 24px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    display: grid;
     overflow-y: auto;
     background:
         linear-gradient(
@@ -432,7 +435,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 14px;
+  padding: 12px;
   background: #041a1f;
   border: 1px solid #2fa08c;
   border-radius: 8px;
@@ -459,6 +462,13 @@ code {
 .editor-element-desc {
   font-size: 12px;
   color: #9fd8cc;
+}
+
+.placed-element {
+  position: absolute;
+  background: #06313a;
+  border-color: #2fa08c;
+  cursor: default;
 }
 
 .storage-container, .logs-container, .tokens-container {
