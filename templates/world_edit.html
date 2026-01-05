@@ -50,21 +50,35 @@
         const sidebar = document.querySelector(".editor-sidebar");
         const panel = document.querySelector(".editor-sidebar-panel");
         const handle = document.querySelector(".editor-sidebar-handle");
-        const elements = document.querySelectorAll(".editor-element");
         
-        let draggingElement = null;
+        let dragged = null;
+        let offsetX = 0;
+        let offsetY = 0;
         
-        elements.forEach(el => {
-            el.addEventListener("dragstart", e => {
-                draggingElement = el.cloneNode(true);
-                draggingElement.classList.add("placed-element");
-                
-                setTimeout(() => sidebar.classList.remove("expanded"), 100);
-            });
+        document.addEventListener("mousedown", e => {
+            const el = e.target.closest(".editor-element");
+            if (!el) return;
+            
+            dragged = el.cloneNode(true);
+            dragged.classList.add("dragging");
+            
+            document.body.appendChild(dragged);
+            
+            const rect = el.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            
+            moveDragged(e.clientX, e.clientY);
+            
+            sidebar.classList.remove("expanded");
+            
+            e.preventDefault();
         });
         
-        document.addEventListener("dragover", e => {
-            e.preventDefault();
+        document.addEventListener("mousemove", e => {
+            if (!dragged) return;
+            
+            moveDragged(e.clientX, e.clientY);
             
             const handleRect = handle.getBoundingClientRect();
             
@@ -76,31 +90,32 @@
             }
         });
         
-        document.addEventListener("drop", e => {
-            e.preventDefault();
-        
+        document.addEventListener("mouseup", e => {
+            if (!dragged) return;
+            
             const panelRect = panel.getBoundingClientRect();
-        
+            
             if (
-                e.clientY > panelRect.top &&
-                e.clientY < panelRect.bottom
+            e.clientY > panelRect.top &&
+            e.clientY < panelRect.bottom
             ) {
-                draggingElement = null;
-                return;
+                dragged.remove();
+            } else {
+                dragged.classList.remove("dragging");
+                dragged.style.position = "absolute";
+                dragged.style.left = `${e.pageX - offsetX}px`;
+                dragged.style.top = `${e.pageY - offsetY}px`;
+                dragged.style.cursor = "default";
             }
-        
-          if (draggingElement) {
-              draggingElement.style.position = "absolute";
-              draggingElement.style.left = `${e.pageX}px`;
-              draggingElement.style.top = `${e.pageY}px`;
-              draggingElement.style.cursor = "default";
-        
-              document.body.appendChild(draggingElement);
-              draggingElement = null;
-          }
-        
+            
+            dragged = null;
             sidebar.classList.remove("expanded");
         });
+        
+        function moveDragged(x, y) {
+            dragged.style.left = `${x - offsetX}px`;
+            dragged.style.top = `${y - offsetY}px`;
+        }
         
         document.addEventListener("DOMContentLoaded", () => {
             const sidebar = document.querySelector(".editor-sidebar");
