@@ -39,7 +39,7 @@
     
         <div class="editor-sidebar-content">
             <!-- Editor Elements -->
-            <div class="editor-element">
+            <div class="editor-element" draggable="true" data-type="text">
                 <span class="editor-element-title">Text</span>
                 <span class="editor-element-desc">Add a text block</span>
             </div>
@@ -47,6 +47,61 @@
     </div>
 
     <script>
+        const sidebar = document.querySelector(".editor-sidebar");
+        const panel = document.querySelector(".editor-sidebar-panel");
+        const handle = document.querySelector(".editor-sidebar-handle");
+        const elements = document.querySelectorAll(".editor-element");
+        
+        let draggingElement = null;
+        
+        elements.forEach(el => {
+            el.addEventListener("dragstart", e => {
+                draggingElement = el.cloneNode(true);
+                draggingElement.classList.add("placed-element");
+                
+                setTimeout(() => sidebar.classList.remove("expanded"), 100);
+            });
+        });
+        
+        document.addEventListener("dragover", e => {
+            e.preventDefault();
+            
+            const handleRect = handle.getBoundingClientRect();
+            
+            if (
+                e.clientY > handleRect.top - 40 &&
+                e.clientY < handleRect.bottom + 40
+            ) {
+                sidebar.classList.add("expanded");
+            }
+        });
+        
+        document.addEventListener("drop", e => {
+            e.preventDefault();
+        
+            const panelRect = panel.getBoundingClientRect();
+        
+            if (
+                e.clientY > panelRect.top &&
+                e.clientY < panelRect.bottom
+            ) {
+                draggingElement = null;
+                return;
+            }
+        
+          if (draggingElement) {
+              draggingElement.style.position = "absolute";
+              draggingElement.style.left = `${e.pageX}px`;
+              draggingElement.style.top = `${e.pageY}px`;
+              draggingElement.style.cursor = "default";
+        
+              document.body.appendChild(draggingElement);
+              draggingElement = null;
+          }
+        
+            sidebar.classList.remove("expanded");
+        });
+        
         document.addEventListener("DOMContentLoaded", () => {
             const sidebar = document.querySelector(".editor-sidebar");
             const handle = sidebar.querySelector(".editor-sidebar-handle");
