@@ -443,6 +443,12 @@ code {
   user-select: none;
   transition: background 0.15s ease, transform 0.15s ease;
 }
+.editor-element.dragging {
+  opacity: 0.8;
+  pointer-events: none;
+  position: fixed;
+  z-index: 2000;
+}
 
 .editor-element:hover {
   background: #06313a;
