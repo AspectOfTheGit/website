@@ -8,46 +8,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
 </head>
-<footer class="site-footer">
-  <div class="footer-left">
-    <a href="https://store.legitimoose.com" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Store" width="64" height="64">
-    </a>
-  </div>
-
-  <div class="footer-center">
-    <p>
-      This is not an official Moose project and is made by the community.<br>
-      We have no affiliation with any real-world brands.<br>
-      Not affiliated with Mojang AB or Partners.
-    </p>
-  </div>
-
-  <div class="footer-right">
-    <a href="https://www.youtube.com/@Legitimoose" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" width="64" height="64">
-    </a>
-  </div>
-</footer>
 
 <body>
     <nav class="navbar">
         <div class="logo">
             <a href="https://aspectofthe.site/" class="logo">
-                <img src="static/icons/favicon.png" alt="Logo" class="logo-img">
+                <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
             </a>
-            Aspect's Site
+            {{ title }}
         </div>
         <div class="nav-links">
-            <a href="/bots">Bots</a>
-            <a href="/utils">Utilities</a>
+            View
+            Settings
         </div>
         <div class="login">
-            {% if username %}
-                <a href="/account">{{ username }}</a>
-            {% else %}
-                <a href="/login">Log in</a>
-            {% endif %}
+            <a href="/account">{{ username }}</a>
         </div>
     </nav>
 
