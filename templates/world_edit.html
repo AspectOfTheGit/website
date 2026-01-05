@@ -56,5 +56,27 @@
             World Page Editor WIP
         </p>
     </main>
+
+    <div class="editor-sidebar collapsed">
+        <div class="editor-sidebar-handle">
+            <span>Editor</span>
+        </div>
+    
+        <div class="editor-sidebar-content">
+            <!-- Editor Elements -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const sidebar = document.querySelector(".editor-sidebar");
+            const handle = sidebar.querySelector(".editor-sidebar-handle");
+    
+            handle.addEventListener("click", () => {
+                sidebar.classList.toggle("expanded");
+                sidebar.classList.toggle("collapsed");
+            });
+        });
+    </script>
 </body>
 </html>
