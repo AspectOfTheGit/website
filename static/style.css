@@ -371,7 +371,7 @@ code {
     height: 300px;
     background: #031014;
     color: #e9f8f2;
-    transform: translateY(240px);
+    transform: translateY(264px);
     transition: transform 0.3s ease;
     border-top: 1px solid #2fa08c;
     box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
@@ -384,7 +384,7 @@ code {
 }
 
 .editor-sidebar.collapsed {
-    transform: translateY(240px);
+    transform: translateY(264px);
 }
 
 
