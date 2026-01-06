@@ -55,7 +55,6 @@
         const handle = document.querySelector(".editor-sidebar-handle");
         
         let dragged = null;
-        let dragging = false;
         let offsetX = 0;
         let offsetY = 0;
         let holding = false;
@@ -74,14 +73,14 @@
                 holding = true;
                 setTimeout(() => {
                     if (holding) {
-                        dragging = true;
+                        dragged.setAttribute("draggable", "true");
                         el.classList.add("dragging");
                         el.classList.remove("placed");
                         dragged = el;
                     } else {
                         return;
                     }
-                }, 600);
+                }, 300);
             }
             
         
@@ -116,7 +115,6 @@
         
         document.addEventListener("pointerup", e => {
             holding = false;
-            dragging = false;
             if (!dragged) return;
         
             const sidebarRect = sidebar.getBoundingClientRect();
@@ -130,6 +128,7 @@
                 dragged.style.left = `${e.pageX - offsetX}px`;
                 dragged.style.top = `${e.pageY - offsetY}px`;
                 dragged.style.cursor = "default";
+                dragged.setAttribute("draggable", "false");
             }
         
             dragged = null;
@@ -138,10 +137,8 @@
         });
         
         function moveDragged(x, y) {
-            if (dragging) {
-                dragged.style.left = `${x - offsetX}px`;
-                dragged.style.top = `${y - offsetY}px`;
-            }
+            dragged.style.left = `${x - offsetX}px`;
+            dragged.style.top = `${y - offsetY}px`;
         }
         
         document.addEventListener("DOMContentLoaded", () => {
