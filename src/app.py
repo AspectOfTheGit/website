@@ -417,7 +417,7 @@ def world_page(world):
     data.setdefault("world", {})
     mcusername = session.get("mc_username")
     if world not in data["world"]:
-        return jsonify({"error": "World does not exist or does not have a page"}), 404
+        return jsonify({"error": "World page does not exist"}), 404
     if not mcusername:
         mcusername = ".anonymous"
             
@@ -438,6 +438,7 @@ def world_edit(world):
         try:# World page doesn't yet exist, so create it
             # Legitidev Request
             worlddata = get_world_info(world)
+            print(worlddata) # debug
             if worlddata == "null":
                 return jsonify({"error": "World does not exist"}), 404
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
