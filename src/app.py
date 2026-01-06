@@ -922,9 +922,13 @@ def apirefreshtoken(token):
 
     return jsonify({"token": new_token}), 200
 
+## WORLD API
+
 @app.post("/api/world/<world>/edit/save")
 def apiworldeditsave(world):
     global data
+    rdata = request.get_json()
+    account = rdata.get("value", "")
 
     if "mc_username" not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -939,6 +943,8 @@ def apiworldeditsave(world):
 
     if account != data["world"][world]["owner"]:
         return jsonify({"error": "Unauthorized"}), 401
+
+    # Check if over storage limit
 
     # save here
 
