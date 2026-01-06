@@ -39,7 +39,7 @@
         <div class="editor-sidebar-panel">
             <div class="editor-sidebar-content">
                 <!-- Editor Elements -->
-                <div class="editor-element" draggable="true" data-type="text">
+                <div class="editor-element" draggable="true" data-type="text" data-sidebar="true">
                     <span class="editor-element-title">Text</span>
                     <span class="editor-element-desc">Add a text block</span>
                 </div>
@@ -59,10 +59,18 @@
         document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
             if (!el) return;
-        
-            dragged = el.cloneNode(true);
-            dragged.classList.add("dragging");
-            document.body.appendChild(dragged);
+
+            // Clone from editor
+            if (el.getAttribute("data-sidebar") == "true") {
+                dragged = el.cloneNode(true);
+                dragged.classList.add("dragging");
+                document.body.appendChild(dragged);
+            } else {// Move element
+                el.classList.add("dragging");
+                el.classList.remove("placed");
+                dragged = el;
+            }
+            
         
             const rect = el.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
