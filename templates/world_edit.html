@@ -18,8 +18,8 @@
             {{ title }}
         </div>
         <div class="nav-links">
-            <a id="view-btn">View</a>
-            <a id="settings-btn">Settings</a>
+            <a id="view-btn" class="nav-btn">View</a>
+            <a id="settings-btn" class="nav-btn">Settings</a>
         </div>
         <div class="login">
             <a href="/account">{{ username }}</a>
@@ -146,7 +146,7 @@
             });
         });
         
-        document.querySelectorAll('.nav-links').forEach(btn => {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (btn.getAttribute("id") == "view-btn") {
                     window.location.href = "http://aspectofthe.site/world/{{ world_uuid }}";
