@@ -44,7 +44,7 @@ body {
     padding: 1rem 2rem;
 }
 
-.nav-links a, .login a {
+.nav-links a, .login a, .nav-btn {
     color: white;
     margin: 0 0.75rem;
     text-decoration: none;
@@ -52,7 +52,7 @@ body {
     transition: color 0.3s;
 }
 
-.nav-links a:hover, .login a:hover {
+.nav-links a:hover, .login a:hover, .nav-btn:hover {
     color: #d4fff3;
 }
 
