@@ -921,10 +921,10 @@ def apirefreshtoken(token):
         json.dump(data, f, indent=4)
 
     return jsonify({"token": new_token}), 200
-
+    
 ## WORLD API
 
-@app.post("/api/world/<world>/edit/save", methods=["POST"])
+@app.post("/api/world/<world>/edit/save")
 def apiworldeditsave(world):
     global data
     rdata = request.get_json()
