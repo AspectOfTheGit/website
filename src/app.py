@@ -922,6 +922,26 @@ def apirefreshtoken(token):
 
     return jsonify({"token": new_token}), 200
 
+@app.post("/api/world/<world>/edit/save")
+def apiworldeditsave(world):
+    global data
+
+    if "mc_username" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = session["mc_username"]
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if world not in data["world"]:
+        return jsonify({"error": "No world page"}), 400
+
+    if account != data["world"][world]["owner"]:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # save here
+
 ## debug or other stuff
 
 @app.route("/api/permission", methods=["POST"])
