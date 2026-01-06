@@ -924,7 +924,7 @@ def apirefreshtoken(token):
 
 ## WORLD API
 
-@app.post("/api/world/<world>/edit/save")
+@app.post("/api/world/<world>/edit/save", methods=["POST"])
 def apiworldeditsave(world):
     global data
     rdata = request.get_json()
@@ -945,8 +945,22 @@ def apiworldeditsave(world):
         return jsonify({"error": "Unauthorized"}), 401
 
     # Check if over storage limit
+    worldstore = "world-" + world
+    data["account"][account].setdefault("abilities", {})
+    capacity = data["account"][account]["abilities"].get("capacity", 1)
+    size = len(content.encode('utf-8'))
+    data["account"][account].setdefault("storage", {})
+    data["account"][account]["storage"].setdefault("capacity", {})
+    data["account"][account]["storage"]["capacity"].setdefault(worldstore, 0)
+    storagesize(account)
+    total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"][worldstore] + size
+    # total is in bytes, capacity is in MB
+    if total > capacity * 1024 * 1024:
+        return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # save here
+    data["account"][account]["storage"]["capacity"][worldstore] = size
+    storagesize(account)
 
 ## debug or other stuff
 
