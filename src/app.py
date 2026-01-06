@@ -439,7 +439,7 @@ def world_edit(world):
             # Legitidev Request
             worlddata = get_world_info(world)
             print(worlddata) # debug
-            if worlddata == "null":
+            if worlddata == None:
                 return jsonify({"error": "World does not exist"}), 404
             if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
                 return jsonify({"error": "Unauthorized"}), 401
