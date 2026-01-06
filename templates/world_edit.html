@@ -73,7 +73,7 @@
                 holding = true;
                 setTimeout(() => {
                     if (holding) {
-                        dragged.setAttribute("draggable", "true");
+                        el.setAttribute("draggable", "true");
                         el.classList.add("dragging");
                         el.classList.remove("placed");
                         dragged = el;
