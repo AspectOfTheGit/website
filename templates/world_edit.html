@@ -26,12 +26,6 @@
         </div>
     </nav>
 
-    <main>
-        <p class="title">
-            World Page Editor WIP
-        </p>
-    </main>
-
     <div class="editor-sidebar collapsed">
         <div class="editor-sidebar-handle">
             <span>Editor</span>
@@ -63,6 +57,7 @@
         let dragged = null;
         let offsetX = 0;
         let offsetY = 0;
+        let holding = false;
         
         document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
@@ -75,9 +70,16 @@
                 dragged.setAttribute("data-sidebar","false");
                 document.body.appendChild(dragged);
             } else {// Move element
-                el.classList.add("dragging");
-                el.classList.remove("placed");
-                dragged = el;
+                holding = true;
+                setTimeout(() => {
+                    if (holding) {
+                        el.classList.add("dragging");
+                        el.classList.remove("placed");
+                        dragged = el;
+                    } else {
+                        return;
+                    }
+                }, 600);
             }
             
         
@@ -111,6 +113,7 @@
         });
         
         document.addEventListener("pointerup", e => {
+             = false;
             if (!dragged) return;
         
             const sidebarRect = sidebar.getBoundingClientRect();
