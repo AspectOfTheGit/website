@@ -18,8 +18,8 @@
             {{ title }}
         </div>
         <div class="nav-links">
-            View
-            Settings
+            <a id="view-btn">View</a>
+            <a id="settings-btn">Settings</a>
         </div>
         <div class="login">
             <a href="/account">{{ username }}</a>
@@ -143,6 +143,14 @@
             handle.addEventListener("click", () => {
                 sidebar.classList.toggle("expanded");
                 sidebar.classList.toggle("collapsed");
+            });
+        });
+        
+        document.querySelectorAll('.nav-links').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (btn.getAttribute("id") == "view-btn") {
+                    window.location.href = "http://aspectofthe.site/world/{{ world_uuid }}";
+                }
             });
         });
     </script>
