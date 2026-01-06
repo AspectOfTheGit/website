@@ -55,6 +55,7 @@
         const handle = document.querySelector(".editor-sidebar-handle");
         
         let dragged = null;
+        let dragging = false;
         let offsetX = 0;
         let offsetY = 0;
         let holding = false;
@@ -73,6 +74,7 @@
                 holding = true;
                 setTimeout(() => {
                     if (holding) {
+                        dragging = true;
                         el.classList.add("dragging");
                         el.classList.remove("placed");
                         dragged = el;
@@ -114,6 +116,7 @@
         
         document.addEventListener("pointerup", e => {
             holding = false;
+            dragging = false;
             if (!dragged) return;
         
             const sidebarRect = sidebar.getBoundingClientRect();
@@ -135,8 +138,10 @@
         });
         
         function moveDragged(x, y) {
-            dragged.style.left = `${x - offsetX}px`;
-            dragged.style.top = `${y - offsetY}px`;
+            if (dragging) {
+                dragged.style.left = `${x - offsetX}px`;
+                dragged.style.top = `${y - offsetY}px`;
+            }
         }
         
         document.addEventListener("DOMContentLoaded", () => {
@@ -152,7 +157,7 @@
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (btn.getAttribute("id") == "view-btn") {
-                    window.location.href = "http://aspectofthe.site/world/{{ world_uuid }}";
+                    window.location.href = "http://aspectofthe.site/world/b9952d54-1abf-4193-82c3-6755f0c3fe4c";
                 }
             });
         });
