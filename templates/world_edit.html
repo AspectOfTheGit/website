@@ -64,6 +64,7 @@
             if (el.getAttribute("data-sidebar") == "true") {
                 dragged = el.cloneNode(true);
                 dragged.classList.add("dragging");
+                dragged.setAttribute("data-sidebar","false");
                 document.body.appendChild(dragged);
             } else {// Move element
                 el.classList.add("dragging");
