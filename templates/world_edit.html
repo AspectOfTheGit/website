@@ -90,15 +90,11 @@
                 }, 300);
             }
             
-        
             const rect = el.getBoundingClientRect();
             offsetX = e.clientX - rect.left;
             offsetY = e.clientY - rect.top;
         
             moveDragged(e.clientX, e.clientY);
-
-            sidebar.classList.add("collapsed");
-            sidebar.classList.remove("expanded");
         
             dragged.setPointerCapture(e.pointerId);
         
@@ -117,6 +113,9 @@
             ) {
                 sidebar.classList.remove("collapsed");
                 sidebar.classList.add("expanded");
+            } else {
+                sidebar.classList.remove("expanded");
+                sidebar.classList.add("collapsed");
             }
         });
         
@@ -166,7 +165,10 @@
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (btn.getAttribute("id") == "view-btn") {
-                    window.location.href = "http://aspectofthe.site/world/b9952d54-1abf-4193-82c3-6755f0c3fe4c";
+                    window.location.href = "http://aspectofthe.site/world/{{ world_uuid }}";
+                }
+                if (btn.getAttribute("id") == "settings-btn") {
+                    // Page settings
                 }
             });
         });
