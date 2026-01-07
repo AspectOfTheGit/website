@@ -74,6 +74,17 @@
                 dragged.classList.add("dragging");
                 dragged.setAttribute("data-sidebar","false");
                 document.body.appendChild(dragged);
+                dragging = true;
+
+                const rect = el.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+            
+                moveDragged(e.clientX, e.clientY);
+            
+                dragged.setPointerCapture(e.pointerId);
+            
+                e.preventDefault();
             } else {// Move element
                 holding = true;
                 dragging = false;
@@ -84,21 +95,21 @@
                         el.classList.add("dragging");
                         el.classList.remove("placed");
                         dragging = true;
+
+                        const rect = el.getBoundingClientRect();
+                        offsetX = e.clientX - rect.left;
+                        offsetY = e.clientY - rect.top;
+                    
+                        moveDragged(e.clientX, e.clientY);
+                    
+                        dragged.setPointerCapture(e.pointerId);
+                    
+                        e.preventDefault();
                     } else {
                         return;
                     }
                 }, 300);
             }
-            
-            const rect = el.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-        
-            moveDragged(e.clientX, e.clientY);
-        
-            dragged.setPointerCapture(e.pointerId);
-        
-            e.preventDefault();
         });
         
         document.addEventListener("pointermove", e => {
@@ -107,10 +118,7 @@
         
             const handleRect = handle.getBoundingClientRect();
         
-            if (
-                e.clientY > handleRect.top - 40 &&
-                e.clientY < handleRect.bottom + 40
-            ) {
+            if (e.clientY > handleRect.top - 40) {
                 sidebar.classList.remove("collapsed");
                 sidebar.classList.add("expanded");
             } else {
