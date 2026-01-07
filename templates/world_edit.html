@@ -58,6 +58,7 @@
         let offsetX = 0;
         let offsetY = 0;
         let holding = false;
+        let dragging = false;
         
         document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
@@ -71,12 +72,14 @@
                 document.body.appendChild(dragged);
             } else {// Move element
                 holding = true;
+                dragging = false;
+                dragged = el;
                 setTimeout(() => {
                     if (holding) {
                         el.setAttribute("draggable", "true");
                         el.classList.add("dragging");
                         el.classList.remove("placed");
-                        dragged = el;
+                        dragging = true;
                     } else {
                         return;
                     }
@@ -118,22 +121,27 @@
             if (!dragged) return;
         
             const sidebarRect = sidebar.getBoundingClientRect();
+
+            if (dragging) {
+                if (e.clientY > sidebarRect.top && e.clientY < sidebarRect.bottom) {
+                    dragged.remove();
+                } else {
+                    dragged.classList.remove("dragging");
+                    dragged.classList.add("placed");
+                    dragged.style.position = "absolute";
+                    dragged.style.left = `${e.pageX - offsetX}px`;
+                    dragged.style.top = `${e.pageY - offsetY}px`;
+                    dragged.style.cursor = "default";
+                    dragged.setAttribute("draggable", "false");
+                }
         
-            if (e.clientY > sidebarRect.top && e.clientY < sidebarRect.bottom) {
-                dragged.remove();
+                dragged = null;
+                sidebar.classList.add("collapsed");
+                sidebar.classList.remove("expanded");
+                dragging = false;
             } else {
-                dragged.classList.remove("dragging");
-                dragged.classList.add("placed");
-                dragged.style.position = "absolute";
-                dragged.style.left = `${e.pageX - offsetX}px`;
-                dragged.style.top = `${e.pageY - offsetY}px`;
-                dragged.style.cursor = "default";
-                dragged.setAttribute("draggable", "false");
+                // Element editor
             }
-        
-            dragged = null;
-            sidebar.classList.add("collapsed");
-            sidebar.classList.remove("expanded");
         });
         
         function moveDragged(x, y) {
