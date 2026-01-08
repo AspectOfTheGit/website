@@ -454,6 +454,7 @@ code {
     pointer-events: none;
     position: fixed;
     z-index: 2000;
+    cursor: grabbing;
 }
 
 .editor-element:hover {
@@ -487,7 +488,7 @@ code {
     position: fixed;
     background: #06313a;
     border-color: #2fa08c;
-    cursor: default;
+    cursor: grabbing;
     opacity: 0.8;
     pointer-events: none;
     z-index: 2000;
