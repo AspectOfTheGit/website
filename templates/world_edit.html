@@ -311,14 +311,14 @@
             document.getElementById("settings-title").value = settings.title;
             document.getElementById("settings-visible").value = settings.visible ? "true" : "false";
             
-            menuOverlay.classList.remove("hidden");
+            settingsOverlay.classList.remove("hidden");
         }
 
         function saveSettingsMenu() {
             settings.title = document.getElementById("settings-title").value.trim();
             settings.visible = document.getElementById("settings-visible").value === "true";
 
-            menuOverlay.classList.add("hidden");
+            settingsOverlay.classList.add("hidden");
         }
 
         function cancelSettingsMenu() {
