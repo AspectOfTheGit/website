@@ -337,6 +337,11 @@
                 cancelSettingsMenu();
             });
 
+        settingsOverlay.querySelector(".btn-primary")
+            .addEventListener("click", () => {
+                saveSettingsMenu();
+            });
+
         // Escape to close menus
         
         document.addEventListener("keydown", e => {
