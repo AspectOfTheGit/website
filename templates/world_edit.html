@@ -62,9 +62,13 @@
             </div>
     
             <div class="editor-menu-content">
-                <div class="editor-menu-panel active" id="tab-properties">
-                    <h3>Properties</h3>
+                <div class="editor-menu-panel active" id="tab-element">
+                    <h3>Element</h3>
                     <p>Core information of the element</p>
+                </div>
+                <div class="editor-menu-panel" id="tab-properties">
+                    <h3>Properties</h3>
+                    <p>Visuals of the element</p>
                 </div>
                 <div class="editor-menu-panel" id="tab-extra">
                     <h3>Extra</h3>
@@ -78,6 +82,31 @@
         </div>
     </div>
 
+    <div class="settings-menu-overlay hidden">
+        <div class="settings-menu">
+            <h2>World Page Settings</h2>
+            <div class="settings-section">
+                <label>
+                    Page title
+                    <input type="text" value="{{ title }}">
+                </label>
+            </div>
+            <div class="settings-section">
+                <label>
+                    Visibility
+                    <select>
+                        <option>Public</option>
+                        <option>Private</option>
+                    </select>
+                </label>
+            </div>
+            <div class="settings-actions">
+                <button class="btn-secondary">Cancel</button>
+                <button class="btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const sidebar = document.querySelector(".editor-sidebar");
         const panel = document.querySelector(".editor-sidebar-panel");
@@ -85,6 +114,8 @@
         const menuOverlay = document.querySelector(".editor-menu-overlay");
         const menuTabs = document.querySelectorAll(".editor-menu-tab");
         const menuPanels = document.querySelectorAll(".editor-menu-panel");
+        const settingsOverlay = document.querySelector(".settings-menu-overlay");
+        const settingsBtn = document.getElementById("settings-btn");
         
         let dragged = null;
         let offsetX = 0;
@@ -240,7 +271,7 @@
             });
         });
 
-        // Menu
+        // Element Editor Menu
         
         function openEditorMenu() {
             menuOverlay.classList.remove("hidden");
@@ -264,6 +295,32 @@
                     .getElementById("tab-" + tab.dataset.tab)
                     .classList.add("active");
             });
+        });
+
+        // Page Settings Menu
+        
+        settingsBtn.addEventListener("click", () => {
+            settingsOverlay.classList.remove("hidden");
+        });
+        
+        settingsOverlay.addEventListener("click", e => {
+            if (e.target === settingsOverlay) {
+                settingsOverlay.classList.add("hidden");
+            }
+        });
+        
+        settingsOverlay.querySelector(".btn-secondary")
+            .addEventListener("click", () => {
+                settingsOverlay.classList.add("hidden");
+            });
+
+        // Escape to close menus
+        
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") {
+                settingsOverlay.classList.add("hidden");
+                menuOverlay.classList.add("hidden");
+            }
         });
     </script>
 </body>
