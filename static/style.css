@@ -510,10 +510,10 @@ code {
         backdrop-filter 0.25s ease;
 
     z-index: 3000;
-
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #9fd8cc;
 }
 
 .editor-menu-overlay:not(.hidden) {
@@ -562,7 +562,6 @@ code {
 .editor-menu-tab {
     background: none;
     border: none;
-    color: #9fd8cc;
     text-align: left;
     padding: 10px 12px;
     border-radius: 8px;
@@ -618,6 +617,7 @@ code {
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #9fd8cc;
 }
 
 .settings-menu-overlay:not(.hidden) {
