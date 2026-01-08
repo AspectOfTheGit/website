@@ -64,14 +64,15 @@
             <div class="editor-menu-content">
                 <div class="editor-menu-panel active" id="tab-properties">
                     <h3>Properties</h3>
+                    <p>Core information of the element</p>
                 </div>
-    
                 <div class="editor-menu-panel" id="tab-extra">
                     <h3>Extra</h3>
+                    <p>Inputs for the elements properties/logic</p>
                 </div>
-    
                 <div class="editor-menu-panel" id="tab-logic">
                     <h3>Logic</h3>
+                    <p>Actions based on events</p>
                 </div>
             </div>
         </div>
@@ -230,6 +231,7 @@
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (btn.getAttribute("id") == "view-btn") {
+                    // Save, wait for response and view page
                     window.location.href = "http://aspectofthe.site/world/{{ world_uuid }}";
                 }
                 if (btn.getAttribute("id") == "settings-btn") {
