@@ -493,6 +493,83 @@ code {
     z-index: 2000;
 }
 
+.editor-menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 16, 20, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 3000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.editor-menu-overlay.hidden {
+    display: none;
+}
+
+.editor-menu {
+    width: 700px;
+    height: 420px;
+    background: #031014;
+    border: 1px solid #2fa08c;
+    border-radius: 14px;
+    display: flex;
+    overflow: hidden;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.editor-menu-tabs {
+    width: 180px;
+    background: #041a1f;
+    border-right: 1px solid #2fa08c;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.editor-menu-tab {
+    background: none;
+    border: none;
+    color: #9fd8cc;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.editor-menu-tab:hover {
+    background: #06313a;
+}
+
+.editor-menu-tab.active {
+    background: #06313a;
+    color: #e9f8f2;
+}
+
+.editor-menu-content {
+    flex: 1;
+    padding: 20px 24px;
+    overflow-y: auto;
+}
+
+.editor-menu-panel {
+    display: none;
+}
+
+.editor-menu-panel.active {
+    display: block;
+}
+
+.editor-menu-panel h3 {
+    margin-top: 0;
+    font-weight: 600;
+}
+
 .storage-container, .logs-container, .tokens-container {
     margin-bottom: 2rem;
     text-align: left;
