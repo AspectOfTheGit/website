@@ -108,6 +108,7 @@
     </div>
 
     <script>
+    document.addEventListener("DOMContentLoaded", () => {
         const sidebar = document.querySelector(".editor-sidebar");
         const panel = document.querySelector(".editor-sidebar-panel");
         const handle = document.querySelector(".editor-sidebar-handle");
@@ -126,6 +127,8 @@
         let startX = 0;
         let startY = 0;
         let didDrag = false;
+
+        // Editor Elements
         
         document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
@@ -248,15 +251,15 @@
             moveDragged(e.clientX, e.clientY);
             dragged.setPointerCapture(e.pointerId);
         }
+
+        // Editor Sidebar
         
-        document.addEventListener("DOMContentLoaded", () => {
-            const sidebar = document.querySelector(".editor-sidebar");
-            const handle = sidebar.querySelector(".editor-sidebar-handle");
-    
-            handle.addEventListener("click", () => {
-                sidebar.classList.toggle("expanded");
-                sidebar.classList.toggle("collapsed");
-            });
+        const sidebar = document.querySelector(".editor-sidebar");
+        const handle = sidebar.querySelector(".editor-sidebar-handle");
+
+        handle.addEventListener("click", () => {
+            sidebar.classList.toggle("expanded");
+            sidebar.classList.toggle("collapsed");
         });
         
         document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -308,7 +311,7 @@
             document.getElementById("settings-title").value = settings.title;
             document.getElementById("settings-visible").value = settings.visible ? "true" : "false";
             
-            menuOverlay.classList.add("hidden");
+            menuOverlay.classList.remove("hidden");
         }
 
         function saveSettingsMenu() {
@@ -345,6 +348,7 @@
                 cancelSettingsMenu();
             }
         });
+    });
     </script>
 </body>
 </html>
