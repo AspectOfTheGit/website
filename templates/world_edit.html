@@ -88,15 +88,15 @@
             <div class="settings-section">
                 <label>
                     Page title
-                    <input type="text" value="{{ title }}">
+                    <input type="text" id="settings-title" value="{{ title }}">
                 </label>
             </div>
             <div class="settings-section">
                 <label>
                     Visibility
-                    <select>
-                        <option>Public</option>
-                        <option>Private</option>
+                    <select id="settings-visible">
+                        <option value="true">Public</option>
+                        <option value="false">Private</option>
                     </select>
                 </label>
             </div>
@@ -298,28 +298,51 @@
         });
 
         // Page Settings Menu
+
+        let settings = {
+            "title": "{{ title }}",
+            "visible": true;
+        };
+
+        function openSettingsMenu() {
+            document.getElementById("settings-title").value = settings.title;
+            document.getElementById("settings-visible").value = settings.visible ? "true" : "false";
+            
+            menuOverlay.classList.add("hidden");
+        }
+
+        function saveSettingsMenu() {
+            settings.title = document.getElementById("settings-title").value.trim();
+            settings.visible = document.getElementById("settings-visible").value === "true";
+
+            menuOverlay.classList.add("hidden");
+        }
+
+        function cancelSettingsMenu() {
+            menuOverlay.classList.add("hidden");
+        }
         
         settingsBtn.addEventListener("click", () => {
-            settingsOverlay.classList.remove("hidden");
+            openSettingsMenu();
         });
         
         settingsOverlay.addEventListener("click", e => {
             if (e.target === settingsOverlay) {
-                settingsOverlay.classList.add("hidden");
+                cancelSettingsMenu();
             }
         });
         
         settingsOverlay.querySelector(".btn-secondary")
             .addEventListener("click", () => {
-                settingsOverlay.classList.add("hidden");
+                cancelSettingsMenu();
             });
 
         // Escape to close menus
         
         document.addEventListener("keydown", e => {
             if (e.key === "Escape") {
-                settingsOverlay.classList.add("hidden");
-                menuOverlay.classList.add("hidden");
+                closeEditorMenu();
+                cancelSettingsMenu();
             }
         });
     </script>
