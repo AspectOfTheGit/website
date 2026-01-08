@@ -105,17 +105,15 @@
         
             holding = true;
         
-            // Sidebar element → instant drag
             if (el.dataset.sidebar === "true") {
                 startDragFromSidebar(el, e);
                 return;
             }
         
-            // Placed element → long press required
             pressTimer = setTimeout(() => {
                 if (!holding) return;
                 startDragExisting(el, e);
-            }, 300);
+            }, 150);
         });
         
         document.addEventListener("pointermove", e => {
