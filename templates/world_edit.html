@@ -90,106 +90,131 @@
         let offsetY = 0;
         let holding = false;
         let dragging = false;
+        let pressTimer = null;
+        let startX = 0;
+        let startY = 0;
+        let didDrag = false;
         
         document.addEventListener("pointerdown", e => {
             const el = e.target.closest(".editor-element");
             if (!el) return;
-
-            // Clone from editor
-            if (el.getAttribute("data-sidebar") == "true") {
-                dragged = el.cloneNode(true);
-                dragged.classList.add("dragging");
-                dragged.setAttribute("data-sidebar","false");
-                document.body.appendChild(dragged);
-                dragging = true;
-
-                const rect = el.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
-            
-                moveDragged(e.clientX, e.clientY);
-            
-                dragged.setPointerCapture(e.pointerId);
-            
-                e.preventDefault();
-            } else {// Move element
-                holding = true;
-                dragging = false;
-                dragged = el;
-                setTimeout(() => {
-                    if (holding) {
-                        el.setAttribute("draggable", "true");
-                        el.classList.add("dragging");
-                        el.classList.remove("placed");
-                        dragging = true;
-                        dragged = el;
-
-                        const rect = el.getBoundingClientRect();
-                        offsetX = e.clientX - rect.left;
-                        offsetY = e.clientY - rect.top;
-                    
-                        moveDragged(e.clientX, e.clientY);
-                    
-                        el.setPointerCapture(e.pointerId);
-                    
-                        e.preventDefault();
-                    } else {
-                        return;
-                    }
-                }, 300);
+        
+            startX = e.clientX;
+            startY = e.clientY;
+            didDrag = false;
+        
+            holding = true;
+        
+            // Sidebar element → instant drag
+            if (el.dataset.sidebar === "true") {
+                startDragFromSidebar(el, e);
+                return;
             }
+        
+            // Placed element → long press required
+            pressTimer = setTimeout(() => {
+                if (!holding) return;
+                startDragExisting(el, e);
+            }, 300);
         });
         
         document.addEventListener("pointermove", e => {
+            if (!holding) return;
+        
+            const dx = Math.abs(e.clientX - startX);
+            const dy = Math.abs(e.clientY - startY);
+        
+            if (!dragging && (dx > 6|| dy > 6)) {
+                clearTimeout(pressTimer);
+                holding = false;
+                return;
+            }
+        
             if (!dragged) return;
+        
+            didDrag = true;
             moveDragged(e.clientX, e.clientY);
         
             const handleRect = handle.getBoundingClientRect();
-        
             if (e.clientY > handleRect.top - 40) {
-                sidebar.classList.remove("collapsed");
                 sidebar.classList.add("expanded");
+                sidebar.classList.remove("collapsed");
             } else {
-                sidebar.classList.remove("expanded");
                 sidebar.classList.add("collapsed");
+                sidebar.classList.remove("expanded");
             }
         });
         
         document.addEventListener("pointerup", e => {
+            clearTimeout(pressTimer);
             holding = false;
+        
+            if (!didDrag) {
+                const el = e.target.closest(".placed");
+                if (el) openEditorMenu();
+                dragged = null;
+                return;
+            }
+        
             if (!dragged) return;
         
             const sidebarRect = sidebar.getBoundingClientRect();
-
-            if (dragging) {
-                if (e.clientY > sidebarRect.top && e.clientY < sidebarRect.bottom) {
-                    dragged.remove();
-                } else {
-                    dragged.classList.remove("dragging");
-                    dragged.classList.add("placed");
-                    dragged.style.position = "absolute";
-                    dragged.style.left = `${e.pageX - offsetX}px`;
-                    dragged.style.top = `${e.pageY - offsetY}px`;
-                    dragged.style.cursor = "default";
-                    dragged.setAttribute("draggable", "false");
-                }
         
-                dragged = null;
-                sidebar.classList.add("collapsed");
-                sidebar.classList.remove("expanded");
-                dragging = false;
+            if (e.clientY > sidebarRect.top && e.clientY < sidebarRect.bottom) {
+                dragged.remove();
             } else {
-                // Element editor
-                const el = e.target.closest(".placed");
-                if (!el) return;
-                
-                openEditorMenu();
+                dragged.classList.remove("dragging");
+                dragged.classList.add("placed");
+                dragged.style.position = "absolute";
+                dragged.style.left = `${e.pageX - offsetX}px`;
+                dragged.style.top = `${e.pageY - offsetY}px`;
+                dragged.style.cursor = "default";
             }
+        
+            dragged = null;
+            dragging = false;
+            didDrag = false;
+        
+            sidebar.classList.add("collapsed");
+            sidebar.classList.remove("expanded");
         });
         
         function moveDragged(x, y) {
             dragged.style.left = `${x - offsetX}px`;
             dragged.style.top = `${y - offsetY}px`;
+        }
+
+        function startDragFromSidebar(el, e) {
+            dragged = el.cloneNode(true);
+            dragged.classList.add("dragging");
+            dragged.dataset.sidebar = "false";
+            document.body.appendChild(dragged);
+        
+            dragging = true;
+            didDrag = true;
+        
+            const rect = el.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+        
+            moveDragged(e.clientX, e.clientY);
+            dragged.setPointerCapture(e.pointerId);
+        }
+        
+        function startDragExisting(el, e) {
+            dragged = el;
+            dragged.classList.add("dragging");
+            dragged.classList.remove("placed");
+        
+            dragging = true;
+            didDrag = true;
+        
+            const rect = el.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+        
+            moveDragged(e.clientX, e.clientY);
+            dragged.setPointerCapture(e.pointerId);
         }
         
         document.addEventListener("DOMContentLoaded", () => {
