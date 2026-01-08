@@ -513,7 +513,6 @@ code {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #9fd8cc;
 }
 
 .editor-menu-overlay:not(.hidden) {
@@ -527,6 +526,7 @@ code {
     width: 700px;
     height: 420px;
 
+    color: #9fd8cc;
     background: #031014;
     border: 1px solid #2fa08c;
     border-radius: 14px;
@@ -617,7 +617,6 @@ code {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #9fd8cc;
 }
 
 .settings-menu-overlay:not(.hidden) {
@@ -629,6 +628,7 @@ code {
 
 .settings-menu {
     width: 420px;
+    color: #9fd8cc;
     background: #031014;
     border: 1px solid #2fa08c;
     border-radius: 14px;
