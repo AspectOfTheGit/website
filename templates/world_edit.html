@@ -203,6 +203,8 @@
             dragged = el;
             dragged.classList.add("dragging");
             dragged.classList.remove("placed");
+
+            dragged.style.cursor = "grabbing";
         
             dragging = true;
             didDrag = true;
