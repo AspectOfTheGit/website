@@ -180,6 +180,10 @@
                 dragging = false;
             } else {
                 // Element editor
+                const el = e.target.closest(".placed");
+                if (!el) return;
+                
+                openEditorMenu();
             }
         });
         
