@@ -53,10 +53,37 @@
         </div>
     </div>
 
+    <div class="editor-menu-overlay hidden">
+        <div class="editor-menu">
+            <div class="editor-menu-tabs">
+                <button class="editor-menu-tab active" data-tab="properties">Properties</button>
+                <button class="editor-menu-tab" data-tab="extra">Extra</button>
+                <button class="editor-menu-tab" data-tab="logic">Logic</button>
+            </div>
+    
+            <div class="editor-menu-content">
+                <div class="editor-menu-panel active" id="tab-properties">
+                    <h3>Properties</h3>
+                </div>
+    
+                <div class="editor-menu-panel" id="tab-extra">
+                    <h3>Extra</h3>
+                </div>
+    
+                <div class="editor-menu-panel" id="tab-logic">
+                    <h3>Logic</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const sidebar = document.querySelector(".editor-sidebar");
         const panel = document.querySelector(".editor-sidebar-panel");
         const handle = document.querySelector(".editor-sidebar-handle");
+        const menuOverlay = document.querySelector(".editor-menu-overlay");
+        const menuTabs = document.querySelectorAll(".editor-menu-tab");
+        const menuPanels = document.querySelectorAll(".editor-menu-panel");
         
         let dragged = null;
         let offsetX = 0;
@@ -95,6 +122,7 @@
                         el.classList.add("dragging");
                         el.classList.remove("placed");
                         dragging = true;
+                        dragged = el;
 
                         const rect = el.getBoundingClientRect();
                         offsetX = e.clientX - rect.left;
@@ -102,7 +130,7 @@
                     
                         moveDragged(e.clientX, e.clientY);
                     
-                        dragged.setPointerCapture(e.pointerId);
+                        el.setPointerCapture(e.pointerId);
                     
                         e.preventDefault();
                     } else {
@@ -178,6 +206,32 @@
                 if (btn.getAttribute("id") == "settings-btn") {
                     // Page settings
                 }
+            });
+        });
+
+        // Menu
+        
+        function openEditorMenu() {
+            menuOverlay.classList.remove("hidden");
+        }
+        
+        function closeEditorMenu() {
+            menuOverlay.classList.add("hidden");
+        }
+        
+        menuOverlay.addEventListener("click", e => {
+            if (e.target === menuOverlay) closeEditorMenu();
+        });
+        
+        menuTabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                menuTabs.forEach(t => t.classList.remove("active"));
+                menuPanels.forEach(p => p.classList.remove("active"));
+        
+                tab.classList.add("active");
+                document
+                    .getElementById("tab-" + tab.dataset.tab)
+                    .classList.add("active");
             });
         });
     </script>
