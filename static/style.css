@@ -599,6 +599,107 @@ code {
     font-weight: 600;
 }
 
+.settings-menu-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(3, 16, 20, 0);
+    backdrop-filter: blur(0px);
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        background 0.25s ease,
+        backdrop-filter 0.25s ease;
+
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-menu-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(3, 16, 20, 0.6);
+    backdrop-filter: blur(6px);
+}
+
+.settings-menu {
+    width: 420px;
+    background: #031014;
+    border: 1px solid #2fa08c;
+    border-radius: 14px;
+
+    padding: 24px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+}
+
+.settings-menu-overlay:not(.hidden) .settings-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.settings-menu h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.settings-section {
+    margin-bottom: 16px;
+}
+
+.settings-section label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.settings-section input,
+.settings-section select {
+    background: #041a1f;
+    border: 1px solid #2fa08c;
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #e9f8f2;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background: #2fa08c;
+    border: none;
+    color: #031014;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid #2fa08c;
+    color: #e9f8f2;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
 .storage-container, .logs-container, .tokens-container {
     margin-bottom: 2rem;
     text-align: left;
