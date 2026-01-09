@@ -930,6 +930,7 @@ def apiworldeditsave(world):
     global data
     rdata = request.get_json()
     account = rdata.get("value", "")
+    content = rdata.get("content", "")
 
     if "mc_username" not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -962,6 +963,17 @@ def apiworldeditsave(world):
     # save here
     data["account"][account]["storage"]["capacity"][worldstore] = size
     storagesize(account)
+
+    try:
+        data["world"][world]["elements"] = content["elements"]
+        data["world"][world]["settings"] = content["settings"]
+    except:
+        return jsonify({"error": "Malformed Dictionary"}), 400
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True}), 200
 
 ## debug or other stuff
 
