@@ -929,7 +929,7 @@ def apirefreshtoken(token):
 def apiworldeditsave(world):
     global data
     rdata = request.get_json()
-    account = rdata.get("value", "")
+    account = rdata.get("account", "")
     content = rdata.get("content", "")
 
     if "mc_username" not in session:
@@ -972,6 +972,39 @@ def apiworldeditsave(world):
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
+
+    return jsonify({"success": True}), 200
+
+@app.post("/api/world/<world>/edit/update")
+def apiworldeditupdate(world):
+    global data
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    element = rdata.get("id", None)
+    merge = rdata.get("merge", None)
+    user = rdata.get("user", "*")
+
+    if "mc_username" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = session["mc_username"]
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if world not in data["world"]:
+        return jsonify({"error": "No world page"}), 400
+
+    if account != data["world"][world]["owner"]:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    size = len(content.encode('utf-8'))
+    # Check if over size limit
+    if size > 1024 * 10:
+        return jsonify({"error": "Storage Limit Exceeded"}), 400
+
+    # update here
+    socketio.emit('update', content, room=worldstore)
 
     return jsonify({"success": True}), 200
 
