@@ -1005,13 +1005,19 @@ def apiworldeditupdate(world):
     if account != data["world"][world]["owner"]:
         return jsonify({"error": "Unauthorized"}), 401
 
-    size = len(content.encode('utf-8'))
+    # Check if keys are valid
+    for i in content:
+        for key in i:
+            if key not in ["id","value","color"]:
+                return jsonify({"error": "Invalid key '" + key + "'"}), 400
+
+    # update here
+    emit = [user, content]
+    size = len(emit.encode('utf-8'))
     # Check if over size limit
     if size > 1024 * 10:
         return jsonify({"error": "Size Limit Exceeded"}), 400
-
-    # update here
-    socketio.emit('update', content, room=worldstore)
+    socketio.emit('update', emit, room=worldstore) # Will be sent to everyone viewing the page, but only chosen users are affected; Unrecommended for transferring personal data
 
     return jsonify({"success": True}), 200
 
