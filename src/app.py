@@ -980,9 +980,16 @@ def apiworldeditupdate(world):
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
-    element = rdata.get("id", None)
-    merge = rdata.get("merge", None)
+    content = rdata.get("content", "")
     user = rdata.get("user", "*")
+
+    '''
+    Content: merges into the web page
+     | Format: [{id:0,value:"New Text"},{id:4,color:"#FF00FF"}]
+     | "id" is the target element's id. Everything else is the element's data.
+    User: who to update the web page for
+     | Examples: "user1", ["user2","anotheruser"], "*" (for all)
+    '''
 
     if "mc_username" not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -1001,7 +1008,7 @@ def apiworldeditupdate(world):
     size = len(content.encode('utf-8'))
     # Check if over size limit
     if size > 1024 * 10:
-        return jsonify({"error": "Storage Limit Exceeded"}), 400
+        return jsonify({"error": "Size Limit Exceeded"}), 400
 
     # update here
     socketio.emit('update', content, room=worldstore)
