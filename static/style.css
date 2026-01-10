@@ -1064,7 +1064,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.6rem 15rem;
+    padding: 0.75rem clamp(1rem, 6vw, 15rem);
     box-sizing: border-box;
     z-index: 50;
 }
@@ -1076,7 +1076,7 @@ body {
 }
 
 .site-footer .footer-center {
-    flex: 1 1 60%;
+    flex: 1 1 auto;
     text-align: center;
     color: #a8dcd1;
     font-size: 0.88rem;
@@ -1095,11 +1095,11 @@ body {
     color: #3dc9b0;
 }
 
-@media (max-width: 350px) {
+@media (max-width: 768px) {
     .site-footer {
         flex-direction: column;
         gap: 0.5rem;
-        padding: 0.65rem;
+        padding: 0.75rem 1rem;
         text-align: center;
     }
 
