@@ -1095,22 +1095,38 @@ body {
     color: #3dc9b0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .site-footer {
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
-        text-align: center;
+        padding: 0.45rem 0.75rem;
+        gap: 0.35rem;
+    }
+
+    .site-footer .footer-center {
+        font-size: 0.75rem;
+        line-height: 1.3;
+        padding: 0;
+    }
+
+    .site-footer a {
+        font-size: 0.75rem;
     }
 
     .site-footer .footer-left,
-    .site-footer .footer-right,
-    .site-footer .footer-center {
-        min-width: auto;
-        flex: none;
+    .site-footer .footer-right {
+        font-size: 0.7rem;
     }
 
     main {
-        padding-bottom: 8rem;
+        padding-bottom: 5.5rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .site-footer {
+        gap: 0.25rem;
+    }
+
+    .site-footer .footer-center {
+        font-size: 0.7rem;
     }
 }
