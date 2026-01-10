@@ -1102,7 +1102,24 @@ def debug_getdata():
 
     return jsonify({"success": True, "value": data}), 200
 
-    
+# i dont havr access to computer rn
+@app.route("/api/forcelogin", methods=["POST"])
+def debug_forcelogin():
+    global data
+    rdata = request.get_json()
+    token = rdata.get("token", "")
+    account = rdata.get("account", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    session["mc_username"] = account
+    session["mc_uuid"] = get_uuid(account)
+    session["mc_access_token"] = True
+
+    refreshaccountinfo()
+
+    return jsonify({"success": True}), 200
     
 #
 # socketio
