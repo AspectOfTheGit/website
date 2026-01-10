@@ -813,7 +813,7 @@ def apistoragewrite():
     storagesize(account)
     total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"]["main"] + size
     # total is in bytes, capacity is in MB
-    if total > capacity * 1024 * 1024:
+    if int(total) > int(capacity) * 1024 * 1024:
         if world_id:
             contents = [time, f"[World {world_id}] Write request attempted with large data of {size} bytes"]
         else:
@@ -957,7 +957,7 @@ def apiworldeditsave(world):
     storagesize(account)
     total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"][worldstore] + size
     # total is in bytes, capacity is in MB
-    if total > capacity * 1024 * 1024:
+    if int(total) > int(capacity) * 1024 * 1024:
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # save here
