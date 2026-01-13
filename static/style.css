@@ -700,7 +700,7 @@ code {
     cursor: pointer;
 }
 
-.storage-container, .logs-container, .tokens-container {
+.storage-container, .logs-container, .tokens-container, .user-id-container {
     margin-bottom: 2rem;
     text-align: left;
 }
@@ -715,6 +715,26 @@ code {
     border: 1px solid #21505d;
     font-family: "Roboto Mono", monospace;
     resize: vertical;
+}
+
+#user-id-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #21505d;
+    background: #031014;
+    color: #f7fffc;
+    font-family: "Roboto Mono", monospace;
+    font-size: 1rem;
+    outline: none;
+    box-sizing: border-box;
+}
+
+#user-id-input:focus {
+    border-color: #1abc9c;
+    box-shadow: 0 0 5px #1abc9c33;
+    background: #04171f;
 }
 
 #save-storage-btn {
