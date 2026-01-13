@@ -110,6 +110,11 @@
       <div id="notifs" class="tab-content">
           <h2>Notifications</h2>
           <p>Send updates on discord (WIP)</p>
+          <div class="user-id-container">
+              <label for="user-id-input">Discord User ID:</label>
+              <input type="text" id="user-id-input" placeholder="Enter user ID here">
+          </div>
+          <button id="save-user-id-btn">Save</button>
       </div>
       <div id="user-storage" class="tab-content">
           <h2>Your Storage</h2>
@@ -252,6 +257,28 @@
                     }
                 } catch (e) {
                     status.textContent = "Error ❌";
+                    console.error(e);
+                }
+            });
+        }
+
+        // Save User ID
+        const idsaveBtn = document.getElementById('save-user-id-btn');
+        const idtextarea = document.getElementById('user-id-input');
+    
+        if (idsaveBtn && idtextarea) {
+            idsaveBtn.addEventListener('click', async () => {
+                const newID = idtextarea.value;
+    
+                try {
+                    const res = await fetch('/api/set-discord', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            new_id: newID
+                        })
+                    });
+                } catch (e) {
                     console.error(e);
                 }
             });
