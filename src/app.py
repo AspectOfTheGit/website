@@ -1155,10 +1155,12 @@ def apisetdiscord():
     # If discord notifications has been used before, change the users able to view
 
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
+    saccount = account.lower()
 
     channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels", headers=headers).json()
+    category_id = None
     for c in channels:
-        if c["type"] == 4 and c["name"] == category_name:
+        if c["type"] == 4 and c["name"] == saccount:
             category_id = c["id"]
     if not category_id:
         return jsonify({"success": True}), 200
@@ -1192,7 +1194,7 @@ def apisetdiscord():
             requests.delete(f"https://discord.com/api/v10/channels/{category_id}/permissions/{overwrite['id']}", headers=headers)
 
     requests.put(
-        f"https://discord.com/api/v10/channels/{category_id}/permissions/{new_user_id}",
+        f"https://discord.com/api/v10/channels/{category_id}/permissions/{id}",
         headers=headers,
         json={
             "type": 1,
