@@ -135,6 +135,12 @@ def notify(account: str, message: str, type: str):
     '''
     Send a notification to the user via Discord
     '''
+
+    try:
+        user_id = data["account"][account]["discord"]
+    except:
+        return
+    
     saccount = account.lower()
     saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
 
@@ -144,7 +150,28 @@ def notify(account: str, message: str, type: str):
     category = next((c for c in channels if c["type"] == 4 and c["name"] == saccount),None)
 
     if not category:
-        category = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"type": 4}).json()
+        category = requests.post(
+            f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",
+            headers=headers,
+            json={
+                "name": saccount,
+                "type": 4,
+                "permission_overwrites": [
+                    {
+                        "id": user_id,
+                        "type": 1,
+                        "allow": "1024",
+                        "deny": "0"
+                    },
+                    {
+                        "id": str(GUILD_ID),
+                        "type": 0,
+                        "allow": "0",
+                        "deny": "1024"
+                    }
+                ]
+            }
+        ).json()
 
     log_channel = next((c for c in channels
                         if c["parent_id"] == category["id"] and c["name"] == "log"),
@@ -164,9 +191,6 @@ def notify(account: str, message: str, type: str):
     
     ts = f"<t:{int(time.time())}:F>"
     embed = {
-        "author": {
-            "name": "Logger"
-        },
         "description": message,
         "color": color
     }
@@ -1104,6 +1128,78 @@ def apiworldeditupdate(world):
     if size > 1024 * 10:
         return jsonify({"error": "Size Limit Exceeded"}), 400
     socketio.emit('update', emit, room=worldstore) # Will be sent to everyone viewing the page, but only chosen users are affected; Unrecommended for transferring personal data
+
+    return jsonify({"success": True}), 200
+
+# Miscellaneous (is that spelt right)
+
+@app.post("/api/set-discord")
+def apisetdiscord():
+    global data
+    rdata = request.get_json()
+    id = rdata.get("new_id", "")
+
+    if "mc_username" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = session["mc_username"]
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    data["account"][account]["discord"] = id
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    # If discord notifications has been used before, change the users able to view
+
+    headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
+
+    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels", headers=headers).json()
+    for c in channels:
+        if c["type"] == 4 and c["name"] == category_name:
+            category_id = c["id"]
+    if not category_id:
+        return jsonify({"success": True}), 200
+
+    r = requests.get(f"https://discord.com/api/v10/channels/{category_id}", headers=headers)
+    if r.status_code != 200:
+        return jsonify({"success": True}), 200
+    category = r.json()
+    
+    overwrites = category.get("permission_overwrites", [])
+
+    everyone_overwrite = next((o for o in overwrites if o["type"] == 0), None)
+    if not everyone_overwrite:
+        requests.patch(
+            f"https://discord.com/api/v10/channels/{category_id}",
+            headers=headers,
+            json={
+                "permission_overwrites": [
+                    {
+                        "id": str(GUILD_ID),
+                        "type": 0,
+                        "allow": "0",
+                        "deny": "1024"
+                    }
+                ]
+            }
+        )
+
+    for overwrite in overwrites:
+        if overwrite["type"] == 1:
+            requests.delete(f"https://discord.com/api/v10/channels/{category_id}/permissions/{overwrite['id']}", headers=headers)
+
+    requests.put(
+        f"https://discord.com/api/v10/channels/{category_id}/permissions/{new_user_id}",
+        headers=headers,
+        json={
+            "type": 1,
+            "allow": "1024",
+            "deny": "0"
+        }
+    )
 
     return jsonify({"success": True}), 200
 
