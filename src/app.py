@@ -159,7 +159,7 @@ def notify(account: str, message: str, type: str):
     colordict = {}
     try:
         color = {"storage.read":0x1a81bc,"storage.write":0xbc891a}[type]
-    else:
+    except:
         color = 0x5c5c5c
     
     ts = f"<t:{int(time.time())}:F>"
