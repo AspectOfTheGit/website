@@ -189,7 +189,7 @@ def notify(account: str, message: str, type: str):
     except:
         color = 0x5c5c5c
     
-    ts = f"<t:{int(time.time())}:F>"
+    ts = f"<t:{int(time.time())}:R>"
     contents = f"{ts} | {message}"
     embed = {
         "description": contents,
