@@ -922,7 +922,7 @@ def apistorageread():
     if world_id:
         contents = f"`[World {world_id}]` Successful read request to storage"
     else:
-        contents = f"Successful read request to storage"]
+        contents = f"Successful read request to storage"
     notify(account, contents, "storage.read")
     
     # return storage
@@ -967,7 +967,7 @@ def apistoragereadkey():
             if world_id:
                 contents = f"`[World {world_id}]` Successful read key request to storage"
             else:
-                contents = f"Successful read key request to storage"]
+                contents = f"Successful read key request to storage"
             notify(account, contents, "storage.read")
     
             return jsonify({"success": True, "value": storagedict[key]})
