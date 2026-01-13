@@ -737,7 +737,7 @@ code {
     background: #04171f;
 }
 
-#save-storage-btn {
+#save-storage-btn, #save-user-id-btn {
     margin-top: 8px;
     background: #2fa08c;
     border: none;
