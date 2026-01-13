@@ -700,9 +700,13 @@ code {
     cursor: pointer;
 }
 
-.storage-container, .logs-container, .tokens-container, .user-id-container {
+.storage-container, .logs-container, .tokens-container {
     margin-bottom: 2rem;
     text-align: left;
+}
+
+.user-id-container {
+    margin-bottom: 1.5rem;
 }
 
 #storage-textarea {
