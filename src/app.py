@@ -136,7 +136,7 @@ def notify(account: str, message: str):
     Send a notification to the user via Discord
     '''
     saccount = account.lower()
-    saccount = re.sub(r"[^a-z0-9-_]", "-", name)[:90]
+    saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
 
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
 
