@@ -190,8 +190,9 @@ def notify(account: str, message: str, type: str):
         color = 0x5c5c5c
     
     ts = f"<t:{int(time.time())}:F>"
+    contents = f"{ts} | {message}"
     embed = {
-        "description": message,
+        "description": contents,
         "color": color
     }
 
@@ -941,12 +942,12 @@ def apistorageread():
     if world_id:
         contents = [time, f"[World {world_id}] Successful read request to storage"]
     else:
-        contents = [time, f"Successful read request to storage"]
+        contents = [time, "Successful read request to storage"]
     socketio.emit('log', contents, room=account)
     if world_id:
         contents = f"`[World {world_id}]` Successful read request to storage"
     else:
-        contents = f"Successful read request to storage"
+        contents = "Successful read request to storage"
     notify(account, contents, "storage.read")
     
     # return storage
@@ -986,12 +987,12 @@ def apistoragereadkey():
             if world_id:
                 contents = [time, f"[World {world_id}] Successful read key request to storage"]
             else:
-                contents = [time, f"Successful read key request to storage"]
+                contents = [time, "Successful read key request to storage"]
             socketio.emit('log', contents, room=account)
             if world_id:
                 contents = f"`[World {world_id}]` Successful read key request to storage"
             else:
-                contents = f"Successful read key request to storage"
+                contents = "Successful read key request to storage"
             notify(account, contents, "storage.read")
     
             return jsonify({"success": True, "value": storagedict[key]})
