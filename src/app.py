@@ -19,6 +19,8 @@ CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 OTHER_TOKEN = os.environ.get("OTHER_TOKEN")
+DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
+GUILD_ID = 1460692900533899438
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
@@ -132,8 +134,30 @@ def notify(account: str, message: str):
     global data
     '''
     Send a notification to the user via Discord
-    Format: "{discordtimestamp} > {msg}"
     '''
+    saccount = account.lower()
+    saccount = re.sub(r"[^a-z0-9-_]", "-", name)[:90]
+
+    headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
+
+    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
+    category = next((c for c in channels if c["type"] == 4 and c["name"] == saccount),None)
+
+    if not category:
+        category = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"type": 4}).json()
+
+    log_channel = next((c for c in channelsif c["parent_id"] == category["id"] and c["name"] == "log"),None)
+
+    if not log_channel:
+        log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": "log","parent_id": category["id"],"type": 0}).json()
+
+    webhooks = requests.get(
+        f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
+
+    webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": "Logger"}).json()
+
+    ts = f"<t:{int(time.time())}:F>"
+    requests.post(webhook["url"],json={"content": f"{ts} | {message}"})
 
 # Re-evaluate user storage size
 def storagesize(account: str):
