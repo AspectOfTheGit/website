@@ -146,7 +146,9 @@ def notify(account: str, message: str):
     if not category:
         category = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"type": 4}).json()
 
-    log_channel = next((c for c in channelsif c["parent_id"] == category["id"] and c["name"] == "log"),None)
+    log_channel = next((c for c in channels
+                        if c["parent_id"] == category["id"] and c["name"] == "log"),
+                       None)
 
     if not log_channel:
         log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": "log","parent_id": category["id"],"type": 0}).json()
