@@ -128,6 +128,13 @@ def refreshaccountinfo():
     if data["account"][mcusername]["last_deploy"] != today:
         data["account"][mcusername]["used"] = 0
 
+def notify(account: str, message: str):
+    global data
+    '''
+    Send a notification to the user via Discord
+    Format: "{discordtimestamp} > {msg}"
+    '''
+
 # Re-evaluate user storage size
 def storagesize(account: str):
     global data
@@ -828,10 +835,11 @@ def apistoragewrite():
 
     # Emit to logs
     if world_id:
-        contents = [time, f"[World {world_id}] Successfully wrote to storage: {content}"]
+        contents = [time, f"[World {world_id}] Successfully wrote new data to storage"]
     else:
-        contents = [time, f"Successfully wrote to storage: {content}"]
+        contents = [time, f"Successfully wrote new data to storage"]
     socketio.emit('log', contents, room=account)
+    notify(account, contents[1])
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -856,7 +864,19 @@ def apistorageread():
     except:
         #print("No token generated") # debug
         return jsonify({"error": "No Token Generated"}), 400
-        
+
+    # Emit to logs
+    ua = request.headers.get("User-Agent", "")
+    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
+    world_id = match.group(1) if match else None
+    
+    if world_id:
+        contents = [time, f"[World {world_id}] Successful read request to storage"]
+    else:
+        contents = [time, f"Successful read request to storage"]
+    socketio.emit('log', contents, room=account)
+    notify(account, contents[1])
+    
     # return storage
     return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
 
@@ -884,6 +904,18 @@ def apistoragereadkey():
     try:
         storagedict = json.loads(data["account"][account]["storage"]["contents"])
         try:
+            # Emit to logs
+            ua = request.headers.get("User-Agent", "")
+            match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
+            world_id = match.group(1) if match else None
+    
+            if world_id:
+                contents = [time, f"[World {world_id}] Successful read key request to storage"]
+            else:
+                contents = [time, f"Successful read key request to storage"]
+            socketio.emit('log', contents, room=account)
+            notify(account, contents[1])
+    
             return jsonify({"success": True, "value": storagedict[key]})
         except:
             return jsonify({"error": f"Key '{key}' not found"}), 500
