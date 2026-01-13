@@ -130,7 +130,7 @@ def refreshaccountinfo():
     if data["account"][mcusername]["last_deploy"] != today:
         data["account"][mcusername]["used"] = 0
 
-def notify(account: str, message: str):
+def notify(account: str, message: str, type: str):
     global data
     '''
     Send a notification to the user via Discord
@@ -149,17 +149,29 @@ def notify(account: str, message: str):
     log_channel = next((c for c in channels
                         if c["parent_id"] == category["id"] and c["name"] == "log"),
                        None)
-
     if not log_channel:
         log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": "log","parent_id": category["id"],"type": 0}).json()
 
     webhooks = requests.get(
         f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
-
     webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": "Logger"}).json()
 
+    colordict = {}
+    try:
+        color = {"storage.read":0x1a81bc,"storage.write":0xbc891a}[type]
+    else:
+        color = 0x5c5c5c
+    
     ts = f"<t:{int(time.time())}:F>"
-    requests.post(webhook["url"],json={"content": f"{ts} | {message}"})
+    embed = {
+        "author": {
+            "name": "Logger"
+        },
+        "description": message,
+        "color": color
+    }
+
+    requests.post(webhook["url"],json={"embeds": [embed]})
 
 # Re-evaluate user storage size
 def storagesize(account: str):
@@ -865,7 +877,11 @@ def apistoragewrite():
     else:
         contents = [time, f"Successfully wrote new data to storage"]
     socketio.emit('log', contents, room=account)
-    notify(account, contents[1])
+    if world_id:
+        contents = f"`[World {world_id}]` Successfully wrote new data to storage"
+    else:
+        contents = f"Successfully wrote new data to storage"
+    notify(account, contents, "storage.write")
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -874,6 +890,8 @@ def apistoragewrite():
 
 @app.route("/api/storage/read", methods=["POST"])
 def apistorageread():
+    import time
+    
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -901,13 +919,19 @@ def apistorageread():
     else:
         contents = [time, f"Successful read request to storage"]
     socketio.emit('log', contents, room=account)
-    notify(account, contents[1])
+    if world_id:
+        contents = f"`[World {world_id}]` Successful read request to storage"
+    else:
+        contents = f"Successful read request to storage"]
+    notify(account, contents, "storage.read")
     
     # return storage
     return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
 
 @app.route("/api/storage/readkey", methods=["POST"])
 def apistoragereadkey():
+    import time
+    
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -940,7 +964,11 @@ def apistoragereadkey():
             else:
                 contents = [time, f"Successful read key request to storage"]
             socketio.emit('log', contents, room=account)
-            notify(account, contents[1])
+            if world_id:
+                contents = f"`[World {world_id}]` Successful read key request to storage"
+            else:
+                contents = f"Successful read key request to storage"]
+            notify(account, contents, "storage.read")
     
             return jsonify({"success": True, "value": storagedict[key]})
         except:
