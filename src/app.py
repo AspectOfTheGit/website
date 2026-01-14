@@ -892,6 +892,11 @@ def apistoragewrite():
         else:
             contents = [time, f"Write request attempted with large data of {size} bytes"]
         socketio.emit('log', contents, room=account)
+        if world_id:
+            contents = f"`[World {world_id}]` Write request attempted with large data of {size} bytes"
+        else:
+            contents = f"Write request attempted with large data of {size} bytes"
+        notify(account, contents, "storage.error")
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # Save content
