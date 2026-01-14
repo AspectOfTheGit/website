@@ -187,8 +187,16 @@ def notify(account: str, message: str, type: str):
         color = {"storage.read":0x1a81bc,
                  "storage.write":0xbc891a,
                  "storage.error":0xff0000,
+                 
                  "webpage.save":0xbc891a,
-                 "webpage.update":0x07eef2}[type]
+                 "webpage.update":0x07eef2,
+                 "webpage.view":0x43ba83,
+                 "webpage.interact":0x39d455,
+
+                 "bot.deploy":0x49ba43,
+                 "bot.log":0x5c5c5c,
+                 "bot.disconnect":0xff0000
+                }[type]
     except:
         color = 0x5c5c5c
     
