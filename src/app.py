@@ -145,6 +145,8 @@ def notify(account: str, message: str, type: str):
             user_id = data["account"][account]["discord"]
         except:
             return
+        if type not in data["account"][account].get("notifs", []):
+            return
     
     saccount = account.lower()
     saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
@@ -467,7 +469,7 @@ def accountpage():
         global data
         mcusername = session.get("mc_username")
         refreshaccountinfo()
-        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid)
+        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid, notifs=data["account"][account].get("notifs", []), discord=data["account"][account].get("discord", ""))
     else:
         return redirect("/login")
 
@@ -1243,6 +1245,27 @@ def apisetdiscord():
     )
 
     return jsonify({"success": True}), 200
+
+@app.post("/api/set-notifs")
+def apisetnotifs():
+    global data
+    rdata = request.get_json()
+    prefs = rdata.get("prefs", "")
+
+    account = session["mc_username"]
+    
+    if not account:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if not all(x in {"storage.read","storage.write","storage.error","webpage.view","webpage.update","webpage.interact","webpage.save"} for x in prefs):
+        return jsonify({"error": "Contains invalid notification type"}), 400
+
+    data["account"][account]["notifs"] = prefs
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True})
 
 ## debug or other stuff
 
