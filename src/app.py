@@ -182,10 +182,13 @@ def notify(account: str, message: str, type: str):
     webhooks = requests.get(
         f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
     webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": "Logger"}).json()
-
-    colordict = {}
+    
     try:
-        color = {"storage.read":0x1a81bc,"storage.write":0xbc891a}[type]
+        color = {"storage.read":0x1a81bc,
+                 "storage.write":0xbc891a,
+                 "storage.error":0xff0000,
+                 "webpage.save":0xbc891a,
+                 "webpage.update":0x07eef2}[type]
     except:
         color = 0x5c5c5c
     
