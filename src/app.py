@@ -147,7 +147,7 @@ def notify(account: str, message: str, type: str):
 
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
     
-    match = re.search(r"^(.+)(\.|$)", type)
+    match = re.search(r"^([^.]+)", type)
     typeroot = match.group(1) if match else None
 
     try:
