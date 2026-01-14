@@ -741,6 +741,40 @@ code {
     background: #04171f;
 }
 
+.notif-container {
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.notif-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+}
+
+.notif-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2fa08c;
+}
+
+#save-notifs-btn {
+    margin-top: 12px;
+    background: #2fa08c;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#save-notifs-btn:hover {
+    background: #3dc9b0;
+}
+
 #save-storage-btn, #save-user-id-btn {
     margin-top: 8px;
     background: #2fa08c;
