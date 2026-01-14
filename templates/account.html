@@ -112,7 +112,7 @@
           <p>Send updates on discord (WIP)</p>
           <div class="user-id-container">
               <label for="user-id-input">Discord User ID:</label>
-              <input type="text" id="user-id-input" placeholder="Enter user ID here">
+              <input type="text" id="user-id-input" placeholder="Enter user ID here" value="{{ discord }}">
           </div>
           <button id="save-user-id-btn">Save</button>
 
@@ -303,7 +303,7 @@
             });
         }
 
-        // Save User ID
+        // Save Discord User ID
         const idsaveBtn = document.getElementById('save-user-id-btn');
         const idtextarea = document.getElementById('user-id-input');
     
@@ -328,12 +328,10 @@
         // Notifications
         async function loadNotifs() {
             try {
-                const res = await fetch("/api/get-notifs");
-                if (!res.ok) return;
+                const prefs = new Set({{ notifs | tojson }});
         
-                const data = await res.json();
                 document.querySelectorAll(".notif-toggle input").forEach(cb => {
-                    cb.checked = !!data[cb.dataset.key];
+                    cb.checked = prefs.has(cb.dataset.key);
                 });
             } catch (e) {
                 console.error(e);
