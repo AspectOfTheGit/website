@@ -938,6 +938,8 @@ def apistorageread():
     ua = request.headers.get("User-Agent", "")
     match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
     world_id = match.group(1) if match else None
+
+    time = time.strftime('%H:%M:%S')
     
     if world_id:
         contents = [time, f"[World {world_id}] Successful read request to storage"]
