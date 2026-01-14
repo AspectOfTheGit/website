@@ -869,10 +869,11 @@ def apistoragewrite():
     try:
         if token != data["account"][account]["token"]["write"]:
             if world_id:
-                contents = [time, f"[World {world_id}] Write request attempted with incorrect token"]
+                contents = [time, f"`[World {world_id}]` Write request attempted with incorrect token"]
             else:
                 contents = [time, "Write request attempted with incorrect token"]
             socketio.emit('log', contents, room=account)
+            notify(account, contents[1], "storage.error")
             return jsonify({"error": "Unauthorized"}), 401
     except:
         return jsonify({"error": "No Token Generated"}), 400
@@ -888,15 +889,11 @@ def apistoragewrite():
     # total is in bytes, capacity is in MB
     if int(total) > float(capacity) * 1024 * 1024:
         if world_id:
-            contents = [time, f"[World {world_id}] Write request attempted with large data of {size} bytes"]
+            contents = [time, f"`[World {world_id}]` Write request attempted with large data of {size} bytes"]
         else:
             contents = [time, f"Write request attempted with large data of {size} bytes"]
         socketio.emit('log', contents, room=account)
-        if world_id:
-            contents = f"`[World {world_id}]` Write request attempted with large data of {size} bytes"
-        else:
-            contents = f"Write request attempted with large data of {size} bytes"
-        notify(account, contents, "storage.error")
+        notify(account, contents[1], "storage.error")
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
     # Save content
@@ -906,15 +903,11 @@ def apistoragewrite():
 
     # Emit to logs
     if world_id:
-        contents = [time, f"[World {world_id}] Successfully wrote new data to storage"]
+        contents = [time, f"`[World {world_id}]` Successfully wrote new data to storage"]
     else:
         contents = [time, f"Successfully wrote new data to storage"]
     socketio.emit('log', contents, room=account)
-    if world_id:
-        contents = f"`[World {world_id}]` Successfully wrote new data to storage"
-    else:
-        contents = f"Successfully wrote new data to storage"
-    notify(account, contents, "storage.write")
+    notify(account, contents[1], "storage.write")
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
@@ -950,15 +943,11 @@ def apistorageread():
     time = time.strftime('%H:%M:%S')
     
     if world_id:
-        contents = [time, f"[World {world_id}] Successful read request to storage"]
+        contents = [time, f"`[World {world_id}]` Successful read request to storage"]
     else:
         contents = [time, "Successful read request to storage"]
     socketio.emit('log', contents, room=account)
-    if world_id:
-        contents = f"`[World {world_id}]` Successful read request to storage"
-    else:
-        contents = "Successful read request to storage"
-    notify(account, contents, "storage.read")
+    notify(account, contents[1], "storage.read")
     
     # return storage
     return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
@@ -997,15 +986,11 @@ def apistoragereadkey():
             time = time.strftime('%H:%M:%S')
     
             if world_id:
-                contents = [time, f"[World {world_id}] Successful read key request to storage"]
+                contents = [time, f"`[World {world_id}]` Successful read key request to storage"]
             else:
                 contents = [time, "Successful read key request to storage"]
             socketio.emit('log', contents, room=account)
-            if world_id:
-                contents = f"`[World {world_id}]` Successful read key request to storage"
-            else:
-                contents = "Successful read key request to storage"
-            notify(account, contents, "storage.read")
+            notify(account, contents[1], "storage.read")
     
             return jsonify({"success": True, "value": storagedict[key]})
         except:
