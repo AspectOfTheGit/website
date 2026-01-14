@@ -104,6 +104,7 @@ def refreshbotinfo():
         if data["bot"][bot]["last_ping"] != 0 and time.time() - data["bot"][bot]["last_ping"] > timeout and data["bot"][bot]["status"]:
             data["bot"][bot]["status"] = False
             data["bot"][bot]["deployer"] = ""
+            notify(bot, f"{bot} disconnected", "bot.disconnect")
         else:
             if data["bot"][bot]["deployer"] == "":
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
@@ -523,6 +524,8 @@ def world_page(world):
         return jsonify({"error": "World page does not exist"}), 404
     if not mcusername:
         mcusername = ".anonymous"
+
+    notify(data["world"][world]["owner"], f"{world} page viewed by {mcusername}", "webpage.view")
             
     # Load world page
     return render_template("world.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"], title=data["world"][world]["title"])
@@ -704,6 +707,8 @@ def update_log():
 
     #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     socketio.emit('log', contents, room=room_name)
+    # todo - Only log player messages
+    notify(room_name, msg, "bot.log")
 
     return jsonify({"success": True, "value": contents})
 
@@ -867,6 +872,7 @@ def apideploybot():
     print(f"[app.py] {bot} deployed to {world} ({worldname}) by {account}")
     contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {account}"]
     socketio.emit('log', contents, room=bot)
+    notify(bot, contents[1], "bot.deploy")
 
     data["account"][account]["used"] += 1
     
@@ -1111,6 +1117,8 @@ def apiworldeditsave(world):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+    notify(account, f"{world} saved", "webpage.save")
+
     return jsonify({"success": True}), 200
 
 @app.post("/api/world/<world>/edit/update")
@@ -1157,6 +1165,8 @@ def apiworldeditupdate(world):
         return jsonify({"error": "Size Limit Exceeded"}), 400
     socketio.emit('update', emit, room=worldstore) # Will be sent to everyone viewing the page, but only chosen users are affected; Unrecommended for transferring personal data
 
+    notify(account, f"{world} recieved updates", "webpage.update")
+    
     return jsonify({"success": True}), 200
 
 # Miscellaneous (is that spelt right)
