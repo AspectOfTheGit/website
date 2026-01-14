@@ -115,6 +115,47 @@
               <input type="text" id="user-id-input" placeholder="Enter user ID here">
           </div>
           <button id="save-user-id-btn">Save</button>
+
+          <div class="notif-container">
+            <h3>Notification Types</h3>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="storage.read">
+                <span>Storage Read</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="storage.write">
+                <span>Storage Write</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="storage.error">
+                <span>Storage Error</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="webpage.save">
+                <span>Webpage Save</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="webpage.update">
+                <span>Webpage Update</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="webpage.view">
+                <span>Webpage User View</span>
+            </label>
+            
+            <label class="notif-toggle">
+                <input type="checkbox" data-key="webpage.interact">
+                <span>Webpage User Interact</span>
+            </label>
+            
+            <button id="save-notifs-btn">Save Preferences</button>
+          </div>
       </div>
       <div id="user-storage" class="tab-content">
           <h2>Your Storage</h2>
@@ -283,7 +324,37 @@
                 }
             });
         }
-    
+
+        // Notifications
+        async function loadNotifs() {
+            try {
+                const res = await fetch("/api/get-notifs");
+                if (!res.ok) return;
+        
+                const data = await res.json();
+                document.querySelectorAll(".notif-toggle input").forEach(cb => {
+                    cb.checked = !!data[cb.dataset.key];
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        document.getElementById("save-notifs-btn")?.addEventListener("click", async () => {
+            const notifs = {};
+            document.querySelectorAll(".notif-toggle input").forEach(cb => {
+                notifs[cb.dataset.key] = cb.checked;
+            });
+        
+            await fetch("/api/set-notifs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(notifs)
+            });
+        });
+        
+        loadNotifs();
+            
         // Spoiler toggles
         document.querySelectorAll('.toggle-token-btn').forEach(btn => {
             btn.addEventListener('click', () => {
