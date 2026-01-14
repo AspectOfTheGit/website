@@ -137,18 +137,19 @@ def notify(account: str, message: str, type: str):
     Send a notification to the user via Discord
     '''
 
-    try:
-        user_id = data["account"][account]["discord"]
-    except:
-        return
+    match = re.search(r"^([^.]+)", type)
+    typeroot = match.group(1) if match else None
+
+    if typeroot != "bot":
+        try:
+            user_id = data["account"][account]["discord"]
+        except:
+            return
     
     saccount = account.lower()
     saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
 
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
-    
-    match = re.search(r"^([^.]+)", type)
-    typeroot = match.group(1) if match else None
 
     try:
         color = {"storage.read":0x1a81bc,
