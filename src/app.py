@@ -469,7 +469,7 @@ def accountpage():
         global data
         mcusername = session.get("mc_username")
         refreshaccountinfo()
-        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid, notifs=data["account"][account].get("notifs", []), discord=data["account"][account].get("discord", ""))
+        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid, notifs=data["account"][mcusername].get("notifs", []), discord=data["account"][mcusername].get("discord", ""))
     else:
         return redirect("/login")
 
