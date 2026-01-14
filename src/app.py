@@ -145,6 +145,9 @@ def notify(account: str, message: str, type: str):
     saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
 
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
+    
+    match = re.searcg(r"^(.+)(\.|$)", type)
+    typeroot = match.group(1) if match else None
 
     channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
     category = next((c for c in channels if c["type"] == 4 and c["name"] == saccount),None)
@@ -174,10 +177,10 @@ def notify(account: str, message: str, type: str):
         ).json()
 
     log_channel = next((c for c in channels
-                        if c["parent_id"] == category["id"] and c["name"] == "log"),
+                        if c["parent_id"] == category["id"] and c["name"] == typeroot),
                        None)
     if not log_channel:
-        log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": "log","parent_id": category["id"],"type": 0}).json()
+        log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": typeroot,"parent_id": category["id"],"type": 0}).json()
 
     webhooks = requests.get(
         f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
