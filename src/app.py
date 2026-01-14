@@ -149,7 +149,43 @@ def notify(account: str, message: str, type: str):
     match = re.searcg(r"^(.+)(\.|$)", type)
     typeroot = match.group(1) if match else None
 
+    try:
+        color = {"storage.read":0x1a81bc,
+                 "storage.write":0xbc891a,
+                 "storage.error":0xff0000,
+                 
+                 "webpage.save":0xbc891a,
+                 "webpage.update":0x07eef2,
+                 "webpage.view":0x43ba83,
+                 "webpage.interact":0x39d455,
+
+                 "bot.deploy":0x49ba43,
+                 "bot.log":0x5c5c5c,
+                 "bot.disconnect":0xff0000
+                }[type]
+    except:
+        color = 0x5c5c5c
+
     channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
+    if typeroot == "bot":
+        category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),None)
+        log_channel = next((c for c in channels
+                            if c["parent_id"] == category["id"] and c["name"] == saccount),
+                           None)
+        if not log_channel:
+            log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"parent_id": category["id"],"type": 0}).json()
+        webhooks = requests.get(
+            f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
+        webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": saccount}).json()
+        
+        embed = {
+            "description": message,
+            "color": color
+        }
+
+        requests.post(webhook["url"],json={"embeds": [embed]})
+        return
+        
     category = next((c for c in channels if c["type"] == 4 and c["name"] == saccount),None)
 
     if not category:
@@ -185,23 +221,6 @@ def notify(account: str, message: str, type: str):
     webhooks = requests.get(
         f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
     webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": "Logger"}).json()
-    
-    try:
-        color = {"storage.read":0x1a81bc,
-                 "storage.write":0xbc891a,
-                 "storage.error":0xff0000,
-                 
-                 "webpage.save":0xbc891a,
-                 "webpage.update":0x07eef2,
-                 "webpage.view":0x43ba83,
-                 "webpage.interact":0x39d455,
-
-                 "bot.deploy":0x49ba43,
-                 "bot.log":0x5c5c5c,
-                 "bot.disconnect":0xff0000
-                }[type]
-    except:
-        color = 0x5c5c5c
     
     ts = f"<t:{int(time.time())}:R>"
     contents = f"{ts}\n{message}"
