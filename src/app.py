@@ -127,7 +127,7 @@ def refreshaccountinfo():
     data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
     data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
     today = datetime.now().date().isoformat()
-    data["account"][mcusername].setdefault("last_deploy", today)
+    data["account"][mcusername].setdefault("last_deploy", None)
     if data["account"][mcusername]["last_deploy"] != today:
         data["account"][mcusername]["used"] = 0
 
