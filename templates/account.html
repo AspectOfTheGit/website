@@ -341,15 +341,18 @@
         }
         
         document.getElementById("save-notifs-btn")?.addEventListener("click", async () => {
-            const notifs = {};
+            let notifs = [];
+        
             document.querySelectorAll(".notif-toggle input").forEach(cb => {
-                notifs[cb.dataset.key] = cb.checked;
+                if (cb.checked) {
+                    notifs.push(cb.dataset.key);
+                }
             });
         
             await fetch("/api/set-notifs", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(notifs)
+                body: JSON.stringify({ prefs: notifs })
             });
         });
         
