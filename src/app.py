@@ -1134,15 +1134,50 @@ def apiworldeditsave(world):
     storagesize(account)
 
     try:
-        data["world"][world]["elements"] = content["elements"]
-        data["world"][world]["settings"] = content["settings"]
+        data["world"][world]["elements"] = content
     except:
         return jsonify({"error": "Malformed Dictionary"}), 400
 
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-    notify(account, f"{world} saved", "webpage.save")
+    notify(account, f"{world} elements saved", "webpage.save")
+
+    return jsonify({"success": True}), 200
+
+@app.post("/api/world/<world>/edit/savesettings")
+def apiworldeditsave(world):
+    global data
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    content = rdata.get("content", "")
+
+    if "mc_username" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    account = session["mc_username"]
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if world not in data["world"]:
+        return jsonify({"error": "No world page"}), 400
+
+    if account != data["world"][world]["owner"]:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        for setting in content:
+            if setting not in ["title","public"]:
+                return jsonify({"error": f"Unknown setting '{setting}'"}), 400
+            data["world"][world][setting] = content[setting]
+    except:
+        return jsonify({"error": "Malformed Dictionary"}), 400
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    notify(account, f"{world} settings saved", "webpage.save")
 
     return jsonify({"success": True}), 200
 
