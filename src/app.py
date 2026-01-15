@@ -777,7 +777,7 @@ def botcompletes(action):
 ## API/Utilities
 ##
 
-## BOT API
+## API UTILS
 #
 
 @app.route("/api/bots/<bot>/status", methods=["GET"])
@@ -788,6 +788,25 @@ def apibotstatus(bot):
         return abort(400)
     refreshbotinfo()
     return jsonify({"success": True, "value": data["bot"][bot]})
+
+@app.route("/api/worldinfo", methods=["GET"])
+def apiworldinfo():
+    ua = request.headers.get("User-Agent", "")
+    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
+    world_id = match.group(1) if match else None
+
+    if not world_id:
+        return jsonify({"error": "Could not get world UUID"}), 400
+
+    try:
+        worldinfo = get_world_info(world)
+    except:
+        return jsonify({"error": "Unknown LegitiDevs Error"}), 500
+
+    if "name" not in worldinfo:
+        return jsonify({"error": "LegitiDevs returned malformed data"}), 500
+    
+    return jsonify({"success": True, "value": worldinfo})
 
 ## DEPLOY API
 #
