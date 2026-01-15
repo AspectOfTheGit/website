@@ -301,19 +301,19 @@
 
         let settings = {
             "title": "{{ title }}",
-            "visible": true
+            "public": true
         };
 
         function openSettingsMenu() {
             document.getElementById("settings-title").value = settings.title;
-            document.getElementById("settings-visible").value = settings.visible ? "true" : "false";
+            document.getElementById("settings-visible").value = settings.public ? "true" : "false";
             
             settingsOverlay.classList.remove("hidden");
         }
 
         function saveSettingsMenu() {
             settings.title = document.getElementById("settings-title").value.trim();
-            settings.visible = document.getElementById("settings-visible").value === "true";
+            settings.public = document.getElementById("settings-visible").value === "true";
 
             settingsOverlay.classList.add("hidden");
         }
