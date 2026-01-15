@@ -106,7 +106,10 @@
       <div id="notifs" class="tab-content">
           <h2>Notifications</h2>
           <p>Send updates on discord</p>
+          <iframe src="https://discord.com/widget?id=1460692900533899438&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+          <!--
           <button id="server-link-btn">Join Server</button>
+          -->
           <div class="user-id-container">
               <label for="user-id-input">Discord User ID:</label>
               <input type="text" id="user-id-input" placeholder="Enter user ID here" value="{{ discord }}">
@@ -330,10 +333,11 @@
             });
         }
 
-        // Server Link
+        /* Server Link
         document.getElementById('server-link-btn').addEventListener('click', () => {
             window.open("https://discord.gg/JSUPbqBqUU");
         });
+        */
 
         // Notifications
         async function loadNotifs() {
