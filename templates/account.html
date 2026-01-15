@@ -308,7 +308,14 @@
         if (idsaveBtn && idtextarea) {
             idsaveBtn.addEventListener('click', async () => {
                 const newID = idtextarea.value;
-    
+
+                idsaveBtn.textContent = "Saved";
+                idsaveBtn.classList.append('pressed');
+
+                setTimeout(() => {
+                    idsaveBtn.textContent = "Save";
+                    idsaveBtn.classList.remove('pressed');
+                }, 1000);
                 try {
                     const res = await fetch('/api/set-discord', {
                         method: 'POST',
@@ -340,8 +347,9 @@
                 console.error(e);
             }
         }
-        
-        document.getElementById("save-notifs-btn")?.addEventListener("click", async () => {
+
+        const savePrefs = document.getElementById("save-notifs-btn");
+        savePrefs.addEventListener("click", async () => {
             let notifs = [];
         
             document.querySelectorAll(".notif-toggle input").forEach(cb => {
@@ -355,6 +363,14 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prefs: notifs })
             });
+
+            savePrefs.textContent = "Saved";
+            savePrefs.classList.append('pressed');
+
+            setTimeout(() => {
+                savePrefs.textContent = "Save";
+                savePrefs.classList.remove('pressed');
+            }, 1000);
         });
         
         loadNotifs();
