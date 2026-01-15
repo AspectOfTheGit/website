@@ -1094,8 +1094,8 @@ def apirefreshtoken(token):
     
 ## WORLD API
 
-@app.post("/api/world/<world>/edit/save")
-def apiworldeditsave(world):
+@app.post("/api/world/<world>/edit/save/elements")
+def apiworldeditelements(world):
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -1145,8 +1145,8 @@ def apiworldeditsave(world):
 
     return jsonify({"success": True}), 200
 
-@app.post("/api/world/<world>/edit/savesettings")
-def apiworldeditsave(world):
+@app.post("/api/world/<world>/edit/save/settings")
+def apiworldeditsettings(world):
     global data
     rdata = request.get_json()
     account = rdata.get("account", "")
