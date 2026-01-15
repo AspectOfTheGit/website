@@ -773,6 +773,11 @@ code {
     transition: background 0.2s ease;
 }
 
+#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed {
+    background: #217373;
+    cursor: not-allowed;
+}
+
 #save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover {
     background: #3dc9b0;
 }
