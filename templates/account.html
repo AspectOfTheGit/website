@@ -310,7 +310,7 @@
                 const newID = idtextarea.value;
 
                 idsaveBtn.textContent = "Saved";
-                idsaveBtn.classList.append('pressed');
+                idsaveBtn.classList.add('pressed');
 
                 setTimeout(() => {
                     idsaveBtn.textContent = "Save";
@@ -332,7 +332,7 @@
 
         // Server Link
         document.getElementById('server-link-btn').addEventListener('click', () => {
-            //window.open(""); todo
+            window.open("https://discord.gg/JSUPbqBqUU");
         });
 
         // Notifications
@@ -365,7 +365,7 @@
             });
 
             savePrefs.textContent = "Saved";
-            savePrefs.classList.append('pressed');
+            savePrefs.classList.add('pressed');
 
             setTimeout(() => {
                 savePrefs.textContent = "Save";
