@@ -527,7 +527,9 @@ def world_page(world):
         return jsonify({"error": "World page does not exist"}), 404
     if not mcusername:
         mcusername = ".anonymous"
-
+    if mcusername != data["world"][world]["owner"] and not data["world"][world]["public"]:
+        return jsonify({"error": "World page is private"}), 400
+    
     notify(data["world"][world]["owner"], f"{world} page viewed by {mcusername}", "webpage.view")
             
     # Load world page
@@ -556,6 +558,7 @@ def world_edit(world):
             data["world"][world] = {}
             data["world"][world]["owner"] = mcusername
             data["world"][world]["elements"] = {}
+            data["world"][world]["public"] = False
             data["world"][world]["title"] = worlddata["name"]
 
             with open(DATA_FILE, "w") as f:
