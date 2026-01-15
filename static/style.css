@@ -724,6 +724,7 @@ code {
 #user-id-input {
     width: 100%;
     max-width: 400px;
+    margin-top: 0.8rem;
     padding: 10px;
     border-radius: 6px;
     border: 1px solid #21505d;
@@ -761,21 +762,7 @@ code {
     accent-color: #2fa08c;
 }
 
-#save-notifs-btn {
-    margin-top: 12px;
-    background: #2fa08c;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-#save-notifs-btn:hover {
-    background: #3dc9b0;
-}
-
-#save-storage-btn, #save-user-id-btn {
+#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn {
     margin-top: 8px;
     background: #2fa08c;
     border: none;
@@ -786,7 +773,7 @@ code {
     transition: background 0.2s ease;
 }
 
-#save-storage-btn:hover {
+#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover {
     background: #3dc9b0;
 }
 
