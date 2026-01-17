@@ -690,8 +690,8 @@ def world():
             data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = "?"
             data["bot"][request.json.get("account")]["world"]["owner"]["name"] = "Error fetching world data"
         
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    botping(bot)
+    
     return jsonify({"success": True, "status": True})
 
 # Log message to bot log
@@ -731,8 +731,6 @@ def bot_instruct(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
-
-    botping(bot)
         
     try:
         return jsonify(data["bot"][bot]["do"])
