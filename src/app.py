@@ -643,21 +643,25 @@ When recieved, updates todo for bot.
 # check bot alive or somethi
 timeout = 10
 
+def botping(account):
+    global data
+    if data["bot"][account]["status"] == False:
+        time = time.strftime('%H:%M:%S')
+        contents = [time, f"Bot successfully online"]
+        socketio.emit('log', contents, room=account)
+    data["bot"][account]["status"] = True  # mark as online
+    data["bot"][account]["last_ping"] = time.time()
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
 @app.route("/bots/ping", methods=["POST"])
 def alive():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
+
+    botping(request.json.get("account"))
     
-    global data
-    if data["bot"][request.json.get("account")]["status"] == False:
-        time = time.strftime('%H:%M:%S')
-        contents = [time, f"Bot successfully online"]
-        socketio.emit('log', contents, room=request.json.get("account"))
-    data["bot"][request.json.get("account")]["status"] = True  # mark as online
-    data["bot"][request.json.get("account")]["last_ping"] = time.time()
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
     return jsonify({"success": True, "status": True})
 
 @app.route("/bots/world", methods=["POST"])
@@ -725,6 +729,8 @@ def bot_instruct(bot):
     bot = bot.strip()
     if bot not in data["bot"]:
         return abort(400)
+
+    botping(bot)
         
     try:
         return jsonify(data["bot"][bot]["do"])
