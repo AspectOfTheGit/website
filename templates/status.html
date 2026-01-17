@@ -57,7 +57,7 @@
         <div class="bot-card">
             <div class="bot-image">
                 <a href="https://aspectofthe.site/bots/status/{{ bot_name }}">
-                    <img src="https://mc-heads.net/head/${{ bot.uuid }}/left" alt="?">
+                    <img src="https://mc-heads.net/head/{{ bot.uuid }}/left" alt="?">
                 </a>
                 <h2 class="bot-name">{{ bot_name }}</h2>
             </div>
@@ -71,7 +71,7 @@
                     <a href="https://legiti.dev/browse/{{ bot.world.uuid }}">{{ bot.world.name | safe }}</a>
                 </h3>
                 <p class="owner">
-                    <img class="owner-head" src="https://mc-heads.net/head/${{ bot.world.owner.uuid }}/left" alt="?">
+                    <img class="owner-head" src="https://mc-heads.net/head/{{ bot.world.owner.uuid }}/left" alt="?">
                     <a href="https://legiti.dev/profile/{{ bot.world.owner.uuid }}">{{ bot.world.owner.name }}</a>
                 </p>
                 {% endif %}
