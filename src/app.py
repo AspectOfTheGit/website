@@ -644,6 +644,8 @@ When recieved, updates todo for bot.
 timeout = 10
 
 def botping(account):
+    import time
+    
     global data
     if data["bot"][account]["status"] == False:
         time = time.strftime('%H:%M:%S')
