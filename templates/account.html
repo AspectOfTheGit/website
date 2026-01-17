@@ -78,7 +78,7 @@
                     <td>Bot uptime limit</td>
                     <td class="plaintext">{{ account.abilities.uptime if account.abilities.uptime is defined else 30 }} mins</td>
                 </tr>
-                <tr data-tip="Whether your bot will go offline 2 minutes after being alone or not">
+                <tr data-tip="Whether your bot will go offline after a minute of being alone or not">
                     <td>No abandoned timeout</td>
                     <td class="status {{ 'available' if account.abilities.abandoned is defined else 'unavailable' }}">
                         {{ '✔️' if account.abilities.abandoned is defined else '❌' }}
