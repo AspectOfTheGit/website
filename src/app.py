@@ -106,7 +106,7 @@ def refreshbotinfo():
             data["bot"][bot]["deployer"] = ""
             notify(bot, f"{bot} disconnected", "bot.disconnect")
         else:
-            if data["bot"][bot]["deployer"] == "":
+            if data["bot"][bot]["deployer"] == "" and data["bot"][bot]["status"]:
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
                 contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}"]
                 socketio.emit('log', contents, room=bot)
