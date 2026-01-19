@@ -675,28 +675,37 @@ def world():
     token = request.headers.get("Authorization")
     if token != BOT_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
+
+    account = request.json.get("account")
     
     global data
-    data["bot"][request.json.get("account")].setdefault("world", {})
-    data["bot"][request.json.get("account")]["world"].setdefault("owner", {})
+    data["bot"][account].setdefault("world", {})
+    data["bot"][account]["world"].setdefault("owner", {})
     if request.json.get("value") == "lobby":
-        data["bot"][request.json.get("account")]["world"]["name"] = "Lobby"
+        data["bot"][account]["world"]["name"] = "Lobby"
     else:
         world_data = get_world_info(request.json.get("value"))
-        data["bot"][request.json.get("account")].setdefault("world", {})
-        data["bot"][request.json.get("account")]["world"]["uuid"] = request.json.get("value")
+        data["bot"][account].setdefault("world", {})
+        data["bot"][account]["world"]["uuid"] = request.json.get("value")
         try:
-            data["bot"][request.json.get("account")]["world"]["name"] = raw_to_html(world_data["raw_name"])
-            data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-            data["bot"][request.json.get("account")]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+            data["bot"][account]["world"]["name"] = raw_to_html(world_data["raw_name"])
+            data["bot"][account]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+            data["bot"][account]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
         except:
-            data["bot"][request.json.get("account")]["world"]["name"] = "Error fetching world data"
-            data["bot"][request.json.get("account")]["world"]["owner"]["uuid"] = "?"
-            data["bot"][request.json.get("account")]["world"]["owner"]["name"] = "Error fetching world data"
+            data["bot"][account]["world"]["name"] = "Error fetching world data"
+            data["bot"][account]["world"]["owner"]["uuid"] = "?"
+            data["bot"][account]["world"]["owner"]["name"] = "Error fetching world data"
         
     botping(bot)
+
+    # Defaults
+    permissions = ["baritone"]
+
+    if world in data["world"]:
+        if "permissions" in data["world"][world]:
+            permissions = data["world"][world]["permissions"]
     
-    return jsonify({"success": True, "status": True})
+    return jsonify({"success": True, "permissions": permissions })
 
 # Log message to bot log
 @app.route("/bots/log", methods=["POST"])
