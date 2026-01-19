@@ -236,6 +236,27 @@ def notify(account: str, message: str, type: str):
 
     requests.post(webhook["url"],json={"embeds": [embed]})
 
+def createworld(world: str, account: str, uuid: str):
+    try:# Create world page
+        # Legitidev Request
+        worlddata = get_world_info(world)
+        print(worlddata) # debug
+        if worlddata == None:
+            return jsonify({"error": "World does not exist"}), 404
+        if worlddata["owner_uuid"] != formatUUID(uuid):
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data["world"][world] = {}
+        data["world"][world]["owner"] = account
+        data["world"][world]["elements"] = {}
+        data["world"][world]["public"] = False
+        data["world"][world]["title"] = worlddata["name"]
+
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+    except:
+        return abort(500)
+
 # Re-evaluate user storage size
 def storagesize(account: str):
     global data
@@ -547,25 +568,7 @@ def world_edit(world):
         if mcusername != data["world"][world]["owner"]:# Check if user owns the world
             return jsonify({"error": "Unauthorized"}), 401
     else:
-        try:# World page doesn't yet exist, so create it
-            # Legitidev Request
-            worlddata = get_world_info(world)
-            print(worlddata) # debug
-            if worlddata == None:
-                return jsonify({"error": "World does not exist"}), 404
-            if worlddata["owner_uuid"] != formatUUID(session.get("mc_uuid")):
-                return jsonify({"error": "Unauthorized"}), 401
-
-            data["world"][world] = {}
-            data["world"][world]["owner"] = mcusername
-            data["world"][world]["elements"] = {}
-            data["world"][world]["public"] = False
-            data["world"][world]["title"] = worlddata["name"]
-
-            with open(DATA_FILE, "w") as f:
-                json.dump(data, f, indent=4)
-        except:
-            return abort(500)
+        createworld(world, mcusername, session["mc_uuid"])
             
     # Load world page editor
     return render_template("world_edit.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"], title=data["world"][world]["title"])
@@ -1100,6 +1103,33 @@ def apirefreshtoken(token):
     return jsonify({"token": new_token}), 200
     
 ## WORLD API
+
+@app.post("/api/world/<world>/permissions")
+def apiworldbotpermissions(world):
+    global data
+    rdata = request.get_json()
+    permissions = rdata.get("permissions", "")
+
+    account = session["mc_username"]
+    
+    if not account:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if world not in data["world"]:
+        createworld(world, account, session["mc_uuid"])
+
+    if account != data["world"][world]["owner"]:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if not all(x in {"annihilate","fly"} for x in permissions):
+        return jsonify({"error": "Contains invalid permission"}), 400
+
+    data["world"][world]["permissions"] = permissions
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True})
 
 @app.post("/api/world/<world>/edit/save/elements")
 def apiworldeditelements(world):
