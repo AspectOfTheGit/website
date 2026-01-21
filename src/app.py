@@ -137,22 +137,24 @@ def notify(account: str, message: str, type: str):
     global data
     '''
     Send a notification to the user via Discord
+    Account is user uuid
     '''
 
     match = re.search(r"^([^.]+)", type)
     typeroot = match.group(1) if match else None
 
     if typeroot != "bot":
+        saccount = data["account"][account]["username"].lower()
+        saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
         try:
             user_id = data["account"][account]["discord"]
         except:
             return
         if type not in data["account"][account].get("notifs", []):
             return
+    else:
+        saccount = account.lower()
     
-    saccount = account.lower()
-    saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
-
     headers = {"Authorization": f"Bot {DISCORD_TOKEN}","Content-Type": "application/json"}
 
     try:
@@ -547,11 +549,12 @@ def world_page(world):
 
     data.setdefault("world", {})
     mcusername = session.get("mc_username")
+    mcuuid = session.get("mc_uuid")
     if world not in data["world"]:
         return jsonify({"error": "World page does not exist"}), 404
     if not mcusername:
         mcusername = ".anonymous"
-    if mcusername != data["world"][world]["owner"] and not data["world"][world]["public"]:
+    if mcuuid != data["world"][world]["owner"] and not data["world"][world]["public"]:
         return jsonify({"error": "World page is private"}), 400
     
     notify(data["world"][world]["owner"], f"{world} page viewed by {mcusername}", "webpage.view")
@@ -570,7 +573,7 @@ def world_edit(world):
         if mcusername != data["world"][world]["owner"]:# Check if user owns the world
             return jsonify({"error": "Unauthorized"}), 401
     else:
-        createworld(world, mcusername, session["mc_uuid"])
+        createworld(world, session["mc_uuid"])
             
     # Load world page editor
     return render_template("world_edit.html", username=mcusername, world_uuid=world, elements=data["world"][world]["elements"], title=data["world"][world]["title"])
