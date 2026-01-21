@@ -122,14 +122,16 @@ def refreshbotinfo():
 def refreshaccountinfo():
     global data
     mcusername = session.get("mc_username")
+    mcuuid = session.get("mc_uuid")
     data.setdefault("account", {})
-    data["account"].setdefault(mcusername, {})
-    data["account"][mcusername].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
-    data["account"][mcusername].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
+    data["account"].setdefault(mcuuid, {})
+    data["account"][mcuuid]["username"] = mcusername
+    data["account"][mcuuid].setdefault("abilities", {}) # Stores player's permissions for what they can do on the website
+    data["account"][mcuuid].setdefault("storage", {}) # Stores the storage for the player's account (storage is a dictionary)
     today = datetime.now().date().isoformat()
-    data["account"][mcusername].setdefault("last_deploy", None)
-    if data["account"][mcusername]["last_deploy"] != today:
-        data["account"][mcusername]["used"] = 0
+    data["account"][mcuuid].setdefault("last_deploy", None)
+    if data["account"][mcuuid]["last_deploy"] != today:
+        data["account"][mcuuid]["used"] = 0
 
 def notify(account: str, message: str, type: str):
     global data
@@ -236,14 +238,14 @@ def notify(account: str, message: str, type: str):
 
     requests.post(webhook["url"],json={"embeds": [embed]})
 
-def createworld(world: str, account: str, uuid: str):
+def createworld(world: str, account: str):
     try:# Create world page
         # Legitidev Request
         worlddata = get_world_info(world)
         print(worlddata) # debug
         if worlddata == None:
             return jsonify({"error": "World does not exist"}), 404
-        if worlddata["owner_uuid"] != formatUUID(uuid):
+        if worlddata["owner_uuid"] != formatUUID(account):
             return jsonify({"error": "Unauthorized"}), 401
 
         data["world"][world] = {}
@@ -485,13 +487,13 @@ def index():
 @app.route("/account")
 def accountpage():
     session_token = session.get("mc_access_token")
-    profile_uuid = session.get("mc_uuid")
+    mcuuid = session.get("mc_uuid")
     
     if session_token and profile_uuid:
         global data
         mcusername = session.get("mc_username")
         refreshaccountinfo()
-        return render_template("account.html", username=mcusername, account=data["account"][mcusername], profile_uuid=profile_uuid, notifs=data["account"][mcusername].get("notifs", []), discord=data["account"][mcusername].get("discord", ""))
+        return render_template("account.html", username=mcusername, account=data["account"][mcuuid], profile_uuid=mcuuid, notifs=data["account"][mcuuid].get("notifs", []), discord=data["account"][mcuuid].get("discord", ""))
     else:
         return redirect("/login")
 
@@ -514,13 +516,13 @@ def home():
 def start_deploy():
     # If not logged in, then log in first
     session_token = session.get("mc_access_token")
-    profile_uuid = session.get("mc_uuid")
+    mcuuid = session.get("mc_uuid")
     
     if session_token and profile_uuid:
         mcusername = session.get("mc_username")
         refreshaccountinfo()
         refreshbotinfo()
-        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcusername], profile_uuid=profile_uuid)
+        return render_template("deploy.html", username=mcusername, bots=data["bot"], account=data["account"][mcuuid], profile_uuid=mcuuid)
     else:
         return redirect("/login")
 
