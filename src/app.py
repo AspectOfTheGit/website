@@ -491,7 +491,7 @@ def accountpage():
     session_token = session.get("mc_access_token")
     mcuuid = session.get("mc_uuid")
     
-    if session_token and profile_uuid:
+    if session_token and mcuuid:
         global data
         mcusername = session.get("mc_username")
         refreshaccountinfo()
