@@ -1470,7 +1470,7 @@ def debug_setdata():
     if token != OTHER_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = jsonify(rdata.get("value", ""))
+    data = rdata.get("value", "")
 
     print(data) # debug
 
