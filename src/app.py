@@ -1473,7 +1473,7 @@ def debug_setdata():
     data = rdata.get("value", "")
 
     with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(jsonify(data), f, indent=4)
 
     return jsonify({"success": True}), 200
 
