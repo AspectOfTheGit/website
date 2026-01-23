@@ -229,7 +229,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const accountName = "{{ username }}"
+        const accountName = "{{ mcuuid }}"
         const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
         const logContainer = document.getElementById("logs-output");
 
