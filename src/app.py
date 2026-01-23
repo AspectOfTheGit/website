@@ -1460,6 +1460,22 @@ def debug_getdata():
 
     return jsonify({"success": True, "value": data}), 200
 
+@app.route("/api/setdata", methods=["POST"])
+def debug_setdata():
+    global data
+    rdata = request.get_json()
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = rdata.get("value", "")
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True}), 200
+
 # i dont havr access to computer rn
 @app.route("/api/forcelogin", methods=["POST"])
 def debug_forcelogin():
