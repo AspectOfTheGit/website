@@ -86,6 +86,7 @@ except:
 def refreshbotinfo():
     import time
     global data, timeout
+    data.setdefault("bot",{})
     bots = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
     for bot in bots:
         # Set Defaults
