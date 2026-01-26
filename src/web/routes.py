@@ -9,12 +9,12 @@ from flask import (
 )
 import os
 
-from data import data
-from utils.world_api import get_world_info
-from utils.player_api import get_uuid
-from discord.notify import notify
+from src.data import data
+from src.utils.world_api import get_world_info
+from src.utils.player_api import get_uuid
+from src.discord.notify import notify
 
-from utils.data_api import (
+from src.utils.data_api import (
     refresh_account_info,
     refresh_bot_info,
     create_world
