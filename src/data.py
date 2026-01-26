@@ -24,7 +24,6 @@ def load_data():
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
         except Exception:
-            # File missing or corrupted → reset safely
             data = _default_data()
             os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
             _write_data_locked()
@@ -41,5 +40,4 @@ def _write_data_locked():
     with open(tmp_path, "w") as f:
         json.dump(data, f, indent=4)
 
-    # Atomic replace (works on Linux, Docker, etc.)
     os.replace(tmp_path, DATA_FILE)
