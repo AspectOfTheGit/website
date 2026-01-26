@@ -73,11 +73,14 @@ def login():
     if r.get("error"):
         return "Login failed", 500
 
-    session["mc_access_token"] = r["access_token"]
-    session["mc_username"] = r["data"]["profile"]["name"]
-    session["mc_uuid"] = r["data"]["profile"]["id"]
+    mc_username = r["data"]["profile"]["name"]
+    mc_uuid = r["data"]["profile"]["id"]
 
-    refresh_account_info()
+    session["mc_access_token"] = r["access_token"]
+    session["mc_username"] = mc_username
+    session["mc_uuid"] = mc_uuid
+
+    refresh_account_info(mc_username, mc_uuid)
     return redirect("/")
 
 
@@ -92,16 +95,16 @@ def account():
     if not session.get("mc_access_token"):
         return redirect("/login")
 
-    mcuuid = session["mc_uuid"]
-    refresh_account_info()
+    mc_uuid = session["mc_uuid"]
+    refresh_account_info(mc_username, mc_uuid)
 
     return render_template(
         "account.html",
         username=session["mc_username"],
-        account=data["account"][mcuuid],
-        profile_uuid=mcuuid,
-        notifs=data["account"][mcuuid].get("notifs", []),
-        discord=data["account"][mcuuid].get("discord", "")
+        account=data["account"][mc_uuid],
+        profile_uuid=mc_uuid,
+        notifs=data["account"][mc_uuid].get("notifs", []),
+        discord=data["account"][mc_uuid].get("discord", "")
     )
 
 
@@ -127,7 +130,7 @@ def bots_deploy():
     if not session.get("mc_access_token"):
         return redirect("/login")
 
-    refresh_account_info()
+    refresh_account_info(session["mc_username"], session["mc_uuid"])
     refresh_bot_info()
 
     return render_template(
