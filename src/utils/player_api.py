@@ -1,3 +1,5 @@
+import requests
+
 def get_username(uuid: str) -> str | None:
     uuid = uuid.replace("-", "")
     url = f"https://api.ashcon.app/mojang/v2/user/{uuid}"
