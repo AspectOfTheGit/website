@@ -92,8 +92,7 @@ def bot_screenshot():
 
     complete_instruction(account, "screenshot")
     return jsonify({"success": True})
-
-# Public API
+    
 
 @bots_bp.get("/botwhat/<bot>")
 def bot_what(bot):
@@ -101,17 +100,3 @@ def bot_what(bot):
         abort(400, description="Unknown bot")
 
     return jsonify(get_instructions(bot))
-
-@bots_bp.get("/status")
-def all_status():
-    refresh_bot_info()
-    return jsonify({"success": True, "bots": get_all_bot_states()})
-
-
-@bots_bp.get("/status/<bot>")
-def single_status(bot):
-    if bot not in data.get("bot", {}):
-        abort(400, description="Unknown bot")
-
-    refresh_bot_info()
-    return jsonify({"success": True, "bot": get_bot_state(bot)})
