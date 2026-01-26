@@ -23,8 +23,8 @@ from src.utils.data_api import (
 web = Blueprint(
     "web",
     __name__,
-    template_folder="../../templates",
-    static_folder="../../static"
+    template_folder="templates",
+    static_folder="static"
 )
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
