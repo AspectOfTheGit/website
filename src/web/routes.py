@@ -15,9 +15,9 @@ from utils.player_api import get_uuid
 from discord.notify import notify
 
 from utils.data_api import (
-    refreshaccountinfo,
-    refreshbotinfo,
-    createworld
+    refresh_account_info,
+    refresh_bot_info,
+    create_world
 )
 
 web = Blueprint(
@@ -77,7 +77,7 @@ def login():
     session["mc_username"] = r["data"]["profile"]["name"]
     session["mc_uuid"] = r["data"]["profile"]["id"]
 
-    refreshaccountinfo()
+    refresh_account_info()
     return redirect("/")
 
 
@@ -93,7 +93,7 @@ def account():
         return redirect("/login")
 
     mcuuid = session["mc_uuid"]
-    refreshaccountinfo()
+    refresh_account_info()
 
     return render_template(
         "account.html",
@@ -127,8 +127,8 @@ def bots_deploy():
     if not session.get("mc_access_token"):
         return redirect("/login")
 
-    refreshaccountinfo()
-    refreshbotinfo()
+    refresh_account_info()
+    refresh_bot_info()
 
     return render_template(
         "deploy.html",
@@ -141,7 +141,7 @@ def bots_deploy():
 
 @web.route("/bots/status")
 def bots_status():
-    refreshbotinfo()
+    refresh_bot_info()
     return render_template(
         "status.html",
         bots=data["bot"],
@@ -209,7 +209,7 @@ def world_edit(world):
         if session["mc_uuid"] != data["world"][world]["owner"]:
             return jsonify({"error": "Unauthorized"}), 401
     else:
-        createworld(world, session["mc_uuid"])
+        create_world(world, session["mc_uuid"])
 
     return render_template(
         "world_edit.html",
