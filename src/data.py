@@ -1,19 +1,45 @@
 import json
 import os
-from app.config import DATA_FILE
+import threading
+
+from src.config import DATA_FILE
 
 data = {}
 
+_lock = threading.Lock()
+
+def _default_data():
+    return {
+        "bot": {},
+        "account": {},
+        "world": {},
+    }
+
+
 def load_data():
     global data
-    try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
-    except Exception:
-        data = {"bot": {}, "account": {}, "world": {}}
-        os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-        save_data()
+
+    with _lock:
+        try:
+            with open(DATA_FILE, "r") as f:
+                data = json.load(f)
+        except Exception:
+            # File missing or corrupted → reset safely
+            data = _default_data()
+            os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+            _write_data_locked()
+
 
 def save_data():
-    with open(DATA_FILE, "w") as f:
+    with _lock:
+        _write_data_locked()
+
+
+def _write_data_locked():
+    tmp_path = DATA_FILE + ".tmp"
+
+    with open(tmp_path, "w") as f:
         json.dump(data, f, indent=4)
+
+    # Atomic replace (works on Linux, Docker, etc.)
+    os.replace(tmp_path, DATA_FILE)
