@@ -36,7 +36,7 @@ def format_uuid(u):
     )
     return u
 
-def storagesize(account: str):
+def storage_size(account: str):
     data["account"][account].setdefault("storage", {})
     data["account"][account]["storage"].setdefault("capacity", {})
     total = 0
