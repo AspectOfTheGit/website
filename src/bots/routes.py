@@ -16,7 +16,7 @@ from src.bots.manager import (
 )
 
 
-bots_bp = Blueprint("bots", __name__, url_prefix="/bots")
+bots = Blueprint("bots", __name__, url_prefix="/bots")
 
 
 def require_bot_auth():
@@ -39,7 +39,7 @@ def get_bot_account(from_form=False):
 
 # Bot Routes
 
-@bots_bp.post("/ping")
+@bots.post("/ping")
 def bot_ping():
     require_bot_auth()
     account = get_bot_account()
@@ -48,7 +48,7 @@ def bot_ping():
     return jsonify({"success": True})
 
 
-@bots_bp.post("/world")
+@bots.post("/world")
 def bot_world():
     require_bot_auth()
     account = get_bot_account()
@@ -61,7 +61,7 @@ def bot_world():
     return jsonify({"success": True})
 
 
-@bots_bp.post("/done/<action>")
+@bots.post("/done/<action>")
 def bot_done(action):
     require_bot_auth()
     account = get_bot_account()
@@ -70,7 +70,7 @@ def bot_done(action):
     return jsonify({"success": True})
 
 
-@bots_bp.post("/screenshot")
+@bots.post("/screenshot")
 def bot_screenshot():
     require_bot_auth()
     account = get_bot_account(from_form=True)
@@ -94,7 +94,7 @@ def bot_screenshot():
     return jsonify({"success": True})
     
 
-@bots_bp.get("/botwhat/<bot>")
+@bots.get("/botwhat/<bot>")
 def bot_what(bot):
     if bot not in data.get("bot", {}):
         abort(400, description="Unknown bot")
