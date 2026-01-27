@@ -101,7 +101,7 @@ def account():
         "account.html",
         username=username,
         account=data["account"][mc_uuid],
-        profile_uuid=mc_uuid,
+        mcuuid=mc_uuid,
         notifs=data["account"][mc_uuid].get("notifs", []),
         discord=data["account"][mc_uuid].get("discord", "")
     )
