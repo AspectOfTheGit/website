@@ -21,7 +21,7 @@ storage = Blueprint(
 # todo - Optimise/make functions
 # todo - Make socketio function in socket.py or something to emit with
 
-@storage.route("/write")
+@storage.post("/write")
 def write():
     ua = request.headers.get("User-Agent", "")
     match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
