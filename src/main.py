@@ -2,11 +2,9 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask
-from flask_socketio import SocketIO
+from src.socket import socketio
 from src.data import load_data
 from src.config import CLIENT_SECRET
-
-socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
 def create_app():
     app = Flask(
