@@ -8,6 +8,7 @@ from flask import (
     abort
 )
 import os
+import requests
 
 from src.data import data
 from src.utils.world_api import get_world_info
@@ -61,7 +62,6 @@ def login():
         "grant_type": "authorization_code"
     }
 
-    import requests
     r = requests.post(
         "https://mc-auth.com/oAuth2/token",
         data=payload,
@@ -94,11 +94,12 @@ def account():
         return redirect("/login")
 
     mc_uuid = session["mc_uuid"]
+    username = session["mc_username"]
     refresh_account_info(mc_username, mc_uuid)
 
     return render_template(
         "account.html",
-        username=session["mc_username"],
+        username=username,
         account=data["account"][mc_uuid],
         profile_uuid=mc_uuid,
         notifs=data["account"][mc_uuid].get("notifs", []),
