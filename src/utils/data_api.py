@@ -12,7 +12,7 @@ def _now() -> float:
     return time.time()
 
 
-def refresh_bot_info()
+def refresh_bot_info():
     now = _now()
 
     for bot, botdata in data.get("bot", {}).items():
