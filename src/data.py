@@ -17,16 +17,18 @@ def _default_data():
 
 
 def load_data():
-    global data
-
     with _lock:
         try:
             with open(DATA_FILE, "r") as f:
-                data = json.load(f)
+                loaded = json.load(f)
         except Exception:
-            data = _default_data()
+            loaded = _default_data()
             os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-            _write_data_locked()
+
+        data.clear()
+        data.update(loaded)
+
+        _write_data_locked()
 
 
 def save_data():
