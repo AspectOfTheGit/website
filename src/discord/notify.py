@@ -11,10 +11,16 @@ def notify(account: str, message: str, type_: str):
     typeroot = match.group(1) if match else None
 
     if typeroot != "bot":
-        if account not in data["account"]:
+        saccount = data["account"][account]["username"].lower()
+        saccount = re.sub(r"[^a-z0-9-_]", "-", saccount)[:90]
+        try:
+            user_id = data["account"][account]["discord"]
+        except:
             return
-        if type_ not in data["account"][account].get("notifs", []):
+        if type not in data["account"][account].get("notifs", []):
             return
+    else:
+        saccount = account.lower()
 
     headers = {
         "Authorization": f"Bot {DISCORD_TOKEN}",
