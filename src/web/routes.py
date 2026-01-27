@@ -95,7 +95,7 @@ def account():
 
     mc_uuid = session["mc_uuid"]
     username = session["mc_username"]
-    refresh_account_info(mc_username, mc_uuid)
+    refresh_account_info(username, mc_uuid)
 
     return render_template(
         "account.html",
