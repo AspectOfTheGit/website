@@ -21,9 +21,11 @@ def create_app():
     from src.bots.routes import bots
     from src.web.routes import web
     from src.api.storage import storage
+    from src.api.debug import debug
     app.register_blueprint(bots)
     app.register_blueprint(web)
     app.register_blueprint(storage)
+    app.register_blueprint(debug)
 
     socketio.init_app(app)
     return app
