@@ -7,7 +7,6 @@ from flask import (
 
 import time
 import re
-from flask_socketio import SocketIO
 
 from src.data import data, save_data
 from src.utils.player_api import storage_size
@@ -20,6 +19,7 @@ storage = Blueprint(
 )
 
 # todo - Optimise/make functions
+# todo - Make socketio function in socket.py or something to emit with
 
 @storage.route("/write")
 def write():
