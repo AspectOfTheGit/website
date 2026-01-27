@@ -10,7 +10,7 @@ from flask import (
 import os
 import requests
 
-import src.data as data
+from src.data import data
 from src.utils.world_api import get_world_info
 from src.utils.player_api import get_uuid
 from src.discord.notify import notify
