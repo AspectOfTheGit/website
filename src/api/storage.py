@@ -1,16 +1,11 @@
-from flask import (
-    Blueprint,
-    request,
-    session,
-    jsonify
-)
-
+from flask import Blueprint, request, jsonify
 import time
 import re
+import json
 
 from src.data import data, save_data
 from src.utils.player_api import storage_size
-from src.discord.notify import notify
+from src.socket import emit_log
 
 storage = Blueprint(
     "storage",
@@ -18,146 +13,163 @@ storage = Blueprint(
     url_prefix="/api/storage"
 )
 
-# todo - Optimise/make functions
-# todo - Make socketio function in socket.py or something to emit with
+
+def get_world_id():
+    ua = request.headers.get("User-Agent", "")
+    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
+    return match.group(1) if match else None
+
+
+def get_account(account):
+    if account not in data["account"]:
+        return None, (jsonify({"error": "Account doesn't exist"}), 400)
+    return data["account"][account], None
+
+
+def check_token(account_data, token, token_type):
+    tokens = account_data.get("token")
+    if not tokens or token_type not in tokens:
+        return jsonify({"error": "No Token Generated"}), 400
+    if token != tokens[token_type]:
+        return jsonify({"error": "Unauthorized"}), 401
+    return None
+
+
+def can_write(account, new_size):
+    account_data = data["account"][account]
+
+    account_data.setdefault("abilities", {})
+    account_data.setdefault("storage", {})
+    account_data["storage"].setdefault("capacity", {})
+
+    capacity_mb = account_data["abilities"].get("capacity", 1)
+
+    storage_size(account)
+    current_size = account_data["storage"]["size"]
+    old_main = account_data["storage"]["capacity"].get("main", 0)
+
+    projected = current_size - old_main + new_size
+    return projected <= capacity_mb * 1024 * 1024
+
+
+# Routes
 
 @storage.post("/write")
 def write():
-    ua = request.headers.get("User-Agent", "")
-    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
-    world_id = match.group(1) if match else None
-    
-    rdata = request.get_json()
+    rdata = request.get_json() or {}
     content = rdata.get("contents", "")
     account = rdata.get("account", "")
     token = rdata.get("token", "")
-    # Does account exist?
-    if account not in data["account"]:
-        return jsonify({"error": "Account doesn't exist"}), 400
-    ts = time.strftime('%H:%M:%S')
-    # Does token match?
-    try:
-        if token != data["account"][account]["token"]["write"]:
-            if world_id:
-                contents = [time, f"`[World {world_id}]` Write request attempted with incorrect token"]
-            else:
-                contents = [time, "Write request attempted with incorrect token"]
-            socketio.emit('log', contents, room=account)
-            notify(account, contents[1], "storage.error")
-            return jsonify({"error": "Unauthorized"}), 401
-    except:
-        return jsonify({"error": "No Token Generated"}), 400
-    # Is size over limit?
-    data["account"][account].setdefault("abilities", {})
-    capacity = data["account"][account]["abilities"].get("capacity", 1)
-    size = len(content.encode('utf-8'))
-    data["account"][account].setdefault("storage", {})
-    data["account"][account]["storage"].setdefault("capacity", {})
-    data["account"][account]["storage"]["capacity"].setdefault("main", 0)
-    storage_size(account)
-    total = data["account"][account]["storage"]["size"] - data["account"][account]["storage"]["capacity"]["main"] + size
-    # total is in bytes, capacity is in MB
-    if int(total) > float(capacity) * 1024 * 1024:
-        if world_id:
-            contents = [ts, f"`[World {world_id}]` Write request attempted with large data of {size} bytes"]
-        else:
-            contents = [ts, f"Write request attempted with large data of {size} bytes"]
-        socketio.emit('log', contents, room=account)
-        notify(account, contents[1], "storage.error")
+
+    world_id = get_world_id()
+
+    account_data, err = get_account(account)
+    if err:
+        return err
+
+    err = check_token(account_data, token, "write")
+    if err:
+        emit_storage_log(
+            socketio,
+            account,
+            "Write request attempted with incorrect token",
+            "storage.error",
+            world_id
+        )
+        return err
+
+    size = len(content.encode("utf-8"))
+
+    if not can_write(account, size):
+        emit_storage_log(
+            socketio,
+            account,
+            f"Write request attempted with large data of {size} bytes",
+            "storage.error",
+            world_id
+        )
         return jsonify({"error": "Storage Limit Exceeded"}), 400
 
-    # Save content
-    data["account"][account]["storage"]["capacity"]["main"] = size
+    account_data["storage"]["capacity"]["main"] = size
+    account_data["storage"]["contents"] = content
     storage_size(account)
-    data["account"][account]["storage"]["contents"] = content
 
-    # Emit to logs
-    if world_id:
-        contents = [ts, f"`[World {world_id}]` Successfully wrote new data to storage"]
-    else:
-        contents = [ts, f"Successfully wrote new data to storage"]
-    socketio.emit('log', contents, room=account)
-    notify(account, contents[1], "storage.write")
+    emit_storage_log(
+        socketio,
+        account,
+        "Successfully wrote new data to storage",
+        "storage.write",
+        world_id
+    )
 
     save_data()
-
     return jsonify({"success": True})
+
 
 @storage.post("/read")
 def read():
-    rdata = request.get_json()
+    rdata = request.get_json() or {}
     account = rdata.get("account", "")
     token = rdata.get("token", "")
-    # Does account exist?
-    if account not in data["account"]:
-        #print("Account doesn't exist") # debug
-        return jsonify({"error": "Account doesn't exist"}), 400
-    # Does token match?
-    try:
-        if token != data["account"][account]["token"]["read"]:
-            #print("Incorrect token") # debug
-            return jsonify({"error": "Unauthorized"}), 401
-    except:
-        #print("No token generated") # debug
-        return jsonify({"error": "No Token Generated"}), 400
 
-    # Emit to logs
-    ua = request.headers.get("User-Agent", "")
-    match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
-    world_id = match.group(1) if match else None
+    world_id = get_world_id()
 
-    ts = time.strftime('%H:%M:%S')
-    
-    if world_id:
-        contents = [ts, f"`[World {world_id}]` Successful read request to storage"]
-    else:
-        contents = [ts, "Successful read request to storage"]
-    socketio.emit('log', contents, room=account)
-    notify(account, contents[1], "storage.read")
-    
-    # return storage
-    return jsonify({"success": True, "value": data["account"][account]["storage"]["contents"]})
+    account_data, err = get_account(account)
+    if err:
+        return err
+
+    err = check_token(account_data, token, "read")
+    if err:
+        return err
+
+    emit_storage_log(
+        socketio,
+        account,
+        "Successful read request to storage",
+        "storage.read",
+        world_id
+    )
+
+    return jsonify({
+        "success": True,
+        "value": account_data["storage"].get("contents", "")
+    })
+
 
 @storage.post("/readkey")
 def readkey():
-    rdata = request.get_json()
+    rdata = request.get_json() or {}
     account = rdata.get("account", "")
     token = rdata.get("token", "")
     key = rdata.get("key", "")
-    # Does account exist?
-    if account not in data["account"]:
-        #print("Account doesn't exist") # debug
-        return jsonify({"error": "Account doesn't exist"}), 400
-    # Does token match?
-    try:
-        if token != data["account"][account]["token"]["read"]:
-            #print("Incorrect token") # debug
-            return jsonify({"error": "Unauthorized"}), 401
-    except:
-        #print("No token generated") # debug
-        return jsonify({"error": "No Token Generated"}), 400
-        
-    # return storage value from key
-    try:
-        storagedict = json.loads(data["account"][account]["storage"]["contents"])
-        try:
-            # Emit to logs
-            ua = request.headers.get("User-Agent", "")
-            match = re.search(r"world:([a-zA-Z0-9-]+)", ua)
-            world_id = match.group(1) if match else None
 
-            ts = time.strftime('%H:%M:%S')
-    
-            if world_id:
-                contents = [ts, f"`[World {world_id}]` Successful read key request to storage"]
-            else:
-                contents = [ts, "Successful read key request to storage"]
-            socketio.emit('log', contents, room=account)
-            notify(account, contents[1], "storage.read")
-    
-            return jsonify({"success": True, "value": storagedict[key]})
-        except:
-            return jsonify({"error": f"Key '{key}' not found"}), 500
-    except:
+    world_id = get_world_id()
+
+    account_data, err = get_account(account)
+    if err:
+        return err
+
+    err = check_token(account_data, token, "read")
+    if err:
+        return err
+
+    try:
+        storagedict = json.loads(account_data["storage"].get("contents", "{}"))
+    except json.JSONDecodeError:
         return jsonify({"error": "Could not convert to dictionary"}), 500
-    
+
+    if key not in storagedict:
+        return jsonify({"error": f"Key '{key}' not found"}), 500
+
+    emit_storage_log(
+        socketio,
+        account,
+        "Successful read key request to storage",
+        "storage.read",
+        world_id
+    )
+
+    return jsonify({
+        "success": True,
+        "value": storagedict[key]
+    })
