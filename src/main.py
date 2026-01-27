@@ -18,9 +18,9 @@ def create_app():
 
     load_data()
 
-    from src.bots.routes import bots_bp
+    from src.bots.routes import bots
     from src.web.routes import web
-    app.register_blueprint(bots_bp)
+    app.register_blueprint(bots)
     app.register_blueprint(web)
 
     socketio.init_app(app)
