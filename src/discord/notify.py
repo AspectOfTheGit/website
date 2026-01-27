@@ -2,7 +2,7 @@ import time
 import re
 import requests
 from src.config import DISCORD_TOKEN, GUILD_ID
-from src.data as datapy
+import src.data as datapy
 
 # todo - store channels that have been created to reduce requests sent
 
