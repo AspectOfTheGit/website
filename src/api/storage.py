@@ -13,7 +13,8 @@ from src.discord.notify import notify
 
 storage = Blueprint(
     "storage",
-    __name__
+    __name__,
+    url_prefix="/api/storage"
 )
 
 # todo - Optimise/make functions
