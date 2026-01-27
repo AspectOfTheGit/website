@@ -49,7 +49,7 @@ def can_write(account, new_size):
     old_main = account_data["storage"]["capacity"].get("main", 0)
 
     projected = current_size - old_main + new_size
-    return float(projected) <= float(capacity_mb * 1024 * 1024)
+    return float(projected) <= float(capacity_mb) * 1024 * 1024
 
 
 # Routes
