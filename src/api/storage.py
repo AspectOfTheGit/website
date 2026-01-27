@@ -81,7 +81,7 @@ def write():
 
     return jsonify({"success": True})
 
-@app.post("/read")
+@storage.post("/read")
 def read():
     rdata = request.get_json()
     account = rdata.get("account", "")
