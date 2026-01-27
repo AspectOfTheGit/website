@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 
-from src.data import data, load_data, save_data
+from src.data import data, save_data
 from src.config import TIMEOUT
 from src.bots.manager import mark_offline
 from src.utils.world_api import get_world_info
@@ -12,9 +12,7 @@ def _now() -> float:
     return time.time()
 
 
-def refresh_bot_info():
-    load_data()
-    
+def refresh_bot_info()
     now = _now()
 
     for bot, botdata in data.get("bot", {}).items():
@@ -26,8 +24,6 @@ def refresh_bot_info():
 
 
 def refresh_account_info(mcusername: str, mcuuid: str):
-    load_data()
-    
     data.setdefault("account", {})
     account = data["account"].setdefault(mcuuid, {})
 
@@ -45,8 +41,6 @@ def refresh_account_info(mcusername: str, mcuuid: str):
 
 
 def create_world(world: str, uuid: str):
-    load_data()
-    
     worlddata = get_world_info(world)
     if worlddata is None:
         raise ValueError("World does not exist")
