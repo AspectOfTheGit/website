@@ -5,7 +5,7 @@ import json
 
 from src.data import data, save_data
 from src.utils.player_api import storage_size
-from src.socket import emit_log
+from src.socket import emit_storage_log
 
 storage = Blueprint(
     "storage",
@@ -70,7 +70,6 @@ def write():
     err = check_token(account_data, token, "write")
     if err:
         emit_storage_log(
-            socketio,
             account,
             "Write request attempted with incorrect token",
             "storage.error",
@@ -82,7 +81,6 @@ def write():
 
     if not can_write(account, size):
         emit_storage_log(
-            socketio,
             account,
             f"Write request attempted with large data of {size} bytes",
             "storage.error",
@@ -95,7 +93,6 @@ def write():
     storage_size(account)
 
     emit_storage_log(
-        socketio,
         account,
         "Successfully wrote new data to storage",
         "storage.write",
@@ -123,7 +120,6 @@ def read():
         return err
 
     emit_storage_log(
-        socketio,
         account,
         "Successful read request to storage",
         "storage.read",
@@ -162,7 +158,6 @@ def readkey():
         return jsonify({"error": f"Key '{key}' not found"}), 500
 
     emit_storage_log(
-        socketio,
         account,
         "Successful read key request to storage",
         "storage.read",
