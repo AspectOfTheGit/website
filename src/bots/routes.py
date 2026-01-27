@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, abort
 import base64
 
 from src.config import BOT_TOKEN
-from src.data import data
+from src.data as datapy
 from src.socket import socketio
 
 from src.bots.manager import (
@@ -41,6 +41,7 @@ def get_bot_account(from_form=False):
 
 @bots.post("/ping")
 def bot_ping():
+    data = datapy.data
     require_bot_auth()
     account = get_bot_account()
 
@@ -50,6 +51,7 @@ def bot_ping():
 
 @bots.post("/world")
 def bot_world():
+    data = datapy.data
     require_bot_auth()
     account = get_bot_account()
 
@@ -63,6 +65,7 @@ def bot_world():
 
 @bots.post("/done/<action>")
 def bot_done(action):
+    data = datapy.data
     require_bot_auth()
     account = get_bot_account()
 
@@ -72,6 +75,7 @@ def bot_done(action):
 
 @bots.post("/screenshot")
 def bot_screenshot():
+    data = datapy.data
     require_bot_auth()
     account = get_bot_account(from_form=True)
 
@@ -96,6 +100,7 @@ def bot_screenshot():
 
 @bots.get("/botwhat/<bot>")
 def bot_what(bot):
+    data = datapy.data
     if bot not in data.get("bot", {}):
         abort(400, description="Unknown bot")
 
