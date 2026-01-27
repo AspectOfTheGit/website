@@ -2,12 +2,11 @@ import time
 import re
 import requests
 from src.config import DISCORD_TOKEN, GUILD_ID
-import src.data as datapy
+from src.data import data
 
 # todo - store channels that have been created to reduce requests sent
 
 def notify(account: str, message: str, type_: str):
-    data = datapy.data
     match = re.search(r"^([^.]+)", type_)
     typeroot = match.group(1) if match else None
 
