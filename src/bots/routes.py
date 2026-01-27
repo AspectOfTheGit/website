@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, abort
 import base64
 
 from src.config import BOT_TOKEN
-from src.data as datapy
+import src.data as datapy
 from src.socket import socketio
 
 from src.bots.manager import (
