@@ -1,5 +1,4 @@
 import time
-from typing import Dict, Optional
 
 from src.data import data, save_data
 from src.config import TIMEOUT
