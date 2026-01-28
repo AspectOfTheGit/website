@@ -16,7 +16,7 @@ world = Blueprint(
     url_prefix="/api/world"
 )
 
-@app.post("/<world>/permissions")
+@world.post("/<world>/permissions")
 def apiworldbotpermissions(world):
     rdata = request.get_json()
     permissions = rdata.get("permissions", "")
@@ -41,7 +41,7 @@ def apiworldbotpermissions(world):
 
     return jsonify({"success": True})
 
-@app.post("/<world>/edit/save/elements")
+@world.post("/<world>/edit/save/elements")
 def apiworldeditelements(world):
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -85,7 +85,7 @@ def apiworldeditelements(world):
 
     return jsonify({"success": True}), 200
 
-@app.post("/<world>/edit/save/settings")
+@world.post("/<world>/edit/save/settings")
 def apiworldeditsettings(world):
     rdata = request.get_json()
     account = rdata.get("account", "")
@@ -114,7 +114,7 @@ def apiworldeditsettings(world):
 
     return jsonify({"success": True}), 200
 
-@app.post("/<world>/edit/update")
+@world.post("/<world>/edit/update")
 def apiworldeditupdate(world):
     rdata = request.get_json()
     account = rdata.get("account", "")
