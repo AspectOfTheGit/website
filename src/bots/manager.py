@@ -65,13 +65,10 @@ def update_world(bot: str, world_uuid: str):
     save_data()
 
 
-def set_instruction(bot: str, action: str, payload: Optional[Dict] = None):
+def set_instruction(bot: str, action: str, value):
     botdata = _ensure_bot(bot)
 
-    botdata["do"][action] = {
-        "status": "pending",
-        "payload": payload or {}
-    }
+    botdata["do"][action] = value
 
     save_data()
 
@@ -79,18 +76,14 @@ def set_instruction(bot: str, action: str, payload: Optional[Dict] = None):
 def get_instructions(bot: str) -> Dict:
     botdata = _ensure_bot(bot)
 
-    return {
-        action: info
-        for action, info in botdata["do"].items()
-        if info.get("status") == "pending"
-    }
+    return botdata["do"]
 
 
 def complete_instruction(bot: str, action: str):
     botdata = _ensure_bot(bot)
 
     if action in botdata["do"]:
-        botdata["do"][action]["status"] = "done"
+        botdata["do"][action] = False
         save_data()
 
 
