@@ -20,10 +20,12 @@ def create_app():
     from src.web.routes import web
     from src.api.storage import storage
     from src.api.debug import debug
+    from src.api.tokens import token
     app.register_blueprint(bots)
     app.register_blueprint(web)
     app.register_blueprint(storage)
     app.register_blueprint(debug)
+    app.register_blueprint(token)
 
     socketio.init_app(app)
     return app
