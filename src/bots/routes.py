@@ -16,7 +16,11 @@ from src.bots.manager import (
 )
 
 
-bots = Blueprint("bots", __name__, url_prefix="/bots")
+bots = Blueprint(
+    "bots",
+    __name__,
+    url_prefix="/bots"
+)
 
 
 def require_bot_auth():
@@ -81,13 +85,13 @@ def bot_screenshot():
     file = request.files["file"]
     encoded = base64.b64encode(file.read()).decode("utf-8")
 
-    socketio.emit(
+    emit_log(
         "screenshot",
         {
             "filename": file.filename,
             "image": encoded,
         },
-        room=account,
+        account,
     )
 
     complete_instruction(account, "screenshot")
