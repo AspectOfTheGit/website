@@ -21,11 +21,13 @@ def create_app():
     from src.api.storage import storage
     from src.api.debug import debug
     from src.api.tokens import token
+    from src.api.discord import discord
     app.register_blueprint(bots)
     app.register_blueprint(web)
     app.register_blueprint(storage)
     app.register_blueprint(debug)
     app.register_blueprint(token)
+    app.register_blueprint(discord)
 
     socketio.init_app(app)
     return app
