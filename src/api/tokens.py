@@ -14,7 +14,7 @@ token = Blueprint(
 )
 
 @token.post("/refresh-token/<token>")
-def apirefreshtoken(token)
+def apirefreshtoken(token):
     if "mc_username" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
