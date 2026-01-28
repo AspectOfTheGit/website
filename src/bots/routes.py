@@ -70,7 +70,7 @@ def bot_done(action):
     require_bot_auth()
     account = get_bot_account()
 
-    complete_instruction(account, action)
+    complete_instruction(account, action, False)
     return jsonify({"success": True})
 
 
@@ -94,7 +94,7 @@ def bot_screenshot():
         account,
     )
 
-    complete_instruction(account, "screenshot")
+    complete_instruction(account, "screenshot", False)
     return jsonify({"success": True})
     
 
