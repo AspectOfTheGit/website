@@ -72,7 +72,7 @@ def set_instruction(bot: str, action: str, value):
     save_data()
 
 
-def get_instructions(bot: str) -> Dict:
+def get_instructions(bot: str):
     botdata = _ensure_bot(bot)
 
     return botdata["do"]
@@ -94,9 +94,9 @@ def request_disconnect(bot: str):
     set_instruction(bot, "disconnect")
 
 
-def get_bot_state(bot: str) -> Dict:
+def get_bot_state(bot: str):
     return data.get("bot", {}).get(bot, {})
 
 
-def get_all_bot_states() -> Dict:
+def get_all_bot_states():
     return data.get("bot", {})
