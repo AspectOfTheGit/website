@@ -50,4 +50,4 @@ def mc_to_html(message):
     else:
         html_output = message
 
-    return html_output.replace("\n", "<br>")
+    return str(html_output.replace("\n", "<br>"))
