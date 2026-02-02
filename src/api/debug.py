@@ -6,7 +6,8 @@ from flask import (
 
 from src.data import data, save_data
 from src.config import OTHER_TOKEN
-from src.utils.data_api import refresh_bot_info, refresh_account_info
+from src.utils.data_api import refresh_account_info
+from src.bots.manager import refresh_bot_info
 
 debug = Blueprint(
     "debug",
