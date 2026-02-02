@@ -196,12 +196,12 @@
           <p class="plaintext">
               Example http request to write:<br>
               <code>
-                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
+                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
               </code>
               <br><br>
               Example http request to read:<br>
               <code>
-                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
+                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
               </code>
           </p>
       </div>
@@ -229,14 +229,14 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const accountName = "{{ mcuuid }}"
+        const accountUUID = "{{ mcuuid }}"
         const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
         const logContainer = document.getElementById("logs-output");
 
         let ownedworlds = [];
 
         // socket.io
-        socket.emit('join', accountName);
+        socket.emit('join', accountUUID);
     
         socket.on("log", (contents) => {
             const time = contents[0];
@@ -284,7 +284,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: newContent,
-                            account: accountName,
+                            account: accountUUID,
                             token: writeToken
                         })
                     });
@@ -553,7 +553,7 @@
             loadingWorlds = true;
         
             try {
-                const formatted = formatUUID("{{ profile_uuid }}");
+                const formatted = formatUUID(accountUUID);
                 const res = await fetch(`https://api.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res.json();
                 populateWorldDropdown();
