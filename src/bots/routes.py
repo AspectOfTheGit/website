@@ -6,6 +6,7 @@ import requests
 from src.config import BOT_TOKEN
 from src.data import data
 from src.socket import emit_log
+from src.utils.text_api import mc_to_html
 
 from src.bots.manager import (
     mark_online,
