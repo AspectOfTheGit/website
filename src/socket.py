@@ -1,5 +1,6 @@
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
+from src.data import data
 import time
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
