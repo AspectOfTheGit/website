@@ -85,6 +85,34 @@ def update_world(bot: str, world_uuid: str):
     botdata["last_ping"] = _now()
 
     save_data()
+    # todo - Update to be like:
+    data["bot"][bot].setdefault("world", {})
+    data["bot"][bot]["world"].setdefault("owner", {})
+    if world_uuid == "lobby":
+        data["bot"][bot]["world"]["name"] = "Lobby"
+    else:
+        world_data = get_world_info(world_uuid)
+        data["bot"][bot].setdefault("world", {})
+        data["bot"][bot]["world"]["uuid"] = world_uuid
+        try:
+            data["bot"][bot]["world"]["name"] = raw_to_html(world_data["raw_name"])
+            data["bot"][bot]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+            data["bot"][bot]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+        except:
+            data["bot"][bot]["world"]["name"] = "Error fetching world data"
+            data["bot"][bot]["world"]["owner"]["uuid"] = "?"
+            data["bot"][bot]["world"]["owner"]["name"] = "Error fetching world data"
+        
+    botping(bot)
+
+    # Defaults
+    permissions = ["baritone"]
+
+    if world in data["world"]:
+        if "permissions" in data["world"][world]:
+            permissions = data["world"][world]["permissions"]
+    
+    return jsonify({"success": True, "permissions": permissions })
 
 
 def set_instruction(bot: str, action: str, value):
