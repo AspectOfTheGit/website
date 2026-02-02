@@ -6,7 +6,7 @@ from flask import (
 
 from src.data import data, save_data
 from src.discord.notify import notify
-from src.utils.data_api import refresh_bot_info
+from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
 from src.socket import emit_log
 import time
