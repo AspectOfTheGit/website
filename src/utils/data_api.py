@@ -2,25 +2,12 @@ import time
 from datetime import datetime
 
 from src.data import data, save_data
-from src.config import TIMEOUT
-from src.bots.manager import mark_offline
 from src.utils.world_api import get_world_info
 from src.utils.player_api import format_uuid
 
 
 def _now() -> float:
     return time.time()
-
-
-def refresh_bot_info():
-    now = _now()
-
-    for bot, botdata in data.get("bot", {}).items():
-        if (
-            botdata.get("status")
-            and now - botdata.get("last_ping", 0) > TIMEOUT
-        ):
-            mark_offline(bot)
 
 
 def refresh_account_info(mcusername: str, mcuuid: str):
