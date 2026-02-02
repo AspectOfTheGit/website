@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, abort
 import base64
+import time
+import requests
 
 from src.config import BOT_TOKEN
 from src.data import data
@@ -71,6 +73,28 @@ def bot_done(action):
     account = get_bot_account()
 
     complete_instruction(account, action)
+    return jsonify({"success": True})
+
+@bots.post("/log")
+def bot_log():   
+    require_bot_auth()
+    
+    try:
+        msg = mc_to_html(request.json.get('value'))
+        if '[{&quot;text&quot;:&quot;' in msg:
+            print("[routes.py] Error during bot log (parsing issue) msg:", msg)
+            return 500
+    except:
+        print("[routes.py] Error during bot log (Unknown)")
+        return 500
+    room_name = request.json.get('account')
+    ts = time.strftime('%H:%M:%S')
+
+    contents = [ts, msg]
+
+    #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
+    emit_log('log', contents, room_name)
+
     return jsonify({"success": True})
 
 
