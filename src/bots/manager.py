@@ -1,7 +1,7 @@
 import time
 
 from src.data import data, save_data
-from src.config import TIMEOUT, bots
+from src.config import TIMEOUT, BOTS
 from src.discord.notify import notify
 from src.socket import emit_log
 from src.utils.player_api import get_uuid
@@ -52,7 +52,7 @@ def refresh_bot_info():
     now = _now()
 
     data.setdefault("bot",{})
-    for bot in bots:
+    for bot in BOTS:
         # Set Defaults
         data["bot"].setdefault(bot, {})
         data["bot"][bot]["uuid"] = get_uuid(bot)
