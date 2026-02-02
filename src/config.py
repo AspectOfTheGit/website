@@ -10,4 +10,5 @@ GUILD_ID = 1460692900533899438
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
+BOTS = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
 TIMEOUT = 10
