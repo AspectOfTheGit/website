@@ -1,8 +1,10 @@
 import time
 
 from src.data import data, save_data
-from src.config import TIMEOUT
+from src.config import TIMEOUT, bots
 from src.discord.notify import notify
+from src.socket import emit_log
+from src.utils.player_api import get_uuid
 
 
 def _now() -> float:
@@ -41,6 +43,7 @@ def mark_offline(bot: str):
 
     if botdata["status"]:
         botdata["status"] = False
+        botdata["deployer"] = ""
         notify(bot, f"{bot} disconnected", "bot.disconnect")
         save_data()
 
@@ -48,9 +51,29 @@ def mark_offline(bot: str):
 def refresh_bot_info():
     now = _now()
 
-    for bot, botdata in data.get("bot", {}).items():
-        if botdata.get("status") and now - botdata.get("last_ping", 0) > TIMEOUT:
+    data.setdefault("bot",{})
+    for bot in bots:
+        # Set Defaults
+        data["bot"].setdefault(bot, {})
+        data["bot"][bot]["uuid"] = get_uuid(bot)
+        data["bot"][bot].setdefault("last_ping", 0)
+        data["bot"][bot].setdefault("status", False)
+        data["bot"][bot].setdefault("deployer", "")
+        data["bot"][bot].setdefault("world", {})
+        data["bot"][bot]["world"].setdefault("name", "")
+        data["bot"][bot]["world"].setdefault("uuid", "")
+        data["bot"][bot]["world"].setdefault("owner", {})
+        data["bot"][bot]["world"]["owner"].setdefault("name", "")
+        data["bot"][bot]["world"]["owner"].setdefault("uuid", "")
+        data["bot"][bot].setdefault("do", {})
+        if data["bot"][bot]["last_ping"] != 0 and now - data["bot"][bot]["last_ping"] > TIMEOUT and data["bot"][bot]["status"]:
             mark_offline(bot)
+        else:
+            if data["bot"][bot]["deployer"] == "" and data["bot"][bot]["status"]:
+                data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
+                contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}"]
+                emit_log('log', contents, bot)
+    save_data()
 
 
 def update_world(bot: str, world_uuid: str):
