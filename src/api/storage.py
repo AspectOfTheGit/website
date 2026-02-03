@@ -5,7 +5,7 @@ import json
 
 from src.data import data, save_data
 from src.utils.player_api import storage_size
-from src.socket import emit_storage_log, socketio
+from src.socket import emit_storage_log
 
 storage = Blueprint(
     "storage",
