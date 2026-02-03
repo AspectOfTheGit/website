@@ -11,4 +11,5 @@ REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
 BOTS = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
+VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone"}
 TIMEOUT = 10
