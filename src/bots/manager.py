@@ -96,16 +96,7 @@ def update_world(bot: str, world_uuid: str):
             botdata["world"]["owner"]["uuid"] = "?"
             botdata["world"]["owner"]["name"] = "Error fetching world data"
 
-    # Defaults
-    permissions = BOT_PERMISSION_DEFAULTS
-
-    if world_uuid in data["world"]:
-        if "permissions" in data["world"][world_uuid]:
-            permissions = data["world"][world_uuid]["permissions"]
-
     save_data()
-    
-    return permissions
 
 
 def set_instruction(bot: str, action: str, value):
