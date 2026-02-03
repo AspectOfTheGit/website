@@ -134,7 +134,7 @@ def bots_deploy():
         username=session["mc_username"],
         bots=data["bot"],
         account=data["account"][session["mc_uuid"]],
-        profile_uuid=session["mc_uuid"]
+        mcuuid=session["mc_uuid"]
     )
 
 
