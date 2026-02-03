@@ -102,7 +102,6 @@ def apisetnotifs():
 
     data["account"][account]["notifs"] = prefs
 
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    save_data()
 
     return jsonify({"success": True})
