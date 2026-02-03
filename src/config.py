@@ -13,4 +13,5 @@ DATA_FILE = "/data/values.json"
 BOTS = ["AspectOfTheBot","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks","AspectOfTheButt","AspectOfThePoop"]
 VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone"}
 BOT_PERMISSION_DEFAULTS = ["baritone"]
+BOT_LOBBY_PERMISSIONS = ["fly","baritone"]
 TIMEOUT = 10
