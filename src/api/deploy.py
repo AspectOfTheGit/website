@@ -9,6 +9,7 @@ from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
+from src.utils.player_api import get_username
 from src.socket import emit_log
 
 from datetime import datetime
@@ -82,7 +83,7 @@ def apideploybot():
     data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"] = {}
     data["bot"][bot]["do"]["deploy"]["world"] = world
-    data["bot"][bot]["do"]["deploy"]["deployer"] = account
+    data["bot"][bot]["do"]["deploy"]["deployer"] = get_username(account)
 
     data["bot"][bot]["do"]["disconnect"] = False # failsafe
     try:
