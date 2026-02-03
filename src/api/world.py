@@ -5,7 +5,7 @@ from flask import (
 )
 
 from src.data import data, save_data
-from src.config import VALID_BOT_PERMISSIONS
+from src.config import VALID_BOT_PERMISSIONS, USER_SOCKET_LIMIT
 from src.utils.data_api import create_world
 from src.utils.player_api import storage_size
 from src.discord.notify import notify
@@ -149,7 +149,7 @@ def apiworldeditupdate(world):
     emit = [user, content]
     size = len(emit.encode('utf-8'))
     # Check if over size limit
-    if size > 1024 * 10:
+    if size > USER_SOCKET_LIMIT:
         return jsonify({"error": "Size Limit Exceeded"}), 400
     emit_log('update', emit, world) # Will be sent to everyone viewing the page, but only chosen users are affected; Unrecommended for transferring personal data
 
