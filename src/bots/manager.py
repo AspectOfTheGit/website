@@ -105,7 +105,7 @@ def update_world(bot: str, world_uuid: str):
 
     save_data()
     
-    return jsonify({"success": True, "permissions": permissions })
+    return permissions
 
 
 def set_instruction(bot: str, action: str, value):
