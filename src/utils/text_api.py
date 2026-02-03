@@ -2,7 +2,9 @@ import json
 import html
 import re
 from markupsafe import Markup
-from src.config import HEX_COLOUR, COLOURS
+from src.config import COLOURS
+
+HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 
 def mc_to_html(message):
     if isinstance(message, str):
