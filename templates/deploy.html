@@ -280,7 +280,7 @@
             }
     
             try {
-                const formatted = formatUUID("{{ profile_uuid }}");
+                const formatted = formatUUID("{{ mcuuid }}");
                 const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res2.json();
             } catch (err) {
