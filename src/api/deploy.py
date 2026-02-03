@@ -77,13 +77,15 @@ def apideploybot():
     except:
         worldname = "Unknown"
 
+    accountusername = get_username(account)
+
     # Deploy bot
     data["bot"][bot].setdefault("deployer", account)
     data["bot"][bot]["deployer"] = account
     data["bot"][bot]["do"].setdefault("deploy", {})
     data["bot"][bot]["do"]["deploy"] = {}
     data["bot"][bot]["do"]["deploy"]["world"] = world
-    data["bot"][bot]["do"]["deploy"]["deployer"] = get_username(account)
+    data["bot"][bot]["do"]["deploy"]["deployer"] = accountusername
 
     data["bot"][bot]["do"]["disconnect"] = False # failsafe
     try:
@@ -98,7 +100,7 @@ def apideploybot():
     except:
         data["bot"][bot]["do"]["deploy"]["uptime"] = 30
 
-    contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {account}"]
+    contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {accountusername}"]
     emit_log('log', contents, bot)
     notify(bot, contents[1], "bot.deploy")
 
