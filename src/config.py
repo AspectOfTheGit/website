@@ -16,6 +16,8 @@ BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
 TIMEOUT = 10
 
+USER_SOCKET_LIMIT = 1024 * 10
+
 COLOURS = {
     "black": "#000000",
     "dark_blue": "#0000AA",
