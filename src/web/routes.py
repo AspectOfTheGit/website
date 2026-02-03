@@ -14,7 +14,7 @@ from src.utils.world_api import get_world_info
 from src.utils.player_api import get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, VALID_BOT_PERMISSIONS
 
 from src.utils.data_api import (
     refresh_account_info,
@@ -99,7 +99,8 @@ def account():
         account=data["account"][mc_uuid],
         mcuuid=mc_uuid,
         notifs=data["account"][mc_uuid].get("notifs", []),
-        discord=data["account"][mc_uuid].get("discord", "")
+        discord=data["account"][mc_uuid].get("discord", ""),
+        validbotperms=VALID_BOT_PERMISSIONS
     )
 
 
