@@ -3,7 +3,7 @@ import base64
 import time
 import requests
 
-from src.config import BOT_TOKEN, BOT_PERMISSION_DEFAULTS
+from src.config import BOT_TOKEN, BOT_PERMISSION_DEFAULTS, BOT_LOBBY_PERMISSIONS
 from src.data import data
 from src.socket import emit_log
 from src.utils.text_api import mc_to_html
@@ -67,7 +67,7 @@ def bot_world():
     update_world(account, world_uuid)
 
     if world_uuid == "lobby":
-        permissions = ["fly","baritone"]
+        permissions = BOT_LOBBY_PERMISSIONS
     else:
         try:
             permissions = data["world"][world_uuid]["permissions"]
