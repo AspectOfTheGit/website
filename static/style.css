@@ -762,6 +762,27 @@ code {
     accent-color: #2fa08c;
 }
 
+.bot-permissions-container {
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.permission-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+}
+
+.permission-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2fa08c;
+}
+
+
 #save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn {
     margin-top: 8px;
     background: #2fa08c;
