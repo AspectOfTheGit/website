@@ -172,7 +172,7 @@ def world_page(world):
 
     if world not in data["world"]:
         if redirectifnone:
-            return redirect(f"https://legiti.dev/browse/{uuid}")
+            return redirect(f"https://legiti.dev/browse/{world}")
         else:
             return jsonify({"error": "World page does not exist"}), 404
 
@@ -184,7 +184,7 @@ def world_page(world):
         and not data["world"][world]["public"]
     ):
         if redirectifnone:
-            return redirect(f"https://legiti.dev/browse/{uuid}")
+            return redirect(f"https://legiti.dev/browse/{world}")
         else:
             return jsonify({"error": "World page is private"}), 400
 
