@@ -1,5 +1,8 @@
 import json
 import html
+import re
+from markupsafe import Markup
+from src.config import HEX_COLOUR, COLOURS
 
 def mc_to_html(message):
     if isinstance(message, str):
@@ -51,3 +54,85 @@ def mc_to_html(message):
         html_output = message
 
     return str(html_output.replace("\n", "<br>"))
+
+
+def raw_to_html(component):
+    if isinstance(component, str):
+        try:
+            component = json.loads(component)
+        except json.JSONDecodeError:
+            return Markup(component)
+    segments = []
+    def collect(c, inherited=None):
+        if isinstance(c, str):
+            style_str = inherited.get("_style_str", "") if inherited else ""
+            segments.append((c, style_str))
+            return
+        if inherited is None:
+            inherited = {}
+            
+        text = c.get("text", "")
+        color = c.get("color", inherited.get("color"))
+        italic = c.get("italic", inherited.get("italic", False))
+        bold = c.get("bold", inherited.get("bold", False))
+        underlined = c.get("underlined", inherited.get("underlined", False))
+        strikethrough = c.get("strikethrough", inherited.get("strikethrough", False))
+
+        resolved_color = None
+        if color:
+            if color in COLOURS:
+                resolved_color = COLOURS[color]
+            elif HEX_COLOUR.match(color):
+                resolved_color = color if color.startswith("#") else f"#{color}"
+
+        style_parts = []
+        if resolved_color:
+            style_parts.append(f"color:{resolved_color}")
+        if italic:
+            style_parts.append("font-style:italic")
+        if bold:
+            style_parts.append("font-weight:bold")
+        decorations = []
+        if underlined:
+            decorations.append("underline")
+        if strikethrough:
+            decorations.append("line-through")
+        if decorations:
+            style_parts.append("text-decoration:" + " ".join(decorations))
+        style_str = ";".join(style_parts)
+        new_inherited = dict(inherited)
+        new_inherited.update({
+            "color": resolved_color or color,
+            "italic": italic,
+            "bold": bold,
+            "underlined": underlined,
+            "strikethrough": strikethrough,
+            "_style_str": style_str
+        })
+
+        if text:
+            segments.append((text, style_str))
+
+        for e in c.get("extra", []):
+            collect(e, new_inherited)
+    collect(component)
+    if not segments:
+        return Markup("")
+    merged = []
+    cur_text, cur_style = segments[0]
+    for t, s in segments[1:]:
+        if s == cur_style:
+            cur_text += t
+        else:
+            merged.append((cur_text, cur_style))
+            cur_text, cur_style = t, s
+    merged.append((cur_text, cur_style))
+    out = []
+    for text, style in merged:
+        if style:
+            escaped = Markup.escape(text)
+            out.append(f"<span style='{style}'>{escaped}</span>")
+        else:
+            out.append(Markup.escape(text))
+
+    return Markup("".join(out))
