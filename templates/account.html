@@ -222,19 +222,18 @@
         </div>
         <button id="edit-world-page">Edit world page</button>
         <button id="edit-world-bot">Edit bot permissions</button>
-        <!--
-          WIP bot permissions
-          Remove the button. Instead show this when a world is selected
         <div class="bot-permissions-container">
             <h3>Bot Permissions</h3>
-
-            FOR EACH IN validbotperms
+        
+            {% for perm in validbotperms %}
             <label class="permission-toggle">
-                <input type="checkbox" data-key="(original key)">
-                <span>(label - capitalise first letter)</span>
+                <input type="checkbox" data-key="{{ perm }}">
+                <span>{{ perm|capitalize }}</span>
             </label>
+            {% endfor %}
+
+            <button id="save-bot-perm-btn">Save</button>
         </div>
-          -->
       </div>
     </main>
   </div>
@@ -616,6 +615,39 @@
         document.getElementById('edit-world-page').addEventListener("click", () => {
             if (selected_world_uuid != null) {
                 window.location.href = `/world/${selected_world_uuid}/edit`;
+            }
+        });
+
+        // Save Bot Permissions
+        const botPermSaveBtn = document.getElementById('save-bot-perm-btn');
+    
+        botPermSaveBtn.addEventListener('click', async () => {
+            let permissions = [];
+            
+            botPermSaveBtn.textContent = "Saved";
+            botPermSaveBtn.classList.add('pressed');
+
+            setTimeout(() => {
+                botPermSaveBtn.textContent = "Save";
+                botPermSaveBtn.classList.remove('pressed');
+            }, 1000);
+
+            document.querySelectorAll(".notif-toggle input").forEach(cb => {
+                if (cb.checked) {
+                    permissions.push(cb.dataset.key);
+                }
+            });
+
+            try {
+                const res = await fetch(`/api/world/${selected_world_uuid}/permissions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        permissions: permissions
+                    })
+                });
+            } catch (e) {
+                console.error(e);
             }
         });
 
