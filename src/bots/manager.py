@@ -99,9 +99,9 @@ def update_world(bot: str, world_uuid: str):
     # Defaults
     permissions = BOT_PERMISSION_DEFAULTS
 
-    if world in data["world"]:
-        if "permissions" in data["world"][world]:
-            permissions = data["world"][world]["permissions"]
+    if world_uuid in data["world"]:
+        if "permissions" in data["world"][world_uuid]:
+            permissions = data["world"][world_uuid]["permissions"]
 
     save_data()
     
