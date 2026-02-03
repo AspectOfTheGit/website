@@ -1,7 +1,7 @@
 import time
 
 from src.data import data, save_data
-from src.config import TIMEOUT, BOTS
+from src.config import TIMEOUT, BOTS, BOT_PERMISSION_DEFAULTS
 from src.discord.notify import notify
 from src.socket import emit_log
 from src.utils.player_api import get_uuid
@@ -106,7 +106,7 @@ def update_world(bot: str, world_uuid: str):
     botping(bot)
 
     # Defaults
-    permissions = ["baritone"]
+    permissions = BOT_PERMISSION_DEFAULTS
 
     if world in data["world"]:
         if "permissions" in data["world"][world]:
