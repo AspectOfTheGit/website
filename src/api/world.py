@@ -29,7 +29,7 @@ def apiworldbotpermissions(world):
         return jsonify({"error": "Unauthorized"}), 401
 
     if world not in data["world"]:
-        create_world(world, account, session["mc_uuid"])
+        create_world(world, account)
 
     if account != data["world"][world]["owner"]:
         return jsonify({"error": "Unauthorized"}), 401
