@@ -80,30 +80,21 @@ def update_world(bot: str, world_uuid: str):
     botdata = _ensure_bot(bot)
 
     botdata.setdefault("world", {})
-    botdata["world"]["uuid"] = world_uuid
-    botdata["world"]["name"] = "Lobby" if world_uuid == "lobby" else world_uuid
-    botdata["last_ping"] = _now()
-
-    save_data()
-    # todo - Update to be like:
-    data["bot"][bot].setdefault("world", {})
-    data["bot"][bot]["world"].setdefault("owner", {})
+    botdata["world"].setdefault("owner", {})
     if world_uuid == "lobby":
-        data["bot"][bot]["world"]["name"] = "Lobby"
+        botdata["world"]["name"] = "Lobby"
     else:
         world_data = get_world_info(world_uuid)
-        data["bot"][bot].setdefault("world", {})
-        data["bot"][bot]["world"]["uuid"] = world_uuid
+        botdata.setdefault("world", {})
+        botdata["world"]["uuid"] = world_uuid
         try:
-            data["bot"][bot]["world"]["name"] = raw_to_html(world_data["raw_name"])
-            data["bot"][bot]["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-            data["bot"][bot]["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+            botdata["world"]["name"] = raw_to_html(world_data["raw_name"])
+            botdata["world"]["owner"]["uuid"] = world_data["owner_uuid"]
+            botdata["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
         except:
-            data["bot"][bot]["world"]["name"] = "Error fetching world data"
-            data["bot"][bot]["world"]["owner"]["uuid"] = "?"
-            data["bot"][bot]["world"]["owner"]["name"] = "Error fetching world data"
-        
-    botping(bot)
+            botdata["world"]["name"] = "Error fetching world data"
+            botdata["world"]["owner"]["uuid"] = "?"
+            botdata["world"]["owner"]["name"] = "Error fetching world data"
 
     # Defaults
     permissions = BOT_PERMISSION_DEFAULTS
@@ -111,6 +102,8 @@ def update_world(bot: str, world_uuid: str):
     if world in data["world"]:
         if "permissions" in data["world"][world]:
             permissions = data["world"][world]["permissions"]
+
+    save_data()
     
     return jsonify({"success": True, "permissions": permissions })
 
