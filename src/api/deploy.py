@@ -1,6 +1,7 @@
 from flask import (
     Blueprint,
     session,
+    request,
     jsonify
 )
 
@@ -10,7 +11,6 @@ from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
 from src.socket import emit_log
 import time
-import requests
 
 deploy = Blueprint(
     "deploy",
