@@ -121,15 +121,7 @@ def complete_instruction(bot: str, action: str):
     if action in botdata["do"]:
         botdata["do"][action] = False
         save_data()
-
-
-def request_deploy(bot: str, world_uuid: str):
-    set_instruction(bot, "deploy", {"world": world_uuid}) # todo - add full payload
-
-
-def request_disconnect(bot: str):
-    set_instruction(bot, "disconnect")
-
+        
 
 def get_bot_state(bot: str):
     return data.get("bot", {}).get(bot, {})
