@@ -168,8 +168,13 @@ def world_page(world):
     world = world.strip()
     data.setdefault("world", {})
 
+    redirectifnone = request.args.get('redirectifnone', False)
+
     if world not in data["world"]:
-        return jsonify({"error": "World page does not exist"}), 404
+        if redirectifnone:
+            return redirect(f"https://legiti.dev/browse/{uuid}")
+        else:
+            return jsonify({"error": "World page does not exist"}), 404
 
     username = session.get("mc_username", ".anonymous")
     uuid = session.get("mc_uuid")
@@ -178,7 +183,10 @@ def world_page(world):
         uuid != data["world"][world]["owner"]
         and not data["world"][world]["public"]
     ):
-        return jsonify({"error": "World page is private"}), 400
+        if redirectifnone:
+            return redirect(f"https://legiti.dev/browse/{uuid}")
+        else:
+            return jsonify({"error": "World page is private"}), 400
 
     notify(
         data["world"][world]["owner"],
