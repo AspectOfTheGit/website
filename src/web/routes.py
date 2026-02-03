@@ -7,7 +7,6 @@ from flask import (
     jsonify,
     abort
 )
-import os
 import requests
 
 from src.data import data
@@ -15,6 +14,7 @@ from src.utils.world_api import get_world_info
 from src.utils.player_api import get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 
 from src.utils.data_api import (
     refresh_account_info,
@@ -25,10 +25,6 @@ web = Blueprint(
     "web",
     __name__
 )
-
-CLIENT_ID = os.environ.get("CLIENT_ID")
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-REDIRECT_URI = "https://aspectofthe.site/login"
 
 AUTH_REQ_URL = (
     "https://mc-auth.com/oAuth2/authorize"
