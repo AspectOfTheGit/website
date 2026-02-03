@@ -4,7 +4,9 @@ from src.data import data, save_data
 from src.config import TIMEOUT, BOTS
 from src.discord.notify import notify
 from src.socket import emit_log
-from src.utils.player_api import get_uuid
+from src.utils.player_api import get_uuid, get_username
+from src.utils.world_api import get_world_info
+from src.utils.text_api import raw_to_html
 
 
 def _now() -> float:
