@@ -5,6 +5,7 @@ from flask import (
 )
 
 from src.data import data, save_data
+from src.config import VALID_BOT_PERMISSIONS
 from src.utils.data_api import create_world
 from src.utils.player_api import storage_size
 from src.discord.notify import notify
@@ -32,7 +33,7 @@ def apiworldbotpermissions(world):
     if account != data["world"][world]["owner"]:
         return jsonify({"error": "Unauthorized"}), 401
     
-    if not all(x in {"annihilate","fly"} for x in permissions):
+    if not all(x in VALID_BOT_PERMISSIONS for x in permissions):
         return jsonify({"error": "Contains invalid permission"}), 400
 
     data["world"][world]["permissions"] = permissions
