@@ -77,7 +77,7 @@ def apideploybot():
     except:
         worldname = "Unknown"
 
-    accountusername = get_username(account)
+    accountusername = data["account"][account]["username"]
 
     # Deploy bot
     data["bot"][bot].setdefault("deployer", account)
