@@ -804,6 +804,10 @@ code {
     background: #3dc9b0;
 }
 
+#edit-world-page {
+    display: none;
+}
+
 .log-box {
     width: 100%;
     height: 150px;
