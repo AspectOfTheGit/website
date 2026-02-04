@@ -37,8 +37,8 @@ def handle_join(room):
     print(f'[socket.py] Client joined room: {room}')
 
 @socketio.on("get_screenshot")
-def screenshot_request(bot):
-    bot_name = bot.get("bot").strip()
+def screenshot_request(rdata):
+    bot_name = rdata.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(400)
 
@@ -48,8 +48,8 @@ def screenshot_request(bot):
     data["bot"][bot_name]["do"]["screenshot"] = True
 
 @socketio.on("bot_disconnect")
-def disconnect_request(bot):
-    bot_name = bot.get("bot").strip()
+def disconnect_request(rdata):
+    bot_name = rdata.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(400)
 
@@ -67,8 +67,9 @@ def disconnect_request(bot):
     data["bot"][bot_name]["do"]["disconnect"] = True
 
 @socketio.on("bot_switch_server")
-def switch_request(bot, world):
-    bot_name = bot.get("bot").strip()
+def switch_request(rdata):
+    bot_name = rdata.get("bot").strip()
+    world_uuid = rdata.get("world").strip()
     if bot_name not in data["bot"]:
         return abort(400)
 
@@ -78,9 +79,9 @@ def switch_request(bot, world):
     if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
         return abort(401)
 
-    print(f"[socket.py] Server switch for {bot_name} | World: {world}")
+    print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
 
     emit_log('log', "Switching server; requested by deployer.", bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
-    data["bot"][bot_name]["do"]["switch"] = world
+    data["bot"][bot_name]["do"]["switch"] = world_uuid
