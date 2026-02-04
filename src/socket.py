@@ -52,7 +52,7 @@ def disconnect_request(bot):
     if bot_name not in data["bot"]:
         return abort(400)
 
-    if mc_uuid not in session:
+    if "mc_uuid" not in session:
         return abort(401)
 
     if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
