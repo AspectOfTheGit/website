@@ -153,11 +153,14 @@ def bot_status(bot):
     if bot not in data["bot"]:
         abort(400)
 
+    is_deployer = 'deployer' in request.args
+
     return render_template(
         "bot_status.html",
         bot=data["bot"][bot],
         bot_name=bot,
-        username=session.get("mc_username")
+        username=session.get("mc_username"),
+        is_deployer=is_deployer
     )
 
 
