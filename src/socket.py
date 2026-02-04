@@ -46,16 +46,16 @@ def screenshot_request(bot):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
 
-@socketio.on("get_screenshot")
-def screenshot_request(bot, account, token):
+@socketio.on("bot_disconnect")
+def disconnect_request(bot):
     bot_name = bot.get("bot").strip()
     if bot_name not in data["bot"]:
         return abort(400)
 
-    if account != data["bot"][bot_name]["deployer"]:
+    if mc_uuid not in session:
         return abort(401)
 
-    if token != data["account"][account]["token"]["deploy"]:
+    if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
         return abort(401)
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
