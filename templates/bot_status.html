@@ -132,12 +132,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("screenshot-btn").addEventListener("click", () => {
         socket.emit("get_screenshot", { bot: botName });
     });
-    document.getElementById("disconnect-btn").addEventListener("click", () => {
-        socket.emit("bot_disconnect", { bot: botName });
-    });
-    document.getElementById("switch-server-btn").addEventListener("click", () => {
-        socket.emit("bot_switch_server", { bot: botName });
-    });
+    {% if is_deployer and token %}
+        document.getElementById("disconnect-btn").addEventListener("click", () => {
+            socket.emit("bot_disconnect", { bot: botName });
+        });
+        document.getElementById("switch-server-btn").addEventListener("click", () => {
+            socket.emit("bot_switch_server", { bot: botName });
+        });
+    {% endif %}
 });
 </script>
 
