@@ -40,7 +40,7 @@ def handle_join(room):
 def screenshot_request(rdata):
     bot_name = rdata.get("bot").strip()
     if bot_name not in data["bot"]:
-        return abort(400)
+        return
 
     print(f"[socket.py] Screenshot requested for {bot_name}")
 
@@ -51,13 +51,13 @@ def screenshot_request(rdata):
 def disconnect_request(rdata):
     bot_name = rdata.get("bot").strip()
     if bot_name not in data["bot"]:
-        return abort(400)
+        return
 
     if "mc_uuid" not in session:
-        return abort(401)
+        return
 
     if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
-        return abort(401)
+        return
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
 
@@ -71,13 +71,13 @@ def switch_request(rdata):
     bot_name = rdata.get("bot").strip()
     world_uuid = rdata.get("world").strip()
     if bot_name not in data["bot"]:
-        return abort(400)
+        return
 
     if "mc_uuid" not in session:
-        return abort(401)
+        return
 
     if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
-        return abort(401)
+        return
 
     print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
 
