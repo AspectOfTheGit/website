@@ -654,7 +654,7 @@
 
         async function loadWorldPermissions(worldUUID) {
             try {
-                const res = await fetch(`/api/${worldUUID}/getpermissions`);
+                const res = await fetch(`/api/world/${worldUUID}/getpermissions`);
                 const perms = await res.json();
         
                 const permSet = new Set(perms);
