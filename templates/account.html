@@ -657,7 +657,7 @@
                 const res = await fetch(`/api/world/${worldUUID}/getpermissions`);
                 const perms = await res.json();
         
-                const permSet = new Set(perms);
+                const permSet = new Set(perms.permissions);
         
                 document.querySelectorAll(".permission-toggle input").forEach(cb => {
                     cb.checked = permSet.has(cb.dataset.key);
