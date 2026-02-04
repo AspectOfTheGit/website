@@ -65,14 +65,14 @@
 
     <div class="controls">
         {% if is_deployer %}
-            <button id="disconnect-btn" class="disconnect-button">
+            <button title="Disconnect bot" id="disconnect-btn" class="disconnect-button">
                 <img src="{{ url_for('static', filename='icons/disconnect.svg') }}" class="disconnect-icon" alt="Disconnect">
             </button>
-            <button id="switch-server-btn" class="switch-server-button">
+            <button title="Switch server" id="switch-server-btn" class="switch-server-button">
                 <img src="{{ url_for('static', filename='icons/switch.svg') }}" class="switch-icon" alt="Switch Server">
             </button>
         {% endif %}
-        <button id="screenshot-btn" class="screenshot-button">
+        <button title="Screenshot" id="screenshot-btn" class="screenshot-button">
             <img src="{{ url_for('static', filename='icons/screenshot.svg') }}" class="camera-icon" alt="Screenshot">
         </button>
     </div>
