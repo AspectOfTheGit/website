@@ -137,7 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
             socket.emit("bot_disconnect", { bot: botName });
         });
         document.getElementById("switch-server-btn").addEventListener("click", () => {
-            socket.emit("bot_switch_server", { bot: botName });
+            const worldUUID = prompt("World UUID");
+            socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
         });
     {% endif %}
 });
