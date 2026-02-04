@@ -1,3 +1,4 @@
+from flask import session
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
 from src.data import data
@@ -64,3 +65,22 @@ def disconnect_request(bot):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
+
+@socketio.on("bot_switch_server")
+def switch_request(bot, world):
+    bot_name = bot.get("bot").strip()
+    if bot_name not in data["bot"]:
+        return abort(400)
+
+    if "mc_uuid" not in session:
+        return abort(401)
+
+    if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
+        return abort(401)
+
+    print(f"[socket.py] Server switch for {bot_name} | World: {world}")
+
+    emit_log('log', "Switching server; requested by deployer.", bot_name)
+
+    data["bot"][bot_name].setdefault("do", {})
+    data["bot"][bot_name]["do"]["switch"] = world
