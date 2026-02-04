@@ -221,7 +221,6 @@
             </div>
         </div>
         <button id="edit-world-page">Edit world page</button>
-        <button id="edit-world-bot">Edit bot permissions</button>
         <div class="bot-permissions-container">
             <h3>Bot Permissions</h3>
         
@@ -602,6 +601,8 @@
                     selected.innerHTML = opt.innerHTML;
                     options.style.display = "none";
                     selected_world_uuid = world.world_uuid;
+                
+                    loadWorldPermissions(selected_world_uuid);
                 });
         
                 options.appendChild(opt);
@@ -618,7 +619,7 @@
             }
         });
 
-        // Save Bot Permissions
+        // Bot Permissions
         const botPermSaveBtn = document.getElementById('save-bot-perm-btn');
     
         botPermSaveBtn.addEventListener('click', async () => {
@@ -650,6 +651,25 @@
                 console.error(e);
             }
         });
+
+        async function loadWorldPermissions(worldUUID) {
+            try {
+                const res = await fetch(`/api/${worldUUID}/getpermissions`);
+                const perms = await res.json();
+        
+                const permSet = new Set(perms);
+        
+                document.querySelectorAll(".permission-toggle input").forEach(cb => {
+                    cb.checked = permSet.has(cb.dataset.key);
+                });
+        
+                document.getElementById("edit-world-page").style.display = "inline-block";
+                document.querySelector(".bot-permissions-container").style.display = "block";
+        
+            } catch (err) {
+                console.error("Failed to load permissions:", err);
+            }
+        }
 
         // Custom dropdown logic
         const dropdown = document.getElementById("world-dropdown");
