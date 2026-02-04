@@ -1080,8 +1080,9 @@ code {
     margin: 0 auto 1rem auto;
 }
 
-.screenshot-button, .switch-button {
+.screenshot-button, .switch-server-button {
     background: #031014;
+    margin-left: 0.5rem;
     border: none;
     padding: 0.5rem 1rem;
     font-weight: 600;
@@ -1095,6 +1096,7 @@ code {
 
 .disconnect-button {
     background: #931014;
+    margin-left: 0.5rem;
     border: none;
     padding: 0.5rem 1rem;
     font-weight: 600;
@@ -1106,7 +1108,7 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.screenshot-button:hover, .switch-button:hover {
+.screenshot-button:hover, .switch-server-button:hover {
     background: #092630;
 }
 
