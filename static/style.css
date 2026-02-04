@@ -1080,7 +1080,7 @@ code {
     margin: 0 auto 1rem auto;
 }
 
-.screenshot-button, switch-button {
+.screenshot-button, .switch-button {
     background: #031014;
     border: none;
     padding: 0.5rem 1rem;
@@ -1106,7 +1106,7 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.screenshot-button:hover, switch-button:hover {
+.screenshot-button:hover, .switch-button:hover {
     background: #092630;
 }
 
@@ -1114,7 +1114,7 @@ code {
     background: #792630;
 }
 
-.camera-icon, disconnect-icon, switch-icon {
+.camera-icon, .disconnect-icon, .switch-icon {
     height: 18px;
     width: 18px;
     filter: invert(100%);
