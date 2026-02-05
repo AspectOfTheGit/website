@@ -9,7 +9,7 @@ from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
-from src.utils.player_api import get_username
+from src.utils.player_api import get_username, format_uuid
 from src.socket import emit_log
 
 from datetime import datetime
@@ -44,6 +44,18 @@ def apideploybot():
     # Is bot in use?
     if data["bot"][bot]["status"] == True or data["bot"][bot]["deployer"] != "":
         return ({"error": "Bot is unavailable"}), 400
+    # Can account deploy to unowned world?
+    try:
+        worldinfo = get_world_info(world)
+        if not worldinfo.get("name", False):
+            worldinfo = False
+    except:
+        worldinfo = False
+        
+    if not data["account"][account]["abilities"].get("unowned", True):
+        if worldinfo == False or worldinfo.get("owner",None) != format_uuid(account):
+            world = "lobby"
+            
     # Can account deploy?
     try:
         dlimitu = int(data["account"][account]["abilities"]["uses"])
@@ -71,11 +83,7 @@ def apideploybot():
         data["account"][account].setdefault("last_deploy", today)
         data["account"][account].setdefault("used", 0)
 
-    try:
-        worldinfo = get_world_info(world)
-        worldname = worldinfo["name"]
-    except:
-        worldname = "Unknown"
+    worldname = worldinfo.get("name","Unknown")
 
     accountusername = data["account"][account]["username"]
 
