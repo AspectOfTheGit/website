@@ -53,7 +53,7 @@ def apideploybot():
         worldinfo = False
         
     if not data["account"][account]["abilities"].get("unowned", True):
-        if worldinfo == False or worldinfo.get("owner",None) != format_uuid(account):
+        if worldinfo == False or worldinfo.get("owner_uuid",None) != format_uuid(account):
             world = "lobby"
             
     # Can account deploy?
