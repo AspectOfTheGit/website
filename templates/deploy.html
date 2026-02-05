@@ -104,7 +104,8 @@
         const options = document.querySelectorAll("#bot-select option");
         const worldBox = document.getElementById("world-uuid");
         const listBox = document.getElementById("world-suggestions");
-        const username = {{ username|tojson }};
+        const username = "{{ username }}";
+        const accountUUID = "{{ mcuuid }}";
     
         let allworlds = [];
         let ownedworlds = [];
@@ -160,7 +161,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                account: username,
+                                account: accountUUID,
                                 token: document.getElementById('deploy-token').textContent,
                                 bot: document.getElementById('bot-select').value,
                                 world: worldBox.value
@@ -279,7 +280,7 @@
             }
     
             try {
-                const formatted = formatUUID("{{ profile_uuid }}");
+                const formatted = formatUUID("{{ mcuuid }}");
                 const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res2.json();
             } catch (err) {

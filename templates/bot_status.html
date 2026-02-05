@@ -53,6 +53,9 @@
     </nav>
 
     <h2>Live Log for {{ bot_name }}</h2>
+    {% if is_deployer %}
+        <h3>You deployed this bot</h3>
+    {% endif %}
 
 <div class="tab-container">
     <div class="tabs">
@@ -61,7 +64,15 @@
     </div>
 
     <div class="controls">
-        <button id="screenshot-btn" class="screenshot-button">
+        {% if is_deployer %}
+            <button title="Disconnect bot" id="disconnect-btn" class="disconnect-button">
+                <img src="{{ url_for('static', filename='icons/disconnect.svg') }}" class="disconnect-icon" alt="Disconnect">
+            </button>
+            <button title="Switch server" id="switch-server-btn" class="switch-server-button">
+                <img src="{{ url_for('static', filename='icons/switch.svg') }}" class="switch-icon" alt="Switch Server">
+            </button>
+        {% endif %}
+        <button title="Screenshot" id="screenshot-btn" class="screenshot-button">
             <img src="{{ url_for('static', filename='icons/screenshot.svg') }}" class="camera-icon" alt="Screenshot">
         </button>
     </div>
@@ -121,6 +132,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("screenshot-btn").addEventListener("click", () => {
         socket.emit("get_screenshot", { bot: botName });
     });
+    {% if is_deployer %}
+        document.getElementById("disconnect-btn").addEventListener("click", () => {
+            socket.emit("bot_disconnect", { bot: botName });
+        });
+        document.getElementById("switch-server-btn").addEventListener("click", () => {
+            const worldUUID = prompt("World UUID");
+            socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
+        });
+    {% endif %}
 });
 </script>
 

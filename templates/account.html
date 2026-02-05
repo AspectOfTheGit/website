@@ -94,12 +94,6 @@
                     <td>Storage Capacity</td>
                     <td class="plaintext">{{ account.storage.size if account.storage.size is defined else 0 }}B/{{ account.abilities.capacity if account.abilities.capacity is defined else 1 }}MB</td>
                 </tr>
-                <tr data-tip="Whether you can send a message as a bot">
-                    <td>Send Messages</td>
-                    <td class="status {{ 'available' if account.abilities.send is defined else 'unavailable' }}">
-                        {{ '✔️' if account.abilities.send is defined else '❌' }}
-                    </td>
-                </tr>
             </tbody>
         </table>
       </div>
@@ -196,12 +190,12 @@
           <p class="plaintext">
               Example http request to write:<br>
               <code>
-                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
+                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
               </code>
               <br><br>
               Example http request to read:<br>
               <code>
-                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"&lt;USERNAME>\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
+                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
               </code>
           </p>
       </div>
@@ -221,7 +215,18 @@
             </div>
         </div>
         <button id="edit-world-page">Edit world page</button>
-        <button id="edit-world-bot">Edit bot permissions</button>
+        <div class="bot-permissions-container">
+            <h3>Bot Permissions</h3>
+        
+            {% for perm in validbotperms %}
+            <label class="permission-toggle">
+                <input type="checkbox" data-key="{{ perm }}">
+                <span>{{ perm|capitalize }}</span>
+            </label>
+            {% endfor %}
+
+            <button id="save-bot-perm-btn">Save</button>
+        </div>
       </div>
     </main>
   </div>
@@ -229,14 +234,14 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const accountName = "{{ mcuuid }}"
+        const accountUUID = "{{ mcuuid }}"
         const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
         const logContainer = document.getElementById("logs-output");
 
         let ownedworlds = [];
 
         // socket.io
-        socket.emit('join', accountName);
+        socket.emit('join', accountUUID);
     
         socket.on("log", (contents) => {
             const time = contents[0];
@@ -284,7 +289,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: newContent,
-                            account: accountName,
+                            account: accountUUID,
                             token: writeToken
                         })
                     });
@@ -553,7 +558,7 @@
             loadingWorlds = true;
         
             try {
-                const formatted = formatUUID("{{ profile_uuid }}");
+                const formatted = formatUUID(accountUUID);
                 const res = await fetch(`https://api.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res.json();
                 populateWorldDropdown();
@@ -590,6 +595,8 @@
                     selected.innerHTML = opt.innerHTML;
                     options.style.display = "none";
                     selected_world_uuid = world.world_uuid;
+                
+                    loadWorldPermissions(selected_world_uuid);
                 });
         
                 options.appendChild(opt);
@@ -605,6 +612,58 @@
                 window.location.href = `/world/${selected_world_uuid}/edit`;
             }
         });
+
+        // Bot Permissions
+        const botPermSaveBtn = document.getElementById('save-bot-perm-btn');
+    
+        botPermSaveBtn.addEventListener('click', async () => {
+            let permissions = [];
+            
+            botPermSaveBtn.textContent = "Saved";
+            botPermSaveBtn.classList.add('pressed');
+
+            setTimeout(() => {
+                botPermSaveBtn.textContent = "Save";
+                botPermSaveBtn.classList.remove('pressed');
+            }, 1000);
+
+            document.querySelectorAll(".permission-toggle input").forEach(cb => {
+                if (cb.checked) {
+                    permissions.push(cb.dataset.key);
+                }
+            });
+
+            try {
+                const res = await fetch(`/api/world/${selected_world_uuid}/permissions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        permissions: permissions
+                    })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        async function loadWorldPermissions(worldUUID) {
+            try {
+                const res = await fetch(`/api/world/${worldUUID}/getpermissions`);
+                const perms = await res.json();
+        
+                const permSet = new Set(perms.permissions);
+        
+                document.querySelectorAll(".permission-toggle input").forEach(cb => {
+                    cb.checked = permSet.has(cb.dataset.key);
+                });
+        
+                document.getElementById("edit-world-page").style.display = "inline-block";
+                document.querySelector(".bot-permissions-container").style.display = "block";
+        
+            } catch (err) {
+                console.error("Failed to load permissions:", err);
+            }
+        }
 
         // Custom dropdown logic
         const dropdown = document.getElementById("world-dropdown");

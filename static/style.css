@@ -762,7 +762,29 @@ code {
     accent-color: #2fa08c;
 }
 
-#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn {
+.bot-permissions-container {
+    display: none;
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.permission-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+}
+
+.permission-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2fa08c;
+}
+
+
+#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn, #edit-world-page {
     margin-top: 8px;
     background: #2fa08c;
     border: none;
@@ -773,13 +795,17 @@ code {
     transition: background 0.2s ease;
 }
 
-#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed {
+#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed, #edit-world-page.pressed {
     background: #217373;
     cursor: not-allowed;
 }
 
-#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover {
+#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover, #edit-world-page:hover {
     background: #3dc9b0;
+}
+
+#edit-world-page {
+    display: none;
 }
 
 .log-box {
@@ -1059,8 +1085,9 @@ code {
     margin: 0 auto 1rem auto;
 }
 
-.screenshot- {
+.screenshot-button, .switch-server-button {
     background: #031014;
+    margin-left: 0.5rem;
     border: none;
     padding: 0.5rem 1rem;
     font-weight: 600;
@@ -1072,11 +1099,29 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.screenshot-:hover {
+.disconnect-button {
+    background: #931014;
+    margin-left: 0.5rem;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.screenshot-button:hover, .switch-server-button:hover {
     background: #092630;
 }
 
-.camera-icon {
+.disconnect-button:hover {
+    background: #792630;
+}
+
+.camera-icon, .disconnect-icon, .switch-icon {
     height: 18px;
     width: 18px;
     filter: invert(100%);
