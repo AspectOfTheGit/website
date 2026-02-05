@@ -2,6 +2,7 @@ from flask import session
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
 from src.data import data
+from src.config import BOTS
 import time
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
@@ -33,6 +34,9 @@ def handle_connect():
 
 @socketio.on('join')
 def handle_join(room):
+    if room not in BOTS and session.get("mc_username") != room:
+        return
+            
     join_room(room)
     print(f'[socket.py] Client joined room: {room}')
 
