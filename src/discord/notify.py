@@ -46,7 +46,8 @@ def notify(account: str, message: str, type_: str):
 
     channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
     if typeroot == "bot":
-        return # Disabled this for now, probably forever
+        if type == "bot.log":
+            return # Disabled bot log notifications, probably forever
         category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),None)
         log_channel = next((c for c in channels
                             if c["parent_id"] == category["id"] and c["name"] == saccount),
