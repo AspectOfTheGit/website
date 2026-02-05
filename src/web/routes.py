@@ -155,6 +155,9 @@ def bot_status(bot):
 
     is_deployer = 'deployer' in request.args
 
+    if not is_deployer and session.get("mc_uuid",None) == data["bot"][bot]["deployer"]:
+        return redirect(f"/bots/status/{bot}?deployer")
+
     return render_template(
         "bot_status.html",
         bot=data["bot"][bot],
