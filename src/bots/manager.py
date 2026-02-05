@@ -34,7 +34,7 @@ def mark_online(bot: str) -> bool:
     botdata["last_ping"] = _now()
 
     if was_offline:
-        notify(bot, f"{bot} connected", "bot.connect")
+        notify(bot, f"{bot} successfully online", "bot.deploy")
 
     save_data()
     return was_offline
