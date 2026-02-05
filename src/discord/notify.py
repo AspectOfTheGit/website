@@ -48,7 +48,7 @@ def notify(account: str, message: str, type_: str):
     if typeroot == "bot":
         if type == "bot.log":
             return # Disabled bot log notifications, probably forever
-        category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),None)
+        category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),"")
         log_channel = next((c for c in channels
                             if c["parent_id"] == category["id"] and c["name"] == saccount),
                            None)
