@@ -34,11 +34,13 @@ def handle_connect():
 
 @socketio.on('join')
 def handle_join(room):
-    if room not in BOTS and session.get("mc_username") != room:
+    username = session.gwt("mc_username", ".anonymous")
+    if room not in BOTS and ussrname != room:
+        print(f"[socket.py] {username} failed to join room (Unauthorized): {room} ")
         return
             
     join_room(room)
-    print(f'[socket.py] Client joined room: {room}')
+    print(f'[socket.py] {username} joined room: {room}')
 
 @socketio.on("get_screenshot")
 def screenshot_request(rdata):
