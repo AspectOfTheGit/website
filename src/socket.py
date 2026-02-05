@@ -34,7 +34,7 @@ def handle_connect():
 
 @socketio.on('join')
 def handle_join(room):
-    username = session.gwt("mc_username", ".anonymous")
+    username = session.get("mc_username", ".anonymous")
     if room not in BOTS and username != room:
         print(f"[socket.py] {username} failed to join room (Unauthorized): {room} ")
         return
