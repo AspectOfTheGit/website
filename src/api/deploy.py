@@ -83,7 +83,10 @@ def apideploybot():
         data["account"][account].setdefault("last_deploy", today)
         data["account"][account].setdefault("used", 0)
 
-    worldname = worldinfo.get("name","Unknown")
+    if worldinfo:
+        worldname = worldinfo.get("name","Unknown")
+    else:
+        worldname = "Unknown"
 
     accountusername = data["account"][account]["username"]
 
