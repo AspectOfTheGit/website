@@ -2,9 +2,10 @@ from flask import session
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
 from src.data import data
-from src.config import BOTS
+from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS
 import time
 import base64
+import re
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
@@ -89,7 +90,7 @@ def disconnect_request(rdata):
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
 
-    emit_log('log', "Disconnected; requested by deployer.", bot_name)
+    emit_log('log', ["[INFO]","Bot disconnected; requested by deployer."], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
@@ -113,7 +114,60 @@ def switch_request(rdata):
 
     print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
 
-    emit_log('log', "Switching server; requested by deployer.", bot_name)
+    emit_log('log', ["[INFO]","Bot switching server; requested by deployer."], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid
+
+@socketio.on("bot_chat")
+def switch_request(rdata):
+    bot_name = rdata.get("bot").strip()
+    try:
+        msg = rdata.get("msg").strip()
+    except:
+        msg = ""
+        
+    if bot_name not in data["bot"]:
+        return
+
+    if "mc_uuid" not in session:
+        return
+
+    account = session["mc_uuid"]
+    
+    try:
+        if data["account"][account]["abilities"]["send"] not in [True,"true"]:
+            return
+    except:
+        return
+
+    ts = time.time()
+
+    if (ts - data["account"][account].get("last_chat",0)) < 7:
+        return
+
+    if msg[0] == "/":
+        type = "command"
+    else:
+        type = "chat"
+
+    if type == "command":
+        match = re.search(r'^/?(\w+)', msg)
+        if match:
+            if match.group(1) not in WHITELISTED_COMMANDS:
+                return
+            if session["mc_uuid"] != data["bot"][bot_name]["deployer"] and match.group(1) not in DEPLOYER_COMMANDS:
+                return
+        else:
+            return
+
+    msg = msg.replace("<","\\<")
+
+    print(f"[socket.py] Chat message sent through {bot_name} by {account} | Message: {msg}")
+
+    data["account"][account]["last_chat"] = ts
+
+    save_data()
+    
+    data["bot"][bot_name].setdefault("do", {})
+    data["bot"][bot_name]["do"]["chat"] = {"type":type,"msg":msg,"sender":session["mc_username"]}
