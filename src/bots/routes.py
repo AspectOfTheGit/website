@@ -91,10 +91,10 @@ def bot_log():
     try:
         msg = mc_to_html(request.json.get('value'))
         if '[{&quot;text&quot;:&quot;' in msg:
-            print("[routes.py] Error during bot log (parsing issue) msg:", msg)
+            print("[bots/routes.py] Error during bot log (parsing issue) msg:", msg)
             return 500
     except:
-        print("[routes.py] Error during bot log (Unknown)")
+        print("[bots/routes.py] Error during bot log (Unknown)")
         return 500
     room_name = request.json.get('account')
     ts = time.strftime('%H:%M:%S')
@@ -113,6 +113,7 @@ def bot_screenshot():
     account = get_bot_account(from_form=True)
 
     if "file" not in request.files:
+        print("[bots/routes.py] No file found in screenshot request!")
         abort(400, description="No file uploaded")
 
     file = request.files["file"]
