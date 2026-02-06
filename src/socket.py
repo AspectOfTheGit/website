@@ -1,7 +1,7 @@
 from flask import session
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
-from src.data import data
+from src.data import data, save_data
 from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS
 import time
 import base64
@@ -144,6 +144,7 @@ def bot_chat(rdata):
     ts = time.time()
 
     if (ts - data["account"][account].get("last_chat",0)) < 7:
+        print(f"[socket.py] Chat message failed (Ratelimited) through {bot_name} by {account} | Message: {msg}")
         return
 
     if msg[0] == "/":
@@ -156,19 +157,20 @@ def bot_chat(rdata):
         if match:
             if session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
                 if match.group(1) not in DEPLOYER_COMMANDS and match.group(1) not in WHITELISTED_COMMANDS:
+                    print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                     return
             else:
                 if match.group(1) not in WHITELISTED_COMMANDS:
+                    print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                     return
         else:
+            print(f"[socket.py] Chat message failed (Couldn't find match for command) through {bot_name} by {account} | Message: {msg}")
             return
-
-    msg = msg.replace("<","\\<")
 
     print(f"[socket.py] Chat message sent through {bot_name} by {account} | Message: {msg}")
 
+    msg = msg.replace("<","\\<")
     data["account"][account]["last_chat"] = ts
-
     save_data()
     
     data["bot"][bot_name].setdefault("do", {})
