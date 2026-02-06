@@ -110,6 +110,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.emit('join', botName );
 
+    socket.on('disconnect', (reason) => {
+        console.log('Disconnected from server. Reason:', reason);
+        logContainer.innerHTML += `<span style="color:#FF5555">[INFO] Client disconnected. Attempting to reconnect to logs...</span><br>`;
+        logContainer.scrollTop = logContainer.scrollHeight;
+        socket.emit('join', botName );
+    });
+
+    socket.on('connect', () => {
+        console.log('Connected to socket');
+        logContainer.innerHTML += `<span style="color:#55FF55">[INFO] Client connected.</span><br>`;
+        logContainer.scrollTop = logContainer.scrollHeight;
+    });
+
+    socket.on('connect_error', (error) => {
+        console.log('Connection error:', error);
+        logContainer.innerHTML += `<span style="color:#FF5555">[INFO] Failed to connect to logs. Retrying...</span><br>`;
+        logContainer.scrollTop = logContainer.scrollHeight;
+        setTimeout(() => {
+            socket.emit('join', botName );
+        }, 3000);
+    });
+
     socket.on("log", (contents) => {
         const time = contents[0];
         const msg = contents[1];
