@@ -25,6 +25,23 @@ def emit_log(type, contents, room, notify=False, event=None):
         notify(room, contents[1], event)
     print(f"[socket.py] Emitted log to '{room}'")
 
+import base64
+
+def emit_image(type, file, room):
+    file_bytes = file.read()
+    encoded = base64.b64encode(file_bytes).decode("utf-8")
+
+    socketio.emit(
+        type,
+        {
+            "filename": file.filename,
+            "image": encoded,
+        },
+        room=room
+    )
+
+    print(f"[socket.py] Emitted image {file.filename} to room '{room}'")
+
 
 # Events
 
