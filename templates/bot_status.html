@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("log", (contents) => {
         const time = contents[0];
-        const msg = contents[1];
+        const msg = contents[1].replace(/<br\s*\/?>/gi, "\n");
         logContainer.innerHTML += `[${time}] ${msg}<br>`;
         logContainer.scrollTop = logContainer.scrollHeight;
     });
