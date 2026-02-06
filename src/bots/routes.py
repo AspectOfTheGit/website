@@ -116,8 +116,10 @@ def bot_screenshot():
         abort(400, description="No file uploaded")
 
     file = request.files["file"]
-
-    emit_image("screenshot", file, account)
+    file_bytes = file.read()
+    file.seek(0)
+    
+    emit_image("screenshot", file_bytes, account)
 
     complete_instruction(account, "screenshot")
     return jsonify({"success": True})
