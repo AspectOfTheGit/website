@@ -30,6 +30,17 @@ def emit_image(type, file, room):
     file_bytes = file.read()
     encoded = base64.b64encode(file_bytes).decode("utf-8")
 
+    # debug
+    print(f"[socket.py] file.filename: {file.filename}")
+    try:
+        print(f"[socket.py] file_bytes: {file_bytes}")
+    except:
+        print("[socket.py] Failed to print file_bytes")
+    try:
+        print(f"[socket.py] encoded: {encoded}")
+    except:
+        print("[socket.py] Failed to print encoded")
+
     socketio.emit(
         type,
         {
