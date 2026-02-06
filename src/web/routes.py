@@ -158,12 +158,18 @@ def bot_status(bot):
     if not is_deployer and session.get("mc_uuid",None) == data["bot"][bot]["deployer"]:
         return redirect(f"/bots/status/{bot}?deployer")
 
+    if session.get("mc_uuid","") in data["account"]:
+        can_chat = data["account"][session.get("mc_uuid",None)]["abilities"].get("send",False) in [True,"true"]
+    else:
+        can_chat = False
+
     return render_template(
         "bot_status.html",
         bot=data["bot"][bot],
         bot_name=bot,
         username=session.get("mc_username"),
-        is_deployer=is_deployer
+        is_deployer=is_deployer,
+        can_chat=can_chat
     )
 
 
