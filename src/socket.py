@@ -154,10 +154,12 @@ def switch_request(rdata):
     if type == "command":
         match = re.search(r'^/?(\w+)', msg)
         if match:
-            if match.group(1) not in WHITELISTED_COMMANDS:
-                return
-            if session["mc_uuid"] != data["bot"][bot_name]["deployer"] and match.group(1) not in DEPLOYER_COMMANDS:
-                return
+            if session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
+                if match.group(1) not in DEPLOYER_COMMANDS and match.group(1) not in WHITELISTED_COMMANDS:
+                    return
+            else:
+                if match.group(1) not in WHITELISTED_COMMANDS:
+                    return
         else:
             return
 
