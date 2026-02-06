@@ -34,13 +34,13 @@ def handle_connect():
 
 @socketio.on('join')
 def handle_join(room):
-    username = session.get("mc_username", ".anonymous")
-    if room not in BOTS and username != room:
-        print(f"[socket.py] {username} failed to join room (Unauthorized): {room} ")
+    uuid = session.get("mc_uuid", ".anonymous")
+    if room not in BOTS and uuid != room:
+        print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
         return
             
     join_room(room)
-    print(f'[socket.py] {username} joined room: {room}')
+    print(f'[socket.py] {uuid} joined room: {room}')
 
 @socketio.on("get_screenshot")
 def screenshot_request(rdata):
