@@ -116,8 +116,14 @@ def bot_screenshot():
         abort(400, description="No file uploaded")
 
     file = request.files["file"]
+    try:
+        print(file) # debug
+    except:
+        print("couldnt print file")
     file_bytes = file.read()
     file.seek(0)
+
+    print(file_bytes) # debug
     
     emit_image("screenshot", file_bytes, account)
 
