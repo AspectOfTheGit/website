@@ -83,7 +83,7 @@
         <div id="screenshot-output">No screenshot taken yet.</div>
     </div>
 
-    {% if can_chat %}<p>Insert a chat box here</p>{% endif %}
+    {% if can_chat %}<p id="bot-chat">Insert a chat box here</p>{% endif %}
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
@@ -176,6 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("switch-server-btn").addEventListener("click", () => {
         const worldUUID = prompt("World UUID");
         socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
+    });{% endif %}
+    {% if can_chat %}document.getElementById("screenshot-btn").addEventListener("click", () => {
+        socket.emit("bot_chat", { bot: botName, msg: prompt("Message") });
     });{% endif %}
 });
 </script>
