@@ -1022,11 +1022,11 @@ code {
     transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.tab-:hover {
+.tab-button:hover {
     background: #21505d;
 }
 
-.tab-.active {
+.tab-button.active {
     background: #2fa08c;
     color: #fff;
 }
