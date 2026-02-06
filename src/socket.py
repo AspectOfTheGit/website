@@ -120,7 +120,7 @@ def switch_request(rdata):
     data["bot"][bot_name]["do"]["switch"] = world_uuid
 
 @socketio.on("bot_chat")
-def switch_request(rdata):
+def bot_chat(rdata):
     bot_name = rdata.get("bot").strip()
     try:
         msg = rdata.get("msg").strip()
