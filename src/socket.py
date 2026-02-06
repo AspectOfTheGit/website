@@ -90,7 +90,7 @@ def disconnect_request(rdata):
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
 
-    emit_log('log', ["[INFO]","Bot disconnected; requested by deployer."], bot_name)
+    emit_log('log', ["INFO","Bot disconnected; requested by deployer."], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
@@ -114,7 +114,7 @@ def switch_request(rdata):
 
     print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
 
-    emit_log('log', ["[INFO]","Bot switching server; requested by deployer."], bot_name)
+    emit_log('log', ["INFO","Bot switching server; requested by deployer."], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid
