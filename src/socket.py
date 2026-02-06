@@ -171,7 +171,9 @@ def bot_chat(rdata):
 
     msg = msg.replace("<","\\<")
     data["account"][account]["last_chat"] = ts
-    save_data()
     
     data["bot"][bot_name].setdefault("do", {})
-    data["bot"][bot_name]["do"]["chat"] = {"type":type,"msg":msg,"sender":session["mc_username"]}
+    data["bot"][bot_name]["do"].setdefault("chat", [])
+    data["bot"][bot_name]["do"]["chat"] += {"type":type,"msg":msg,"sender":session["mc_username"]}
+
+    save_data()
