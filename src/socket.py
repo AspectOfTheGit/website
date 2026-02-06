@@ -4,6 +4,7 @@ from src.discord.notify import notify
 from src.data import data
 from src.config import BOTS
 import time
+import base64
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
@@ -24,8 +25,6 @@ def emit_log(type, contents, room, notify=False, event=None):
     if notify:
         notify(room, contents[1], event)
     print(f"[socket.py] Emitted log to '{room}'")
-
-import base64
 
 def emit_image(type, file, room):
     file_bytes = file.read()
