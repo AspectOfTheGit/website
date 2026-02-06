@@ -125,11 +125,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on('connect_error', (error) => {
         console.log('Connection error:', error);
-        logContainer.innerHTML += `<span style="color:#FF5555">[INFO] Failed to connect to logs. Retrying...</span><br>`;
+        logContainer.innerHTML += `<span style="color:#FFAA00">[INFO] Failed to connect to logs. Retrying...</span><br>`;
         logContainer.scrollTop = logContainer.scrollHeight;
         setTimeout(() => {
             socket.emit('join', botName );
-        }, 3000);
+        }, 8000);
     });
 
     socket.on("log", (contents) => {
