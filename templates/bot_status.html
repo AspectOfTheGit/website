@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.on("screenshot", (data) => {
         const img = document.createElement("img");
         img.src = "data:image/png;base64," + data.image;
-        img.alt = data.filename;
+        img.alt = "Screenshot";
         img.style.maxWidth = "100%";
         img.style.maxHeight = "100%";
     
