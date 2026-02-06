@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify, abort, send_file
+from io import BytesIO
 import base64
 import time
 import requests
@@ -117,13 +118,15 @@ def bot_screenshot():
         abort(400, description="No file uploaded")
 
     file = request.files["file"]
-    encoded = base64.b64encode(file.read()).decode("utf-8")
-
+    
+    file_stream = BytesIO(file.read())
+    file_stream.seek(0)
+    
     emit_log(
         "screenshot",
         {
             "filename": file.filename,
-            "image": encoded,
+            "image_bytes": file_stream.read()
         },
         account,
     )
