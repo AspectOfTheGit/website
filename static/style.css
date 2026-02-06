@@ -784,7 +784,7 @@ code {
 }
 
 
-#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn, #edit-world-page {
+#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn, #save-bot-perms-btn, #edit-world-page {
     margin-top: 8px;
     background: #2fa08c;
     border: none;
@@ -795,12 +795,12 @@ code {
     transition: background 0.2s ease;
 }
 
-#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed, #edit-world-page.pressed {
+#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed, #save-bot-perms-btn.pressed, #edit-world-page.pressed {
     background: #217373;
     cursor: not-allowed;
 }
 
-#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover, #edit-world-page:hover {
+#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover, #save-bot-perms-btn:hover, #edit-world-page:hover {
     background: #3dc9b0;
 }
 
