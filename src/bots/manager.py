@@ -119,6 +119,10 @@ def complete_instruction(bot: str, action: str):
     botdata = _ensure_bot(bot)
 
     if action in botdata["do"]:
+        if action == "chat":
+            if botdata["do"]["chat"] != []:
+                del botdata["do"]["chat"][0]
+            return
         botdata["do"][action] = False
         save_data()
         
