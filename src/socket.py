@@ -133,6 +133,9 @@ def bot_chat(rdata):
     if "mc_uuid" not in session:
         return
 
+    if not data["bot"][bot_name]["status"]:
+        return
+
     account = session["mc_uuid"]
     
     try:
