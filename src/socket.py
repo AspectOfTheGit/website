@@ -27,9 +27,7 @@ def emit_log(type, contents, room, notify=False, event=None):
     print(f"[socket.py] Emitted log to '{room}'")
 
 def emit_image(type, file, room):
-    file_bytes = file.read()
-    encoded = base64.b64encode(file_bytes).decode("utf-8")
-
+    encoded = base64.b64encode(file).decode("utf-8")
     # debug
     print(f"[socket.py] file.filename: {file.filename}")
     try:
@@ -40,17 +38,15 @@ def emit_image(type, file, room):
         print(f"[socket.py] encoded: {encoded}")
     except:
         print("[socket.py] Failed to print encoded")
-
+        
     socketio.emit(
-        type,
+        "screenshot",
         {
-            "filename": file.filename,
-            "image": encoded,
+            "image": encoded
         },
         room=room
     )
-
-    print(f"[socket.py] Emitted image {file.filename} to room '{room}'")
+    print(f"[emit_image_bytes] Emitted screenshot to {room}, {len(file)} bytes")
 
 
 # Events
