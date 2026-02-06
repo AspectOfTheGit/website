@@ -75,7 +75,11 @@ def disconnect_request(rdata):
 @socketio.on("bot_switch_server")
 def switch_request(rdata):
     bot_name = rdata.get("bot").strip()
-    world_uuid = rdata.get("world").strip()
+    try:
+        world_uuid = rdata.get("world").strip()
+    except:
+        world_uuid = ""
+        
     if bot_name not in data["bot"]:
         return
 
