@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const worldUUID = prompt("World UUID");
         socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
     });{% endif %}
-    {% if can_chat %}document.getElementById("screenshot-btn").addEventListener("click", () => {
+    {% if can_chat %}document.getElementById("bot-chat").addEventListener("click", () => {
         socket.emit("bot_chat", { bot: botName, msg: prompt("Message") });
     });{% endif %}
 });
