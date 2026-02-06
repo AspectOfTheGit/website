@@ -16,6 +16,9 @@ BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
 TIMEOUT = 10
 
+WHITELISTED_COMMANDS = ["listall","find","uuid"]
+DEPLOYER_COMMANDS = ["trigger"]
+
 USER_SOCKET_LIMIT = 1024 * 10
 
 COLOURS = {
