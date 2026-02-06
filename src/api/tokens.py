@@ -6,6 +6,7 @@ from flask import (
 
 from src.data import data, save_data
 import string
+import secrets
 
 token = Blueprint(
     "token",
