@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify, abort
-import base64
 import time
 import requests
 
