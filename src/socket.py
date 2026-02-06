@@ -29,9 +29,8 @@ def emit_log(type, contents, room, notify=False, event=None):
 def emit_image(type, file, room):
     encoded = base64.b64encode(file).decode("utf-8")
     # debug
-    print(f"[socket.py] file.filename: {file.filename}")
     try:
-        print(f"[socket.py] file_bytes: {file_bytes}")
+        print(f"[socket.py] file: {file}")
     except:
         print("[socket.py] Failed to print file_bytes")
     try:
