@@ -91,6 +91,7 @@ def bot_log():
         msg = mc_to_html(request.json.get('value'))
         if '[{&quot;text&quot;:&quot;' in msg:
             print("[bots/routes.py] Error during bot log (parsing issue) msg:", msg)
+            print("Original message:", request.json.get('value'))
             return 500
     except:
         print("[bots/routes.py] Error during bot log (Unknown)")
