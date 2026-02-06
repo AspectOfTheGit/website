@@ -1,12 +1,11 @@
-from flask import Blueprint, request, jsonify, abort, send_file
-from io import BytesIO
+from flask import Blueprint, request, jsonify, abort
 import base64
 import time
 import requests
 
 from src.config import BOT_TOKEN, BOT_PERMISSION_DEFAULTS, BOT_LOBBY_PERMISSIONS
 from src.data import data
-from src.socket import emit_log
+from src.socket import emit_log, emit_image
 from src.utils.text_api import mc_to_html
 
 from src.bots.manager import (
@@ -118,18 +117,8 @@ def bot_screenshot():
         abort(400, description="No file uploaded")
 
     file = request.files["file"]
-    
-    file_stream = BytesIO(file.read())
-    file_stream.seek(0)
-    
-    emit_log(
-        "screenshot",
-        {
-            "filename": file.filename,
-            "image_bytes": file_stream.read()
-        },
-        account,
-    )
+
+    emit_image("screenshot", file, account)
 
     complete_instruction(account, "screenshot")
     return jsonify({"success": True})
