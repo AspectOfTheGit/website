@@ -64,14 +64,12 @@
     </div>
 
     <div class="controls">
-        {% if is_deployer %}
-            <button title="Disconnect bot" id="disconnect-btn" class="disconnect-button">
-                <img src="{{ url_for('static', filename='icons/disconnect.svg') }}" class="disconnect-icon" alt="Disconnect">
-            </button>
-            <button title="Switch server" id="switch-server-btn" class="switch-server-button">
-                <img src="{{ url_for('static', filename='icons/switch.svg') }}" class="switch-icon" alt="Switch Server">
-            </button>
-        {% endif %}
+        {% if is_deployer %}<button title="Disconnect bot" id="disconnect-btn" class="disconnect-button">
+            <img src="{{ url_for('static', filename='icons/disconnect.svg') }}" class="disconnect-icon" alt="Disconnect">
+        </button>
+        <button title="Switch server" id="switch-server-btn" class="switch-server-button">
+            <img src="{{ url_for('static', filename='icons/switch.svg') }}" class="switch-icon" alt="Switch Server">
+        </button>{% endif %}
         <button title="Screenshot" id="screenshot-btn" class="screenshot-button">
             <img src="{{ url_for('static', filename='icons/screenshot.svg') }}" class="camera-icon" alt="Screenshot">
         </button>
@@ -84,6 +82,8 @@
     <div id="screenshot" class="tab-content">
         <div id="screenshot-output">No screenshot taken yet.</div>
     </div>
+
+    {% if can_chat %}<p>Insert a chat box here</p>{% endif %}
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
@@ -170,15 +170,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("screenshot-btn").addEventListener("click", () => {
         socket.emit("get_screenshot", { bot: botName });
     });
-    {% if is_deployer %}
-        document.getElementById("disconnect-btn").addEventListener("click", () => {
-            socket.emit("bot_disconnect", { bot: botName });
-        });
-        document.getElementById("switch-server-btn").addEventListener("click", () => {
-            const worldUUID = prompt("World UUID");
-            socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
-        });
-    {% endif %}
+    {% if is_deployer %}document.getElementById("disconnect-btn").addEventListener("click", () => {
+        socket.emit("bot_disconnect", { bot: botName });
+    });
+    document.getElementById("switch-server-btn").addEventListener("click", () => {
+        const worldUUID = prompt("World UUID");
+        socket.emit("bot_switch_server", { bot: botName, world: worldUUID });
+    });{% endif %}
 });
 </script>
 
