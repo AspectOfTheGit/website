@@ -58,8 +58,9 @@ def handle_connect():
 def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
     if room not in BOTS and uuid != room:
-        print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
-        return
+        if not re.match("^voice-", room):
+            print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
+            return
             
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
