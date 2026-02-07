@@ -6,7 +6,7 @@ from flask import (
 )
 
 from src.data import data, save_data
-from src.config import VALID_BOT_PERMISSIONS, USER_SOCKET_LIMIT
+from src.config import VALID_BOT_PERMISSIONS, BOT_PERMISSION_DEFAULTS, USER_SOCKET_LIMIT
 from src.utils.data_api import create_world
 from src.utils.player_api import storage_size
 from src.discord.notify import notify
@@ -48,7 +48,7 @@ def apiworldgetbotpermissions(world):
     if world not in data["world"]:
         return jsonify({"error": "No world page"}), 400
 
-    return jsonify({"success": True, "permissions": data["world"][world].get("permissions",[])})
+    return jsonify({"success": True, "permissions": data["world"][world].get("permissions",BOT_PERMISSION_DEFAULTS)})
 
 @world.post("/<world>/edit/save/elements")
 def apiworldeditelements(world):
