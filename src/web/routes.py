@@ -237,3 +237,25 @@ def world_edit(world):
         elements=data["world"][world]["elements"],
         title=data["world"][world]["title"]
     )
+
+
+@web.route("/voice/<world>")
+def voice_room(world):
+    world = world.strip()
+
+    if not session.get("mc_uuid"):
+        return redirect("/login")
+
+    data.setdefault("world", {})
+
+    if world in data["world"]:
+        return jsonify({"error": "Voice room not found"}), 400
+
+    if not data["world"].get("voice",False):
+        return jsonify({"error": "Voice room closed"}), 400
+
+    return render_template(
+        "voice_room.html",
+        uuid=session["mc_uuid"],
+        world_uuid=world
+    )
