@@ -252,8 +252,9 @@ def voice_room(world):
     if world not in data["world"]:
         return jsonify({"error": "Voice room not found"}), 400
 
-    if (time.time_ns() // 1000000) - data["world"].get("voice",0) > 800: # If voice room hasn't recieved an update in 800ms
-        return jsonify({"error": "Voice room closed"}), 400
+    timediff = (time.time_ns() // 1000000) - data["world"].get("voice",0)
+    if timediff > 800: # If voice room hasn't recieved an update in 800ms
+        return jsonify({"error": f"Voice room closed (since {timediff}ms ago)"}), 400
 
     return render_template(
         "voice_room.html",
