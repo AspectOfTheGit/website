@@ -190,4 +190,10 @@ def voice_data(data):
     room = data["room"]
     audio = data["audio"]
 
-    socketio.to(room).emit("voice-data", audio)
+    MAX_CHUNK_SIZE = 1500
+
+    if len(audio) > MAX_CHUNK_SIZE:
+        socketio.emit("voice-rate-limit", {"max": MAX_CHUNK_SIZE}, room=room)
+        return
+
+    socketio.emit("voice-data", audio, room=room)
