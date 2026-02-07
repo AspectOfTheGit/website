@@ -122,6 +122,8 @@ def complete_instruction(bot: str, action: str):
         if action == "chat":
             if botdata["do"]["chat"] != []:
                 del botdata["do"]["chat"][0]
+            if not botdata["status"]:
+                botdata["do"]["chat"] = []
             return
         botdata["do"][action] = False
         save_data()
