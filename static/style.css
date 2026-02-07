@@ -783,8 +783,23 @@ code {
     accent-color: #2fa08c;
 }
 
+.voice-room-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+}
 
-#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn, #save-bot-perms-btn, #edit-world-page {
+.voice-room-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #2fa08c;
+}
+
+
+#save-storage-btn, #save-user-id-btn, #server-link-btn, #save-notifs-btn, #save-voice-room-btn, #save-bot-perms-btn, #edit-world-page {
     margin-top: 8px;
     background: #2fa08c;
     border: none;
@@ -795,12 +810,12 @@ code {
     transition: background 0.2s ease;
 }
 
-#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed, #save-bot-perms-btn.pressed, #edit-world-page.pressed {
+#save-storage-btn.pressed, #save-user-id-btn.pressed, #server-link-btn.pressed, #save-notifs-btn.pressed, #save-voice-room-btn.pressed, #save-bot-perms-btn.pressed, #edit-world-page.pressed {
     background: #217373;
     cursor: not-allowed;
 }
 
-#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover, #save-bot-perms-btn:hover, #edit-world-page:hover {
+#save-storage-btn:hover, #save-user-id-btn:hover, #server-link-btn:hover, #save-notifs-btn:hover, #save-voice-room-btn:hover, #save-bot-perms-btn:hover, #edit-world-page:hover {
     background: #3dc9b0;
 }
 
