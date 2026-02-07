@@ -227,6 +227,15 @@
 
             <button id="save-bot-perm-btn">Save</button>
         </div>
+        <div class="tokens-container">
+            <div class="token-spoiler">
+                <button class="toggle-token-btn">Show Voice Token</button>
+                <div class="token-content">
+                    <code id="read-token">Generate new token to view</code>
+                    <button class="refresh-world-token-btn" data-token="voice">Refresh</button>
+                </div>
+            </div>
+        </div>
       </div>
     </main>
   </div>
@@ -397,7 +406,7 @@
             });
         });
     
-        // Refresh tokens
+        // Refresh Account tokens
         document.querySelectorAll('.refresh-token-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const type = btn.dataset.token;
@@ -408,6 +417,32 @@
                     if(res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        // Refresh World tokens
+        document.querySelectorAll('.refresh-world-token-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const type = btn.dataset.token;
+                btn.disabled = true;
+    
+                try {
+                    const res = await fetch(`/api/refresh-world-token/${type}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ world: selected_world_uuid }),
+                    });
+                    if(res.ok) {
+                        const data = await res.json();
+                        document.getElementById(`${type}-world-token`).textContent = data.token;
                     }
                 } catch (e) {
                     console.error(e);
