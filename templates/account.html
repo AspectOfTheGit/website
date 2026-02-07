@@ -226,13 +226,15 @@
             {% endfor %}
 
             <button id="save-bot-perm-btn">Save</button>
-        </div>
-        <div class="tokens-container">
-            <div class="token-spoiler">
-                <button class="toggle-token-btn">Show Voice Token</button>
-                <div class="token-content">
-                    <code id="read-token">Generate new token to view</code>
-                    <button class="refresh-world-token-btn" data-token="voice">Refresh</button>
+
+            <div class="tokens-container">
+                Warning! You're only shown world tokens once.
+                <div class="token-spoiler">
+                    <button class="toggle-token-btn">Show Voice Token</button>
+                    <div class="token-content">
+                        <code id="voice-world-token">Generate new token to view</code>
+                        <button class="refresh-world-token-btn" data-token="voice">Refresh</button>
+                    </div>
                 </div>
             </div>
         </div>
