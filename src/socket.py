@@ -9,7 +9,7 @@ import re
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
-user_rooms = {}
+rooms = {}
 
 #
 
@@ -60,7 +60,7 @@ def handle_connect():
 def disconnect():
     print('[socket.py] Client disconnected')
     sid = request.sid
-    room = user_rooms.pop(sid, None)
+    room = rooms.pop(sid, None)
     if room:
         leave_room(room)
 
@@ -73,7 +73,7 @@ def handle_join(room):
             return
             
     sid = request.sid
-    user_rooms[sid] = room
+    rooms[sid] = room
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
 
@@ -197,16 +197,15 @@ def bot_chat(rdata):
 
     save_data()
 
-@socketio.on("voice-data")
-def voice_data(audio):
-    sid = request.sid
-    room = user_rooms.get(sid)
-    
-    if not room:
-        return
-
-    if len(audio) > 15000:
-        emit("voice-rate-limit")
-        return
-
-    socketio.emit("voice-data", audio, room=room)
+@socketio.on("signal")
+def signal(data):
+    """
+    data = {
+        'to': target_sid,
+        'signal': <offer/answer/candidate>
+    }
+    """
+    target = data.get("to")
+    signal_data = data.get("signal")
+    if target:
+        emit("signal", {"from": request.sid, "signal": signal_data}, room=target)
