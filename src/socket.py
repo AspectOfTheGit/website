@@ -73,9 +73,9 @@ def handle_join(room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
     sid = request.sid
-    if room_name not in rooms:
-        rooms[room_name] = set()
-    rooms[room_name].add(sid)
+    if room not in rooms:
+        rooms[room] = set()
+    rooms[room].add(sid)
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
 
