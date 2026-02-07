@@ -54,66 +54,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     const room = "voice-{{ world_uuid }}";
+    const peers = {};
+
     socket.emit("join", room);
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let playQueue = Promise.resolve();
+    const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    socket.on("voice-data", async (audioBuffer) => {
-        try {
-            const blob = new Blob([audioBuffer], { type: "audio/webm;codecs=opus" });
-            const arrayBuffer = await blob.arrayBuffer();
+    socket.on("signal", async (data) => {
+        const from = data.from;
+        const signal = data.signal;
 
-            const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+        if (!peers[from]) {
+            const pc = createPeerConnection(from);
+            peers[from] = pc;
 
-            const source = audioCtx.createBufferSource();
-            source.buffer = decoded;
-            source.connect(audioCtx.destination);
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        }
 
-            playQueue = playQueue.then(() => {
-                return new Promise((resolve) => {
-                    source.onended = resolve;
-                    source.start();
-                });
-            });
-        } catch (err) {
-            console.warn("Failed to decode audio chunk", err);
+        const pc = peers[from];
+
+        if (signal.type === "offer") {
+            await pc.setRemoteDescription(signal);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit("signal", { to: from, signal: pc.localDescription });
+        } else if (signal.type === "answer") {
+            await pc.setRemoteDescription(signal);
+        } else if (signal.candidate) {
+            await pc.addIceCandidate(signal.candidate);
         }
     });
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    function createPeerConnection(peerSid) {
+        const pc = new RTCPeerConnection();
 
-    let currentBitrate = 32000;
-    let mediaRecorder;
-
-    function startRecorder() {
-        mediaRecorder = new MediaRecorder(stream, {
-            mimeType: "audio/webm;codecs=opus",
-            audioBitsPerSecond: currentBitrate
-        });
-
-        mediaRecorder.ondataavailable = async (event) => {
-            if (event.data.size === 0) return;
-            const buffer = await event.data.arrayBuffer();
-            socket.emit("voice-data", buffer);
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit("signal", { to: peerSid, signal: { candidate: event.candidate } });
+            }
         };
 
-        mediaRecorder.start(1000);
+        pc.ontrack = (event) => {
+            const audioEl = document.createElement("audio");
+            audioEl.srcObject = event.streams[0];
+            audioEl.autoplay = true;
+            document.body.appendChild(audioEl);
+        };
+
+        return pc;
     }
 
-    startRecorder();
+    socket.on("joined", async () => {
+        const pc = createPeerConnection("temp-peer");
+        peers["temp-peer"] = pc;
 
-    socket.on("voice-rate-limit", () => {
-        const nextBitrate = Math.max(12000, Math.floor(currentBitrate / 2));
-        if (nextBitrate === currentBitrate) return;
-
-        console.warn("Voice rate-limited, lowering bitrate to", nextBitrate);
-        currentBitrate = nextBitrate;
-
-        if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-        }
-        startRecorder();
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
     });
 });
 </script>
