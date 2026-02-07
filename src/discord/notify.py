@@ -55,6 +55,7 @@ def notify(account: str, message: str, type_: str):
                                None)
         except:
             print("[discord/notify.py] bot log discord error, classic")
+            return
         if not log_channel:
             log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"parent_id": category["id"],"type": 0}).json()
         webhooks = requests.get(
