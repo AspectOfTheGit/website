@@ -178,7 +178,7 @@ def bot_chat(rdata):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"].setdefault("chat", [])
 
-    prefix = "<light_purple>[NAME]<dark_gray> | > <gray>"
+    prefix = f"<light_purple>{session["mc_username"]}<dark_gray> | > <gray>"
     msg = f"{prefix}{msg}"
     
     data["bot"][bot_name]["do"]["chat"].append(msg)
