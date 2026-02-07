@@ -9,7 +9,6 @@ import re
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
-
 #
 
 def emit_storage_log(account, message, event, world_id=None):
@@ -186,16 +185,15 @@ def bot_chat(rdata):
     save_data()
 
 @socketio.on("voice-data")
-def voice_data(data):
-    room = data["room"]
-    audio = data["audio"]
-
-    MAX_CHUNK_SIZE = 1500
-
-    if len(audio) > MAX_CHUNK_SIZE:
-        print(f"[socket.py] Ratelimiting voice chat user in {room}: {len(audio)}bytes out of max {MAX_CHUNK_SIZE}")
-        socketio.emit("voice-rate-limit", {"max": MAX_CHUNK_SIZE}, room=room)
+def voice_data(audio):
+    sid = request.sid
+    room = user_rooms.get(sid)
+    
+    if not room:
         return
 
-    print(f"[socket.py] Voice chat data in {room}: {audio}") # temp debug
+    if len(audio) > 1500:
+        emit("voice-rate-limit")
+        return
+
     socketio.emit("voice-data", audio, room=room)
