@@ -9,6 +9,8 @@ import re
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
+user_rooms = {}
+
 #
 
 def emit_storage_log(account, message, event, world_id=None):
@@ -54,6 +56,14 @@ def emit_image(type, file, room):
 def handle_connect():
     print('[socket.py] Client connected')
 
+@socketio.on("disconnect")
+def disconnect():
+    print('[socket.py] Client disconnected')
+    sid = request.sid
+    room = user_rooms.pop(sid, None)
+    if room:
+        leave_room(room)
+
 @socketio.on('join')
 def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
@@ -62,6 +72,8 @@ def handle_join(room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
             
+    sid = request.sid
+    user_rooms[sid] = room
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
 
@@ -193,7 +205,7 @@ def voice_data(audio):
     if not room:
         return
 
-    if len(audio) > 1500:
+    if len(audio) > 15000:
         emit("voice-rate-limit")
         return
 
