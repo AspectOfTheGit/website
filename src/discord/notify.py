@@ -44,14 +44,17 @@ def notify(account: str, message: str, type_: str):
     except:
         color = 0x5c5c5c
 
-    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,[{"name":None,"type":None,"parent_id":None}]).json()
+    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
     if typeroot == "bot":
         if type == "bot.log":
             return # Disabled bot log notifications, probably forever
-        category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),{"id":None})
-        log_channel = next((c for c in channels
-                            if c["parent_id"] == category["id"] and c["name"] == saccount),
-                           None)
+        try:
+            category = next((c for c in channels if c["type"] == 4 and c["name"] == ".bots"),{"id":None})
+            log_channel = next((c for c in channels
+                                if c["parent_id"] == category["id"] and c["name"] == saccount),
+                               None)
+        except:
+            print("[discord/notify.py] bot log discord error, classic")
         if not log_channel:
             log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": saccount,"parent_id": category["id"],"type": 0}).json()
         webhooks = requests.get(
