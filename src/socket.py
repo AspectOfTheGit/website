@@ -1,4 +1,4 @@
-from flask import session
+from flask import session, request
 from flask_socketio import SocketIO, emit, join_room
 from src.discord.notify import notify
 from src.data import data, save_data
