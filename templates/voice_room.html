@@ -49,50 +49,62 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-    const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
+    const socket = io("https://aspectofthe.site", {
+        transports: ["websocket"]
+    });
+
     const room = "voice-{{ world_uuid }}";
 
     socket.emit("join", room);
 
     socket.on("voice-data", (audioBuffer) => {
-        const blob = new Blob([audioBuffer], { type: "audio/webm" });
+        const blob = new Blob([audioBuffer], { type: "audio/webm;codecs=opus" });
+        const url = URL.createObjectURL(blob);
 
-        const audio = new Audio(URL.createObjectURL(blob));
-        audio.play().catch(err => {
-            console.error("Audio play failed:", err);
-        });
-    });
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
 
-    socket.on("voice-rate-limit", ({ max }) => {
-        console.warn("Lowering voice bitrate");
-    
-        mediaRecorder.stop();
-    
-        mediaRecorder = new MediaRecorder(stream, {
-            mimeType: "audio/webm;codecs=opus",
-            audioBitsPerSecond: 16000
-        });
-    
-        mediaRecorder.start(500);
+        audio.onended = () => URL.revokeObjectURL(url);
     });
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm"
-    });
+    let currentBitrate = 32000;
+    let mediaRecorder;
 
-    mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0) {
+    function startRecorder() {
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: "audio/webm;codecs=opus",
+            audioBitsPerSecond: currentBitrate
+        });
+
+        mediaRecorder.ondataavailable = async (event) => {
+            if (event.data.size === 0) return;
+
             const buffer = await event.data.arrayBuffer();
 
-            socket.emit("voice-data", {
-                room,
-                audio: buffer
-            });
-        }
-    };
+            socket.emit("voice-data", buffer);
+        };
 
-    mediaRecorder.start(500);
+        mediaRecorder.start(500);
+    }
+
+    startRecorder();
+
+    socket.on("voice-rate-limit", () => {
+        const nextBitrate = Math.max(12000, Math.floor(currentBitrate / 2));
+
+        if (nextBitrate === currentBitrate) return;
+
+        console.warn("Voice rate-limited, lowering bitrate to", nextBitrate);
+
+        currentBitrate = nextBitrate;
+
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+
+        startRecorder();
+    });
 });
 </script>
