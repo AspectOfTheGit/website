@@ -184,3 +184,7 @@ def bot_chat(rdata):
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
+
+@socketio.on("voice-data", ({ room, audio }) => {
+    socketio.to(room).emit("voice-data", audio);
+});
