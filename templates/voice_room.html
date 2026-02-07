@@ -54,6 +54,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     socket.emit("join", room);
 
+    socket.on("voice-data", (audioBuffer) => {
+        const blob = new Blob([audioBuffer], { type: "audio/webm" });
+
+        const audio = new Audio(URL.createObjectURL(blob));
+        audio.play().catch(err => {
+            console.error("Audio play failed:", err);
+        });
+    });
+
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     const mediaRecorder = new MediaRecorder(stream, {
