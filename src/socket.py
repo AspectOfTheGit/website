@@ -74,7 +74,7 @@ def handle_join(room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
         else:
-            existing_peers = [s for s in rooms[room_name] if s != sid]
+            existing_peers = [s for s in rooms[room] if s != sid]
             emit("existing-peers", existing_peers)
     sid = request.sid
     if room not in rooms:
