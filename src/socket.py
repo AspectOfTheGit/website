@@ -193,7 +193,9 @@ def voice_data(data):
     MAX_CHUNK_SIZE = 1500
 
     if len(audio) > MAX_CHUNK_SIZE:
+        print(f"[socket.py] Ratelimiting voice chat user in {room}: {len(audio)}bytes out of max {MAX_CHUNK_SIZE}")
         socketio.emit("voice-rate-limit", {"max": MAX_CHUNK_SIZE}, room=room)
         return
 
+    print(f"[socket.py] Voice chat data in {room}: {audio}") # temp debug
     socketio.emit("voice-data", audio, room=room)
