@@ -48,7 +48,7 @@ def apiworldgetbotpermissions(world):
     if world not in data["world"]:
         return jsonify({"error": "No world page"}), 400
 
-    return jsonify({"success": True, "permissions": data["world"][world]["permissions"]})
+    return jsonify({"success": True, "permissions": data["world"][world].get("permissions",[])})
 
 @world.post("/<world>/edit/save/elements")
 def apiworldeditelements(world):
