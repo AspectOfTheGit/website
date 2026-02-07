@@ -1,6 +1,7 @@
 from flask import (
     Blueprint,
     session,
+    request,
     jsonify
 )
 
@@ -34,6 +35,29 @@ def apirefreshtoken(token):
     data["account"][account]["token"].setdefault(token, {})
 
     data["account"][account]["token"][token] = new_token
+
+    save_data()
+
+    return jsonify({"token": new_token}), 200
+
+@token.post("/refresh-world-token/<token>")
+def apirefreshtoken(token):
+    rdata = request.get_json()
+    world = rdata.get("world", "")
+
+    if world not in data["world"]:
+        return jsonify({"error": "World doesn't exist"}), 400
+
+    if token not in ["voice"]:
+        return jsonify({"error": "Invalid Token Type"}), 400
+
+    chars = string.ascii_letters + string.digits + ''.join(c for c in string.punctuation if c not in ('"', "'"))
+    new_token = ''.join(secrets.choice(chars) for _ in range(24))
+
+    data["world"][world].setdefault("token", {})
+    data["world"][world]["token"].setdefault(token, {})
+
+    data["world"][world]["token"][token] = new_token
 
     save_data()
 
