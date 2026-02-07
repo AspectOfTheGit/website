@@ -248,7 +248,7 @@ def voice_room(world):
 
     data.setdefault("world", {})
 
-    if world in data["world"]:
+    if world not in data["world"]:
         return jsonify({"error": "Voice room not found"}), 400
 
     if not data["world"].get("voice",False):
