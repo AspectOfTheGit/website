@@ -56,16 +56,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const room = "voice-{{ world_uuid }}";
 
     socket.emit("join", room);
-
-    const audioCtx = new AudioContext();
-    let sourceNode;
     
-    socket.on("voice-data", async (audioBuffer) => {
-        const buffer = await audioCtx.decodeAudioData(audioBuffer.slice(0));
-        sourceNode = audioCtx.createBufferSource();
-        sourceNode.buffer = buffer;
-        sourceNode.connect(audioCtx.destination);
-        sourceNode.start();
+    socket.on("voice-data", (audioBuffer) => {
+        const blob = new Blob([audioBuffer], { type: "audio/webm;codecs=opus" });
+        const url = URL.createObjectURL(blob);
+    
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
+    
+        audio.onended = () => URL.revokeObjectURL(url);
     });
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
