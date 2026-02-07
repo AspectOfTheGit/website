@@ -181,6 +181,6 @@ def bot_chat(rdata):
     prefix = "<light_purple>[NAME]<dark_gray> | > <gray>"
     msg = f"{prefix}{msg}"
     
-    data["bot"][bot_name]["do"]["chat"] += msg
+    data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
