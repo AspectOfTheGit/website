@@ -63,6 +63,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
+    socket.on("voice-rate-limit", ({ max }) => {
+        console.warn("Lowering voice bitrate");
+    
+        mediaRecorder.stop();
+    
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: "audio/webm;codecs=opus",
+            audioBitsPerSecond: 16000
+        });
+    
+        mediaRecorder.start(500);
+    });
+
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     const mediaRecorder = new MediaRecorder(stream, {
