@@ -44,7 +44,7 @@ def notify(account: str, message: str, type_: str):
     except:
         color = 0x5c5c5c
 
-    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers).json()
+    channels = requests.get(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,[{"name":None,"type":None,"parent_id":None}]).json()
     if typeroot == "bot":
         if type == "bot.log":
             return # Disabled bot log notifications, probably forever
