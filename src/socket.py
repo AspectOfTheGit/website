@@ -169,17 +169,17 @@ def bot_chat(rdata):
         else:
             print(f"[socket.py] Chat message failed (Couldn't find match for command) through {bot_name} by {account} | Message: {msg}")
             return
+    else:
+        msg = msg.replace("<","\\<")
+        prefix = f"<light_purple>{session["mc_username"]}<dark_gray> | > <gray>"
+        msg = f"{prefix}{msg}"
 
     print(f"[socket.py] Chat message sent through {bot_name} by {account} | Message: {msg}")
 
-    msg = msg.replace("<","\\<")
     data["account"][account]["last_chat"] = ts
     
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"].setdefault("chat", [])
-
-    prefix = f"<light_purple>{session["mc_username"]}<dark_gray> | > <gray>"
-    msg = f"{prefix}{msg}"
     
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
