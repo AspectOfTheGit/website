@@ -54,17 +54,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     const room = "voice-{{ world_uuid }}";
-
     socket.emit("join", room);
-    
-    socket.on("voice-data", (audioBuffer) => {
-        const blob = new Blob([audioBuffer], { type: "audio/webm;codecs=opus" });
-        const url = URL.createObjectURL(blob);
-    
-        const audio = new Audio(url);
-        audio.play().catch(() => {});
-    
-        audio.onended = () => URL.revokeObjectURL(url);
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let playQueue = Promise.resolve();
+
+    socket.on("voice-data", async (audioBuffer) => {
+        try {
+            const blob = new Blob([audioBuffer], { type: "audio/webm;codecs=opus" });
+            const arrayBuffer = await blob.arrayBuffer();
+
+            const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = decoded;
+            source.connect(audioCtx.destination);
+
+            playQueue = playQueue.then(() => {
+                return new Promise((resolve) => {
+                    source.onended = resolve;
+                    source.start();
+                });
+            });
+        } catch (err) {
+            console.warn("Failed to decode audio chunk", err);
+        }
     });
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -80,31 +94,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         mediaRecorder.ondataavailable = async (event) => {
             if (event.data.size === 0) return;
-
             const buffer = await event.data.arrayBuffer();
-
             socket.emit("voice-data", buffer);
         };
 
-        mediaRecorder.start(500);
+        mediaRecorder.start(1000);
     }
 
     startRecorder();
 
     socket.on("voice-rate-limit", () => {
         const nextBitrate = Math.max(12000, Math.floor(currentBitrate / 2));
-
         if (nextBitrate === currentBitrate) return;
 
         console.warn("Voice rate-limited, lowering bitrate to", nextBitrate);
-
         currentBitrate = nextBitrate;
 
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
             mediaRecorder.stop();
         }
-
         startRecorder();
     });
 });
 </script>
+
