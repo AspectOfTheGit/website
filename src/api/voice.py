@@ -1,12 +1,13 @@
 from flask import (
     Blueprint,
-    session,
     request,
     jsonify
 )
 
 from src.data import data
+from src.socket import emit_log
 import re
+import time
 
 voice = Blueprint(
     "voice",
