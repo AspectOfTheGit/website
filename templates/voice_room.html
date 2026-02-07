@@ -43,3 +43,32 @@
     <h2>Voice Room</h2>
     <h3>{{ world_uuid }}</h3>
 </body>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
+    const room = "voice-{{ world_uuid }}";
+
+    socket.emit("join", room);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm"
+    });
+
+    mediaRecorder.ondataavailable = async (event) => {
+        if (event.data.size > 0) {
+            const buffer = await event.data.arrayBuffer();
+
+            socket.emit("voice-data", {
+                room,
+                audio: buffer
+            });
+        }
+    };
+
+    mediaRecorder.start(500);
+});
+</script>
