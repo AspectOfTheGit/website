@@ -66,6 +66,18 @@ def disconnect():
             leave_room(room)
             break
 
+@socketio.on("join")
+def handle_join(room_name):
+    sid = request.sid
+    if room_name not in rooms:
+        rooms[room_name] = set()
+    rooms[room_name].add(sid)
+    join_room(room_name)
+
+    # Notify new user of existing peers
+    existing_peers = [s for s in rooms[room_name] if s != sid]
+    emit("existing-peers", existing_peers)
+
 @socketio.on('join')
 def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
@@ -74,12 +86,12 @@ def handle_join(room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
         else:
+            sid = request.sid
+            if room not in rooms:
+                rooms[room] = set()
+            rooms[room].add(sid)
             existing_peers = [s for s in rooms[room] if s != sid]
             emit("existing-peers", existing_peers)
-    sid = request.sid
-    if room not in rooms:
-        rooms[room] = set()
-    rooms[room].add(sid)
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
 
