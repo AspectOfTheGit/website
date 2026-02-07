@@ -63,6 +63,7 @@ def disconnect():
     for room, members in rooms.items():
         if sid in members:
             members.remove(sid)
+            leave_room(room)
             break
 
 @socketio.on('join')
@@ -72,6 +73,9 @@ def handle_join(room):
         if not re.match("^voice-", room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
+        else:
+            existing_peers = [s for s in rooms[room_name] if s != sid]
+            emit("existing-peers", existing_peers)
     sid = request.sid
     if room not in rooms:
         rooms[room] = set()
@@ -200,13 +204,7 @@ def bot_chat(rdata):
     save_data()
 
 @socketio.on("signal")
-def signal(data):
-    """
-    data = {
-        'to': target_sid,
-        'signal': <offer/answer/candidate>
-    }
-    """
+def handle_signal(data):
     target = data.get("to")
     signal_data = data.get("signal")
     if target:
