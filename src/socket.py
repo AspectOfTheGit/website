@@ -72,9 +72,10 @@ def handle_join(room):
         if not re.match("^voice-", room):
             print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
             return
-            
     sid = request.sid
-    rooms[sid] = room
+    if room_name not in rooms:
+        rooms[room_name] = set()
+    rooms[room_name].add(sid)
     join_room(room)
     print(f'[socket.py] {uuid} joined room: {room}')
 
