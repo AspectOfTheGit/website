@@ -41,7 +41,7 @@ def apirefreshtoken(token):
     return jsonify({"token": new_token}), 200
 
 @token.post("/refresh-world-token/<token>")
-def apirefreshtoken(token):
+def apirefreshworldtoken(token):
     rdata = request.get_json()
     world = rdata.get("world", "")
 
