@@ -39,6 +39,7 @@ def create_world(world: str, uuid: str):
 
     data["world"][world] = {
         "owner": uuid,
+        "token": {},
         "elements": {},
         "public": False,
         "title": worlddata["name"],
