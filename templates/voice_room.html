@@ -49,26 +49,26 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-    const socket = io("https://aspectofthe.site", {
-        transports: ["websocket"]
-    });
+    const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
 
     const room = "voice-{{ world_uuid }}";
     const peers = {};
+    const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     socket.emit("join", room);
 
-    const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    socket.on("existing-peers", async (peerSids) => {
+        for (const sid of peerSids) {
+            await createPeerConnection(sid, true);
+        }
+    });
 
     socket.on("signal", async (data) => {
         const from = data.from;
         const signal = data.signal;
 
         if (!peers[from]) {
-            const pc = createPeerConnection(from);
-            peers[from] = pc;
-
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+            await createPeerConnection(from, false);
         }
 
         const pc = peers[from];
@@ -81,18 +81,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (signal.type === "answer") {
             await pc.setRemoteDescription(signal);
         } else if (signal.candidate) {
-            await pc.addIceCandidate(signal.candidate);
+            try {
+                await pc.addIceCandidate(signal.candidate);
+            } catch (err) {
+                console.warn("Failed to add ICE candidate", err);
+            }
         }
     });
 
-    function createPeerConnection(peerSid) {
+    async function createPeerConnection(peerSid, isInitiator) {
         const pc = new RTCPeerConnection();
 
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.emit("signal", { to: peerSid, signal: { candidate: event.candidate } });
-            }
-        };
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
         pc.ontrack = (event) => {
             const audioEl = document.createElement("audio");
@@ -101,17 +101,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.body.appendChild(audioEl);
         };
 
-        return pc;
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit("signal", { to: peerSid, signal: { candidate: event.candidate } });
+            }
+        };
+
+        peers[peerSid] = pc;
+
+        if (isInitiator) {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit("signal", { to: peerSid, signal: pc.localDescription });
+        }
     }
-
-    socket.on("joined", async () => {
-        const pc = createPeerConnection("temp-peer");
-        peers["temp-peer"] = pc;
-
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-    });
 });
 </script>
-
