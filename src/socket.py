@@ -60,9 +60,10 @@ def handle_connect():
 def disconnect():
     print('[socket.py] Client disconnected')
     sid = request.sid
-    room = rooms.pop(sid, None)
-    if room:
-        leave_room(room)
+    for room, members in rooms.items():
+        if sid in members:
+            members.remove(sid)
+            break
 
 @socketio.on('join')
 def handle_join(room):
