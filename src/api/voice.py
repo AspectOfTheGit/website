@@ -39,7 +39,10 @@ def apivoiceupdate():
 
     #if token != data["account"][account]["token"]["deploy"]:# todo - create a token for this
     #    return jsonify({"error": "Unauthorized"}), 401
-        
+
+    data["world"][world]["voice"] = time.time_ns() // 1000000
     emit_log('update',"HI, i'm an update",f"voice-{world}")
+
+    # no need to save data, its not very important.
 
     return jsonify({"success": True}), 200
