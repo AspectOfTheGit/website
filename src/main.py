@@ -24,6 +24,7 @@ def create_app():
     from src.api.discord import discord
     from src.api.world import world
     from src.api.deploy import deploy
+    from src.api.voice import voice
     
     app.register_blueprint(bots)
     app.register_blueprint(web)
@@ -33,6 +34,7 @@ def create_app():
     app.register_blueprint(discord)
     app.register_blueprint(world)
     app.register_blueprint(deploy)
+    app.register_blueprint(voice)
 
     socketio.init_app(app)
     return app
