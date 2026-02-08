@@ -190,8 +190,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             const pos = player.Pos;
             const dist = distance3D(myPos, pos);
             let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
+            console.log("Pos:", pos, "| Distance:", dist, "| uuid", player.uuid, "| volume:", vol);
     
             if(player.uuid === "{{ mc_uuid }}") myPos = pos;
+
+            console.log("your pos:", myPos);
     
             let audioEl = audioElementsByUUID[player.uuid];
             if(!audioEl){
