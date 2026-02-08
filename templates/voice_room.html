@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const room = "voice-{{ world_uuid }}";
     const peers = {};
+
     const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     socket.emit("join", room);
@@ -60,6 +61,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket.on("existing-peers", async (peerSids) => {
         for (const sid of peerSids) {
             await createPeerConnection(sid, true);
+        }
+    });
+
+    socket.on("new-peer", async (peerSid) => {
+        if (!peers[peerSid]) {
+            await createPeerConnection(peerSid, false);
         }
     });
 
@@ -90,7 +97,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     async function createPeerConnection(peerSid, isInitiator) {
-        const pc = new RTCPeerConnection();
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" }
+            ]
+        });
 
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
@@ -98,6 +109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const audioEl = document.createElement("audio");
             audioEl.srcObject = event.streams[0];
             audioEl.autoplay = true;
+            audioEl.controls = false;
             document.body.appendChild(audioEl);
         };
 
@@ -117,3 +129,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 </script>
+
