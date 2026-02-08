@@ -66,23 +66,30 @@ def disconnect():
             leave_room(room)
             break
 
-
 @socketio.on('join')
 def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
+    sid = request.sid
+
     if room not in BOTS and uuid != room:
         if not re.match("^voice-", room):
-            print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room} ")
+            print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room}")
             return
-        else:
-            sid = request.sid
-            if room not in rooms:
-                rooms[room] = set()
-            rooms[room].add(sid)
-            existing_peers = [s for s in rooms[room] if s != sid]
-            emit("existing-peers", existing_peers)
+
+    if room not in rooms:
+        rooms[room] = set()
+
+    for peer_sid in rooms[room]:
+        emit("new-peer", sid, room=peer_sid)
+
+    rooms[room].add(sid)
     join_room(room)
-    print(f'[socket.py] {uuid} joined room: {room}')
+
+    existing_peers = [s for s in rooms[room] if s != sid]
+    emit("existing-peers", existing_peers)
+
+    print(f"[socket.py] {uuid} joined room: {room}")
+
 
 @socketio.on("get_screenshot")
 def screenshot_request(rdata):
