@@ -245,6 +245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if(player.uuid === "{{ mc_uuid }}"){
                 myPos = player.Pos;
                 myRot = player.Rot || [0,0];
+                console.log("your pos:", myPos, "| your rot:", myRot);
                 return;
             }
 
@@ -287,6 +288,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if(pan){
                 pan.pan.value = computePan(myPos, myRot[0], player.Pos);
             }
+
+            console.log("uuid:", player.uuid, "| pos:", player.Pos, "| rot:", player.Rot, "| distance:", dist, "| volume:", baseVol, "| pan:", pan.pan.value, "| gain:", gain.gain.value);
         });
     }
 
