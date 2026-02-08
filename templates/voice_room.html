@@ -62,12 +62,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const room = "voice-{{ world_uuid }}";
 
     const peers = {};
-    const audioElementsByUUID = {};
+    const gainNodesByUUID = {};
+    const panNodesByUUID = {};
     const volumeControlsByUUID = {};
-    const pannerNodesByUUID = {};
+    const pendingAudioNodes = [];
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
     let localStream;
-    let myPos = [0,0,0];
-    let myRot = [0,0,0];
+    let myPos = [0, 0, 0];
+    let myRot = [0, 0];
     const MAX_DISTANCE = 10;
 
     let isMuted = false;
@@ -78,193 +82,170 @@ document.addEventListener("DOMContentLoaded", async () => {
     const micSelect = document.getElementById("mic-select");
     const userVolumesDiv = document.getElementById("user-volumes");
 
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    /* Mic stuff */
 
     async function populateMicrophones() {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const mics = devices.filter(d => d.kind === "audioinput");
         micSelect.innerHTML = "";
-        mics.forEach(d => {
+        devices.filter(d => d.kind === "audioinput").forEach(d => {
             const opt = document.createElement("option");
             opt.value = d.deviceId;
-            opt.textContent = d.label || `Mic ${micSelect.length+1}`;
+            opt.textContent = d.label || "Microphone";
             micSelect.appendChild(opt);
         });
     }
 
     async function getLocalStream(deviceId=null) {
-        if(localStream){
-            localStream.getTracks().forEach(t => t.stop());
-        }
+        if (localStream) localStream.getTracks().forEach(t => t.stop());
         localStream = await navigator.mediaDevices.getUserMedia({
             audio: deviceId ? { deviceId } : true
         });
-        localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+        localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
 
         Object.values(peers).forEach(pc => {
-            const sender = pc.getSenders().find(s => s.track && s.kind === "audio");
-            if(sender) sender.replaceTrack(localStream.getAudioTracks()[0]);
+            const sender = pc.getSenders().find(s => s.track?.kind === "audio");
+            if (sender) sender.replaceTrack(localStream.getAudioTracks()[0]);
         });
     }
 
     await populateMicrophones();
     await getLocalStream();
 
-    micSelect.addEventListener("change", async () => {
-        await getLocalStream(micSelect.value);
-    });
+    micSelect.onchange = () => getLocalStream(micSelect.value);
 
-    muteBtn.addEventListener("click", () => {
+    muteBtn.onclick = () => {
         isMuted = !isMuted;
         muteBtn.textContent = isMuted ? "Unmute" : "Mute";
-        localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
-    });
+        localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+    };
 
-    deafenBtn.addEventListener("click", () => {
+    deafenBtn.onclick = () => {
         isDeafened = !isDeafened;
         deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
-        Object.values(audioElementsByUUID).forEach(el => el.muted = isDeafened);
-    });
+    };
+
+    /* WebRTC */
 
     socket.emit("join", room);
 
-    socket.on("existing-peers", async (peerSids) => {
-        for(const sid of peerSids) await createPeerConnection(sid, true);
-    });
-    socket.on("new-peer", async (peerSid) => {
-        if(!peers[peerSid]) await createPeerConnection(peerSid, false);
-    });
-    socket.on("signal", async (data) => {
-        const from = data.from;
-        const signal = data.signal;
+    socket.on("existing-peers", peers =>
+        peers.forEach(sid => createPeerConnection(sid, true))
+    );
 
-        if(!peers[from]) await createPeerConnection(from, false);
+    socket.on("signal", async ({ from, signal }) => {
+        if (!peers[from]) await createPeerConnection(from, false);
         const pc = peers[from];
 
-        if(signal.type === "offer"){
+        if (signal.type === "offer") {
             await pc.setRemoteDescription(signal);
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            socket.emit("signal",{to:from, signal: pc.localDescription});
-        }else if(signal.type==="answer"){
+            socket.emit("signal", { to: from, signal: pc.localDescription });
+        } else if (signal.type === "answer") {
             await pc.setRemoteDescription(signal);
-        }else if(signal.candidate){
-            try{ await pc.addIceCandidate(signal.candidate);}catch(e){ console.warn(e);}
+        } else if (signal.candidate) {
+            try { await pc.addIceCandidate(signal.candidate); } catch {}
         }
     });
 
-    async function createPeerConnection(peerSid,isInitiator){
-        const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    async function createPeerConnection(peerSid, initiator) {
+        const pc = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        });
 
-        pc.ontrack = (event) => {
-            const audioEl = document.createElement("audio");
-            audioEl.srcObject = event.streams[0];
-            audioEl.autoplay = true;
-            audioEl.controls = false;
-            audioEl.muted = isDeafened;
-            document.body.appendChild(audioEl);
+        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+        pc.ontrack = (e) => {
+            const source = audioContext.createMediaStreamSource(e.streams[0]);
+            const gain = audioContext.createGain();
+            const pan = audioContext.createStereoPanner();
+
+            gain.gain.value = 1;
+            pan.pan.value = 0;
+
+            source.connect(gain).connect(pan).connect(audioContext.destination);
+            pendingAudioNodes.push({ gain, pan });
         };
 
-        pc.onicecandidate = (event) => {
-            if(event.candidate) socket.emit("signal",{to:peerSid,signal:{candidate:event.candidate}});
+        pc.onicecandidate = e => {
+            if (e.candidate)
+                socket.emit("signal", { to: peerSid, signal: { candidate: e.candidate } });
         };
 
         peers[peerSid] = pc;
 
-        if(isInitiator){
+        if (initiator) {
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            socket.emit("signal",{to:peerSid, signal: pc.localDescription});
+            socket.emit("signal", { to: peerSid, signal: pc.localDescription });
         }
     }
 
-    function distance3D(a,b){
-        const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
-        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    /* math */
+
+    function distance(a, b) {
+        const dx = a[0]-b[0], dz = a[2]-b[2];
+        return Math.sqrt(dx*dx + dz*dz);
     }
 
-    function rotateRelativePos(relPos, rot){
-        const yaw = (rot[1] || 0) * Math.PI / 180;
-        const cosY = Math.cos(-yaw);
-        const sinY = Math.sin(-yaw);
+    function computePan(listenerPos, listenerYaw, sourcePos) {
+        const dx = sourcePos[0] - listenerPos[0];
+        const dz = sourcePos[2] - listenerPos[2];
 
-        const x = relPos[0] * cosY - relPos[2] * sinY;
-        const z = relPos[0] * sinY + relPos[2] * cosY;
-        const y = relPos[1];
-        return [x, y, z];
+        const angleToSource = Math.atan2(-dx, dz) * 180 / Math.PI;
+        let delta = angleToSource - listenerYaw;
+
+        delta = ((delta + 180) % 360) - 180;
+        return Math.max(-1, Math.min(1, delta / 90));
     }
 
-    function updateVolumes(players){
+    /* Volume and volume control UI */
+
+    function updateVolumes(players) {
         players.forEach(player => {
-            if (!player.Pos || !Array.isArray(player.Pos)) return;
+            if (!Array.isArray(player.Pos)) return;
 
-            if(player.uuid === "{{ mc_uuid }}"){
+            if (player.uuid === "{{ mc_uuid }}") {
                 myPos = player.Pos;
-                myRot = player.Rot || [0,0,0];
+                if (Array.isArray(player.Rot)) myRot = player.Rot;
                 return;
             }
 
-            const pos = player.Pos;
-
-            let audioEl = audioElementsByUUID[player.uuid];
-            if(!audioEl){
-                const els = Array.from(document.querySelectorAll("audio"));
-                for(const el of els){
-                    if(!Object.values(audioElementsByUUID).includes(el)){
-                        audioElementsByUUID[player.uuid] = el;
-                        audioEl = el;
-                        break;
-                    }
-                }
+            if (!gainNodesByUUID[player.uuid] && pendingAudioNodes.length) {
+                const node = pendingAudioNodes.shift();
+                gainNodesByUUID[player.uuid] = node.gain;
+                panNodesByUUID[player.uuid] = node.pan;
             }
 
-            if(!audioEl) return;
+            const gain = gainNodesByUUID[player.uuid];
+            const pan = panNodesByUUID[player.uuid];
+            if (!gain || !pan) return;
 
-            if(!pannerNodesByUUID[player.uuid]){
-                const source = audioContext.createMediaElementSource(audioEl);
-                const panner = audioContext.createPanner();
-                panner.panningModel = "HRTF";
-                panner.distanceModel = "linear";
-                panner.maxDistance = MAX_DISTANCE;
-                panner.refDistance = 1;
-                panner.rolloffFactor = 1;
-                source.connect(panner).connect(audioContext.destination);
-                pannerNodesByUUID[player.uuid] = panner;
-            }
+            const dist = distance(myPos, player.Pos);
+            const baseVol = Math.max(0, 1 - dist / MAX_DISTANCE);
+            const userVol = volumeControlsByUUID[player.uuid]?.value ?? 1;
+            const finalVol = isDeafened ? 0 : baseVol * userVol;
 
-            let relPos = [
-                pos[0] - myPos[0],
-                pos[1] - myPos[1],
-                pos[2] - myPos[2]
-            ];
+            gain.gain.setTargetAtTime(finalVol, audioContext.currentTime, 0.05);
+            pan.pan.setTargetAtTime(
+                computePan(myPos, myRot[0], player.Pos),
+                audioContext.currentTime,
+                0.05
+            );
 
-            relPos = rotateRelativePos(relPos, myRot);
-
-            const panner = pannerNodesByUUID[player.uuid];
-            panner.setPosition(relPos[0], relPos[1], relPos[2]);
-            panner.orientationX.value = 0;
-            panner.orientationY.value = 0;
-            panner.orientationZ.value = -1;
-
-            if(!volumeControlsByUUID[player.uuid]){
-                const container = document.createElement("div");
-                container.style.display = "flex";
-                container.style.alignItems = "center";
-                container.style.gap = "8px";
-                container.style.marginBottom = "6px";
+            if (!volumeControlsByUUID[player.uuid]) {
+                const row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.alignItems = "center";
+                row.style.gap = "8px";
 
                 const head = document.createElement("img");
                 head.src = `https://mc-heads.net/avatar/${player.uuid}/32`;
-                head.width = 32;
-                head.height = 32;
-                head.style.borderRadius = "4px";
 
-                const label = document.createElement("span");
-                label.textContent = player.Name;
-                label.style.minWidth = "260px";
-                label.style.fontFamily = "monospace";
-                label.style.fontSize = "12px";
+                const name = document.createElement("span");
+                name.textContent = player.Name;
+                name.style.minWidth = "200px";
+                name.style.fontFamily = "monospace";
 
                 const slider = document.createElement("input");
                 slider.type = "range";
@@ -272,26 +253,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 slider.max = 1;
                 slider.step = 0.01;
                 slider.value = 1;
-                slider.style.flex = "1";
 
-                slider.addEventListener("input", ()=>{
-                    audioEl.volume = parseFloat(slider.value);
-                });
-
-                container.appendChild(head);
-                container.appendChild(label);
-                container.appendChild(slider);
-
-                userVolumesDiv.appendChild(container);
+                row.append(head, name, slider);
+                userVolumesDiv.appendChild(row);
                 volumeControlsByUUID[player.uuid] = slider;
             }
-
-            audioEl.muted = isDeafened;
         });
     }
 
-    socket.on("update", (players)=>{
-        updateVolumes(players);
-    });
+    socket.on("update", updateVolumes);
 });
 </script>
