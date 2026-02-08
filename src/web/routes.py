@@ -15,7 +15,7 @@ from src.utils.world_api import get_world_info
 from src.utils.player_api import get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, VALID_BOT_PERMISSIONS
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
 
 from src.utils.data_api import (
     refresh_account_info,
@@ -251,8 +251,6 @@ def voice_room(world):
 
     if world not in data["world"]:
         return jsonify({"error": "Voice room not found"}), 400
-
-    MAX_TIME_TILL_VOICE_ROOM_CLOSE = 800 # in milliseconds
 
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
     if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update in 800ms
