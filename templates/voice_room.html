@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const pannerNodesByUUID = {};
     let localStream;
     let myPos = [0,0,0];
+    let myRot = [0,0,0];
     const MAX_DISTANCE = 10;
 
     let isMuted = false;
@@ -77,7 +78,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const micSelect = document.getElementById("mic-select");
     const userVolumesDiv = document.getElementById("user-volumes");
 
-    // Web Audio Context
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     async function populateMicrophones() {
@@ -179,21 +179,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function parsePos(posStr){
-        return posStr.replace(/\[|\]/g,"").split(",").map(s=>parseFloat(s.replace("d","")));
-    }
     function distance3D(a,b){
         const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
         return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
 
+    function rotateRelativePos(relPos, rot){
+        const yaw = (rot[1] || 0) * Math.PI / 180;
+        const cosY = Math.cos(-yaw);
+        const sinY = Math.sin(-yaw);
+
+        const x = relPos[0] * cosY - relPos[2] * sinY;
+        const z = relPos[0] * sinY + relPos[2] * cosY;
+        const y = relPos[1];
+        return [x, y, z];
+    }
+
     function updateVolumes(players){
         players.forEach(player => {
             if (!player.Pos || !Array.isArray(player.Pos)) return;
-            const pos = player.Pos;
-            if(player.uuid === "{{ mc_uuid }}") myPos = pos;
 
-            // Find or create audio element
+            if(player.uuid === "{{ mc_uuid }}"){
+                myPos = player.Pos;
+                myRot = player.Rot || [0,0,0];
+                return;
+            }
+
+            const pos = player.Pos;
+
             let audioEl = audioElementsByUUID[player.uuid];
             if(!audioEl){
                 const els = Array.from(document.querySelectorAll("audio"));
@@ -208,7 +221,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if(!audioEl) return;
 
-            // Create Web Audio nodes for this audio
             if(!pannerNodesByUUID[player.uuid]){
                 const source = audioContext.createMediaElementSource(audioEl);
                 const panner = audioContext.createPanner();
@@ -221,21 +233,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 pannerNodesByUUID[player.uuid] = panner;
             }
 
-            // Compute relative position
-            const relPos = [
+            let relPos = [
                 pos[0] - myPos[0],
                 pos[1] - myPos[1],
                 pos[2] - myPos[2]
             ];
 
-            // Apply stereo and distance via PannerNode
+            relPos = rotateRelativePos(relPos, myRot);
+
             const panner = pannerNodesByUUID[player.uuid];
             panner.setPosition(relPos[0], relPos[1], relPos[2]);
             panner.orientationX.value = 0;
             panner.orientationY.value = 0;
-            panner.orientationZ.value = -1; // facing forward
+            panner.orientationZ.value = -1;
 
-            // Volume slider
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
                 container.style.display = "flex";
@@ -250,7 +261,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 head.style.borderRadius = "4px";
 
                 const label = document.createElement("span");
-                label.textContent = player.uuid;
+                label.textContent = player.Name;
                 label.style.minWidth = "260px";
                 label.style.fontFamily = "monospace";
                 label.style.fontSize = "12px";
