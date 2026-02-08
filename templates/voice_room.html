@@ -185,12 +185,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function updateVolumes(players){
         players.forEach(player=>{
-            const pos = parsePos(player.Pos);
-            const dist = distance3D(myPos,pos);
-            let vol = Math.max(0, Math.min(1, 1 - dist/MAX_DISTANCE));
-
+            if (!player.Pos || !Array.isArray(player.Pos)) return;
+    
+            const pos = player.Pos;
+            const dist = distance3D(myPos, pos);
+            let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
+    
             if(player.uuid === "{{ mc_uuid }}") myPos = pos;
-
+    
             let audioEl = audioElementsByUUID[player.uuid];
             if(!audioEl){
                 const els = Array.from(document.querySelectorAll("audio"));
@@ -202,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
-
+    
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
                 const label = document.createElement("label");
@@ -221,10 +223,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
-
-            if(audioEl){
-                audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
-            }
+    
+            if(audioEl) audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
         });
     }
 
