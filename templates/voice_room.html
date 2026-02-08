@@ -166,16 +166,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         peers[peerSid] = pc;
         localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-        pc.ontrack = e => {
+        pc.ontrack = async (e) => {
+            if (audioCtx.state !== "running") {
+                console.warn("AudioContext suspended — resuming");
+                await audioCtx.resume();
+            }
+        
             const stream = e.streams[0];
+        
             const source = audioCtx.createMediaStreamSource(stream);
             const gain = audioCtx.createGain();
-
             gain.gain.value = 1;
+        
             source.connect(gain).connect(audioCtx.destination);
             gainNodesByUUID[peerSid] = gain;
-
-            console.log("🎧 Audio bound", peerSid);
+        
+            console.log("🎧 Audio bound + playing", peerSid, audioCtx.state);
         };
 
         pc.onicecandidate = e => {
