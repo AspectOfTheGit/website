@@ -21,7 +21,7 @@ DEPLOYER_COMMANDS = ["trigger"]
 
 USER_SOCKET_LIMIT = 1024 * 10
 
-MAX_TIME_TILL_VOICE_ROOM_CLOSE = 800 # in milliseconds
+MAX_TIME_TILL_VOICE_ROOM_CLOSE = 1600 # in milliseconds
 
 COLOURS = {
     "black": "#000000",
