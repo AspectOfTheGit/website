@@ -1,5 +1,5 @@
 from flask import session, request
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
 from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS
