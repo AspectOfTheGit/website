@@ -6,8 +6,11 @@ from flask import (
 
 from src.data import data
 from src.socket import emit_log
+from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE
 import re
 import time
+import string
+import secrets
 
 voice = Blueprint(
     "voice",
@@ -15,6 +18,7 @@ voice = Blueprint(
     url_prefix="/api/voice"
 )
 
+voice_rooms = {}
 
 @voice.post("/update")
 def apivoiceupdate():
@@ -38,10 +42,24 @@ def apivoiceupdate():
     except:
         return jsonify({"error": "No Token Generated"}), 400
 
+    timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
+    if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update in 800ms
+        voice_rooms[world] = {"players":[]}
+
+    if world not in voice_rooms:
+        voice_rooms[world] = {"players":[]}
+
+    for player in value:
+        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])
+        if uuid not in voice_rooms[world]["players"]:
+            chars = string.ascii_letters + string.digits
+            auth = ''.join(secrets.choice(chars) for _ in range(36))
+            voice_rooms[world]["players"].append({"uuid":uuid,"world":world,"auth":auth})
+
 
     data["world"][world]["voice"] = time.time_ns() // 1000000
     emit_log('update',"HI, i'm an update",f"voice-{world}")
 
     # no need to save data, its not very important.
 
-    return jsonify({"success": True}), 200
+    return jsonify({"players": voice_rooms[world]["players"]}), 200
