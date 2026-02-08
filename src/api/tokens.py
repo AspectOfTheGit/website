@@ -45,8 +45,16 @@ def apirefreshworldtoken(token):
     rdata = request.get_json()
     world = rdata.get("world", "")
 
+    account = session["mc_uuid"]
+
     if world not in data["world"]:
         return jsonify({"error": "World doesn't exist"}), 400
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if account != data["world"][world]["owner"]:
+        return jsonify({"error": "Unauthorized"}), 401
 
     if token not in ["voice"]:
         return jsonify({"error": "Invalid Token Type"}), 400
