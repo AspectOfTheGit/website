@@ -2,77 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aspect's Site</title>
+    <title>Voice Room</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
 </head>
-<footer class="site-footer">
-  <div class="footer-left">
-    <a href="https://store.legitimoose.com" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Store" width="64" height="64">
-    </a>
-  </div>
-
-  <div class="footer-center">
-    <p>
-      This is not an official Moose project and is made by the community.<br>
-      We have no affiliation with any real-world brands.<br>
-      Not affiliated with Mojang AB or Partners.
-    </p>
-  </div>
-
-  <div class="footer-right">
-    <a href="https://www.youtube.com/@Legitimoose" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" width="64" height="64">
-    </a>
-  </div>
-</footer>
 
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
-                <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
-            </a>
-            Aspect's Site
-        </div>
-    </nav>
+<h2>Voice Room</h2>
+<div id="voice-controls">
+    <button id="mute-btn">Mute</button>
+    <button id="deafen-btn">Deafen</button>
+    <select id="mic-select"></select>
+</div>
 
-    <h2>Voice Room</h2>
-    <h3>{{ world_uuid }}</h3>
-    <p>Audio is not stored anywhere. I don't have enough space to store it anyway.</p>
-    <div id="voice-controls" style="margin: 10px 0;">
-        <button id="mute-btn">Mute</button>
-        <button id="deafen-btn">Deafen</button>
-        <label for="mic-select">Mic:</label>
-        <select id="mic-select"></select>
-    </div>
-    
-    <div id="user-volumes" style="margin-top: 10px;">
-        <h4>Connected Users</h4>
-    </div>
-</body>
+<div id="user-volumes">
+    <h4>Connected Users</h4>
+</div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
+
     const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-    const room = "voice-{{ world_uuid }}";
-    socket.emit("join", room);
+    socket.emit("join", "voice-{{ world_uuid }}");
+    
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    document.body.addEventListener("click", () => {
+        if (audioCtx.state !== "running") audioCtx.resume();
+    }, { once: true });
+
+    const gainNodesByUUID = {};
+    const audioSourcesByUUID = {};
+
+    /* variables */
 
     const peers = {};
-    const audioElementsByUUID = {};
     const volumeControlsByUUID = {};
-
     const targetPositions = {};
     const smoothedPositions = {};
-    const unboundAudioElements = [];
 
+    let myPos = [0,0,0];
     let localStream;
-    let myPos = [0, 0, 0];
-
     let isMuted = false;
     let isDeafened = false;
 
@@ -85,19 +55,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     const micSelect = document.getElementById("mic-select");
     const userVolumesDiv = document.getElementById("user-volumes");
 
+    /* mic */
+
     async function populateMicrophones() {
         const devices = await navigator.mediaDevices.enumerateDevices();
         micSelect.innerHTML = "";
-        devices.filter(d => d.kind === "audioinput").forEach((d, i) => {
-            const opt = document.createElement("option");
-            opt.value = d.deviceId;
-            opt.textContent = d.label || `Mic ${i + 1}`;
-            micSelect.appendChild(opt);
+        devices.filter(d => d.kind === "audioinput").forEach((d,i)=>{
+            const o = document.createElement("option");
+            o.value = d.deviceId;
+            o.textContent = d.label || `Mic ${i+1}`;
+            micSelect.appendChild(o);
         });
     }
 
-    async function getLocalStream(deviceId = null) {
-        if (localStream) localStream.getTracks().forEach(t => t.stop());
+    async function getLocalStream(deviceId=null){
+        if(localStream) localStream.getTracks().forEach(t=>t.stop());
 
         localStream = await navigator.mediaDevices.getUserMedia({
             audio: deviceId ? { deviceId } : true
@@ -105,9 +77,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
 
-        Object.values(peers).forEach(pc => {
-            const sender = pc.getSenders().find(s => s.track?.kind === "audio");
-            if (sender) sender.replaceTrack(localStream.getAudioTracks()[0]);
+        Object.values(peers).forEach(pc=>{
+            const sender = pc.getSenders().find(s=>s.track?.kind==="audio");
+            if(sender) sender.replaceTrack(localStream.getAudioTracks()[0]);
         });
     }
 
@@ -126,181 +98,145 @@ document.addEventListener("DOMContentLoaded", async () => {
         deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
     };
 
-    socket.on("existing-peers", async sids => {
-        for (const sid of sids) await createPeerConnection(sid, true);
+    /* WebRTC */
+
+    socket.on("existing-peers", async sids=>{
+        for(const sid of sids) await createPeerConnection(sid, true);
     });
 
-    socket.on("new-peer", async sid => {
-        if (!peers[sid]) await createPeerConnection(sid, false);
+    socket.on("new-peer", async sid=>{
+        if(!peers[sid]) await createPeerConnection(sid, false);
     });
 
-    socket.on("signal", async ({ from, signal }) => {
-        if (!peers[from]) await createPeerConnection(from, false);
+    socket.on("signal", async ({from, signal})=>{
+        if(!peers[from]) await createPeerConnection(from, false);
         const pc = peers[from];
 
-        if (signal.type === "offer") {
+        if(signal.type==="offer"){
             await pc.setRemoteDescription(signal);
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            socket.emit("signal", { to: from, signal: pc.localDescription });
-        } else if (signal.type === "answer") {
+            const ans = await pc.createAnswer();
+            await pc.setLocalDescription(ans);
+            socket.emit("signal",{to:from,signal:pc.localDescription});
+        }else if(signal.type==="answer"){
             await pc.setRemoteDescription(signal);
-        } else if (signal.candidate) {
-            try { await pc.addIceCandidate(signal.candidate); } catch {}
+        }else if(signal.candidate){
+            try{ await pc.addIceCandidate(signal.candidate); }catch{}
         }
     });
 
-    async function createPeerConnection(peerSid, isInitiator) {
+    async function createPeerConnection(peerSid,isInitiator){
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+            iceServers:[{urls:"stun:stun.l.google.com:19302"}]
         });
 
         peers[peerSid] = pc;
-        localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+        localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
 
-        pc.ontrack = (e) => {
-            const audioEl = document.createElement("audio");
-            audioEl.srcObject = e.streams[0];
-            audioEl.autoplay = true;
-            audioEl.volume = 1;
+        pc.ontrack = (e)=>{
+            const stream = e.streams[0];
 
-            document.body.appendChild(audioEl);
-            unboundAudioElements.push(audioEl);
+            const source = audioCtx.createMediaStreamSource(stream);
+            const gain = audioCtx.createGain();
+            gain.gain.value = 1;
 
-            console.log("VOICE: new audio track received");
+            source.connect(gain).connect(audioCtx.destination);
+
+            audioSourcesByUUID[peerSid] = source;
+            gainNodesByUUID[peerSid] = gain;
+
+            console.log("🎧 Audio bound to peer", peerSid);
         };
 
-        pc.onicecandidate = e => {
-            if (e.candidate) {
-                socket.emit("signal", {
-                    to: peerSid,
-                    signal: { candidate: e.candidate }
-                });
+        pc.onicecandidate = e=>{
+            if(e.candidate){
+                socket.emit("signal",{to:peerSid,signal:{candidate:e.candidate}});
             }
         };
 
-        if (isInitiator) {
+        if(isInitiator){
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            socket.emit("signal", { to: peerSid, signal: pc.localDescription });
+            socket.emit("signal",{to:peerSid,signal:pc.localDescription});
         }
     }
 
-    function distance3D(a, b) {
-        const dx = a[0] - b[0];
-        const dy = a[1] - b[1];
-        const dz = a[2] - b[2];
-        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    /* audio */
+
+    function distance3D(a,b){
+        const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
+        return Math.sqrt(dx*dx+dy*dy+dz*dz);
     }
 
-    function lerp(a, b, t) {
-        return a + (b - a) * t;
+    function lerp(a,b,t){ return a+(b-a)*t; }
+    function lerpVec(a,b,t){
+        return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
     }
 
-    function lerpVec3(a, b, t) {
-        return [
-            lerp(a[0], b[0], t),
-            lerp(a[1], b[1], t),
-            lerp(a[2], b[2], t),
-        ];
+    function expFalloff(dist){
+        if(dist>=MAX_DISTANCE) return 0;
+        return Math.exp(-FALL_OFF*dist);
     }
 
-    function expFalloff(dist) {
-        if (dist >= MAX_DISTANCE) return 0;
-        return Math.exp(-FALL_OFF * dist);
-    }
+    socket.on("update", players=>{
+        console.group("VOICE UPDATE");
+        players.forEach(p=>{
+            if(!Array.isArray(p.Pos)) return;
 
-    function handlePlayerUpdate(players) {
-        console.groupCollapsed("VOICE UPDATE");
-
-        for (const p of players) {
-            if (!Array.isArray(p.Pos)) continue;
-
-            if (p.uuid === "{{ mc_uuid }}") {
+            if(p.uuid === "{{ mc_uuid }}"){
                 myPos = p.Pos;
-                continue;
-            }
-
-            if (!audioElementsByUUID[p.uuid] && unboundAudioElements.length > 0) {
-                audioElementsByUUID[p.uuid] = unboundAudioElements.shift();
-                console.log("Bound audio to", p.uuid);
+                return;
             }
 
             targetPositions[p.uuid] = p.Pos;
-
-            if (!smoothedPositions[p.uuid]) {
+            if(!smoothedPositions[p.uuid])
                 smoothedPositions[p.uuid] = [...p.Pos];
-            }
 
-            if (!volumeControlsByUUID[p.uuid]) {
+            if(!volumeControlsByUUID[p.uuid]){
                 const row = document.createElement("div");
-                row.style.display = "flex";
-                row.style.alignItems = "center";
-                row.style.gap = "8px";
-                row.style.marginBottom = "6px";
+                row.style.display="flex";
+                row.style.gap="8px";
 
-                const img = document.createElement("img");
-                img.src = `https://mc-heads.net/head/${p.uuid}/left`;
-                img.width = 32;
+                const img=document.createElement("img");
+                img.src=`https://mc-heads.net/head/${p.uuid}/left`;
+                img.width=32;
 
-                const label = document.createElement("span");
-                label.textContent = p.Name || p.uuid;
-                label.style.width = "180px";
-                label.style.fontFamily = "monospace";
-                label.style.fontSize = "12px";
+                const label=document.createElement("span");
+                label.textContent=p.Name||p.uuid;
+                label.style.width="160px";
 
-                const slider = document.createElement("input");
-                slider.type = "range";
-                slider.min = 0;
-                slider.max = 1;
-                slider.step = 0.01;
-                slider.value = 1;
+                const slider=document.createElement("input");
+                slider.type="range"; slider.min=0; slider.max=1;
+                slider.step=0.01; slider.value=1;
 
-                volumeControlsByUUID[p.uuid] = slider;
-                row.append(img, label, slider);
+                volumeControlsByUUID[p.uuid]=slider;
+                row.append(img,label,slider);
                 userVolumesDiv.appendChild(row);
             }
-
-            console.log("Player", p.uuid, "pos", p.Pos);
-        }
-
+        });
         console.groupEnd();
-    }
+    });
 
-    socket.on("update", handlePlayerUpdate);
-
-    function smoothAudioLoop() {
-        for (const uuid in smoothedPositions) {
+    function audioLoop(){
+        for(const uuid in gainNodesByUUID){
             const target = targetPositions[uuid];
-            const audio = audioElementsByUUID[uuid];
+            const gain = gainNodesByUUID[uuid];
             const slider = volumeControlsByUUID[uuid];
+            if(!target||!gain||!slider) continue;
 
-            if (!target || !audio || !slider) continue;
+            smoothedPositions[uuid]=lerpVec(smoothedPositions[uuid],target,POSITION_LERP);
+            const dist=distance3D(myPos,smoothedPositions[uuid]);
+            const base=expFalloff(dist);
+            const final=isDeafened?0:base*parseFloat(slider.value);
 
-            smoothedPositions[uuid] =
-                lerpVec3(smoothedPositions[uuid], target, POSITION_LERP);
+            gain.gain.value = final;
 
-            const dist = distance3D(myPos, smoothedPositions[uuid]);
-            const baseVol = expFalloff(dist);
-
-            audio.volume = isDeafened
-                ? 0
-                : Math.max(0, Math.min(1, baseVol * slider.value));
-
-            if (Math.random() < 0.01) {
-                console.log("VOL APPLY", {
-                    uuid,
-                    dist,
-                    baseVol,
-                    slider: slider.value,
-                    final: audio.volume
-                });
-            }
+            console.debug("VOL APPLY",{uuid,dist,base,final});
         }
-
-        requestAnimationFrame(smoothAudioLoop);
+        requestAnimationFrame(audioLoop);
     }
 
-    smoothAudioLoop();
+    audioLoop();
 });
 </script>
+</body>
+</html>
