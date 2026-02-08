@@ -71,7 +71,7 @@ def apivoiceupdate():
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
         else:
-            existing_player["socket"] = {"Pos": player["Pos"], "uuid": uuid}
+            existing["socket"] = {"Pos": player["Pos"], "uuid": uuid}
 
     voice_rooms[world]["players"] = [
         p for p in voice_rooms[world]["players"]
