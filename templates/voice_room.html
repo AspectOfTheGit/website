@@ -55,17 +55,6 @@
     </div>
 </body>
 
-<div id="voice-controls" style="margin: 10px 0;">
-    <button id="mute-btn">Mute</button>
-    <button id="deafen-btn">Deafen</button>
-    <label for="mic-select">Mic:</label>
-    <select id="mic-select"></select>
-</div>
-
-<div id="user-volumes" style="margin-top: 10px;">
-    <h4>User Volumes</h4>
-</div>
-
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -162,8 +151,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function createPeerConnection(peerSid,isInitiator){
         const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
+    
+        peers[peerSid] = pc;
+    
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
+    
         pc.ontrack = (event) => {
             const audioEl = document.createElement("audio");
             audioEl.srcObject = event.streams[0];
@@ -171,14 +163,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             audioEl.controls = false;
             audioEl.muted = isDeafened;
             document.body.appendChild(audioEl);
+    
+            audioElementsByUUID[peerSid] = audioEl;
         };
-
+    
         pc.onicecandidate = (event) => {
             if(event.candidate) socket.emit("signal",{to:peerSid,signal:{candidate:event.candidate}});
         };
-
-        peers[peerSid] = pc;
-
+    
         if(isInitiator){
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
@@ -197,55 +189,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     function updateVolumes(players){
         players.forEach(player=>{
             if (!player.Pos || !Array.isArray(player.Pos)) return;
-    
-            const pos = player.Pos;
-            const dist = distance3D(myPos, pos);
-            let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
-    
-            console.log(
-                "Pos:", pos,
-                "| Distance:", dist,
-                "| uuid", player.uuid,
-                "| volume:", vol
-            );
-    
-            if(player.uuid === "{{ mc_uuid }}") myPos = pos;
-            console.log("your pos:", myPos);
-    
-            let audioEl = audioElementsByUUID[player.uuid];
-            if(!audioEl){
-                const els = Array.from(document.querySelectorAll("audio"));
-                for(const el of els){
-                    if(!Object.values(audioElementsByUUID).includes(el)){
-                        audioElementsByUUID[player.uuid] = el;
-                        audioEl = el;
-                        break;
-                    }
-                }
+        
+            if(player.uuid === "{{ mc_uuid }}"){
+                myPos = player.Pos;
+                return;
             }
-    
+        
+            let audioEl = audioElementsByUUID[player.uuid] || audioElementsByUUID[Object.keys(peers).find(sid => sid === player.uuid)];
+        
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
                 container.style.display = "flex";
                 container.style.alignItems = "center";
                 container.style.gap = "8px";
                 container.style.marginBottom = "6px";
-    
-                // Player head
+        
                 const head = document.createElement("img");
                 head.src = `https://mc-heads.net/head/${player.uuid}/left`;
                 head.width = 32;
                 head.height = 32;
                 head.style.borderRadius = "4px";
-    
-                // UUID label
+        
                 const label = document.createElement("span");
                 label.textContent = player.Name;
                 label.style.minWidth = "260px";
                 label.style.fontFamily = "monospace";
                 label.style.fontSize = "12px";
-    
-                // Volume slider
+        
                 const slider = document.createElement("input");
                 slider.type = "range";
                 slider.min = 0;
@@ -253,26 +223,23 @@ document.addEventListener("DOMContentLoaded", async () => {
                 slider.step = 0.01;
                 slider.value = 1;
                 slider.style.flex = "1";
-    
+        
                 slider.addEventListener("input", ()=>{
-                    if(audioEl){
-                        audioEl.volume = vol * parseFloat(slider.value);
-                    }
+                    if(audioEl) audioEl.volume = parseFloat(slider.value) * (audioEl.volume || 1);
                 });
-    
+        
                 container.appendChild(head);
                 container.appendChild(label);
                 container.appendChild(slider);
-    
+        
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
-    
-            if(audioEl){
-                audioEl.volume = isDeafened
-                    ? 0
-                    : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
-            }
+        
+            const dist = distance3D(myPos, player.Pos);
+            const vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
+        
+            if(audioEl) audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
         });
     }
 
