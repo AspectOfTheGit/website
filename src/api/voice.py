@@ -7,6 +7,7 @@ from flask import (
 from src.data import data
 from src.socket import emit_log
 from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE
+from src.utils.player_api import format_uuid
 import re
 import time
 import string
@@ -50,7 +51,7 @@ def apivoiceupdate():
         voice_rooms[world] = {"players":[]}
 
     for player in value:
-        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])
+        uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"]))
         if not any(p["uuid"] == uuid for p in voice_rooms[world]["players"]):
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36))
