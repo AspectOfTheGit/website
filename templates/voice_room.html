@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const peers = {};
     const audioElementsByUUID = {};
     const volumeControlsByUUID = {};
+    const pannerNodesByUUID = {};
     let localStream;
     let myPos = [0,0,0];
     const MAX_DISTANCE = 10;
@@ -75,6 +76,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const deafenBtn = document.getElementById("deafen-btn");
     const micSelect = document.getElementById("mic-select");
     const userVolumesDiv = document.getElementById("user-volumes");
+
+    // Web Audio Context
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     async function populateMicrophones() {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -184,15 +188,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateVolumes(players){
-        players.forEach(player=>{
+        players.forEach(player => {
             if (!player.Pos || !Array.isArray(player.Pos)) return;
-    
             const pos = player.Pos;
-            const dist = distance3D(myPos, pos);
-            let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
-    
             if(player.uuid === "{{ mc_uuid }}") myPos = pos;
-    
+
+            // Find or create audio element
             let audioEl = audioElementsByUUID[player.uuid];
             if(!audioEl){
                 const els = Array.from(document.querySelectorAll("audio"));
@@ -204,26 +205,56 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
-    
+
+            if(!audioEl) return;
+
+            // Create Web Audio nodes for this audio
+            if(!pannerNodesByUUID[player.uuid]){
+                const source = audioContext.createMediaElementSource(audioEl);
+                const panner = audioContext.createPanner();
+                panner.panningModel = "HRTF";
+                panner.distanceModel = "linear";
+                panner.maxDistance = MAX_DISTANCE;
+                panner.refDistance = 1;
+                panner.rolloffFactor = 1;
+                source.connect(panner).connect(audioContext.destination);
+                pannerNodesByUUID[player.uuid] = panner;
+            }
+
+            // Compute relative position
+            const relPos = [
+                pos[0] - myPos[0],
+                pos[1] - myPos[1],
+                pos[2] - myPos[2]
+            ];
+
+            // Apply stereo and distance via PannerNode
+            const panner = pannerNodesByUUID[player.uuid];
+            panner.setPosition(relPos[0], relPos[1], relPos[2]);
+            panner.orientationX.value = 0;
+            panner.orientationY.value = 0;
+            panner.orientationZ.value = -1; // facing forward
+
+            // Volume slider
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
                 container.style.display = "flex";
                 container.style.alignItems = "center";
                 container.style.gap = "8px";
                 container.style.marginBottom = "6px";
-    
+
                 const head = document.createElement("img");
                 head.src = `https://mc-heads.net/avatar/${player.uuid}/32`;
                 head.width = 32;
                 head.height = 32;
                 head.style.borderRadius = "4px";
-    
+
                 const label = document.createElement("span");
                 label.textContent = player.uuid;
                 label.style.minWidth = "260px";
                 label.style.fontFamily = "monospace";
                 label.style.fontSize = "12px";
-    
+
                 const slider = document.createElement("input");
                 slider.type = "range";
                 slider.min = 0;
@@ -231,32 +262,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                 slider.step = 0.01;
                 slider.value = 1;
                 slider.style.flex = "1";
-    
+
                 slider.addEventListener("input", ()=>{
-                    if(audioEl){
-                        audioEl.volume = vol * parseFloat(slider.value);
-                    }
+                    audioEl.volume = parseFloat(slider.value);
                 });
-    
+
                 container.appendChild(head);
                 container.appendChild(label);
                 container.appendChild(slider);
-    
+
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
-    
-            if(audioEl){
-                audioEl.volume = isDeafened
-                    ? 0
-                    : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
-            }
+
+            audioEl.muted = isDeafened;
         });
     }
 
     socket.on("update", (players)=>{
         updateVolumes(players);
     });
-
 });
 </script>
