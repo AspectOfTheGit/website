@@ -50,9 +50,14 @@
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
     const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-
     const room = "voice-{{ world_uuid }}";
+
     const peers = {};
+    const audioElementsByUUID = {};
+
+    let myPos = [0, 0, 0];
+
+    const MAX_DISTANCE = 10;
 
     const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -98,9 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function createPeerConnection(peerSid, isInitiator) {
         const pc = new RTCPeerConnection({
-            iceServers: [
-                { urls: "stun:stun.l.google.com:19302" }
-            ]
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
         });
 
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
@@ -127,6 +130,58 @@ document.addEventListener("DOMContentLoaded", async () => {
             socket.emit("signal", { to: peerSid, signal: pc.localDescription });
         }
     }
+
+    function parsePos(posStr) {
+        return posStr.replace(/\[|\]/g, "")
+                     .split(",")
+                     .map(s => parseFloat(s.replace("d", "")));
+    }
+
+    function distance3D(a, b) {
+        const dx = a[0] - b[0];
+        const dy = a[1] - b[1];
+        const dz = a[2] - b[2];
+        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    }
+
+    function updateVolumes(players) {
+        players.forEach((player, i) => {
+            const pos = parsePos(player.Pos);
+            const dist = distance3D(myPos, pos);
+
+            let volume = 1 - (dist / MAX_DISTANCE);
+            volume = Math.max(0, Math.min(1, volume));
+
+            const audioEl = audioElementsByUUID[player.uuid];
+            if (audioEl) {
+                audioEl.volume = volume;
+            } else {
+                const audioEls = Array.from(document.querySelectorAll("audio"));
+                for (const el of audioEls) {
+                    if (!Object.values(audioElementsByUUID).includes(el)) {
+                        audioElementsByUUID[player.uuid] = el;
+                        el.volume = volume;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    setInterval(async () => {
+        try {
+            const res = await fetch(`/voice_positions/{{ world_uuid }}`);
+            const players = await res.json();
+
+            const me = players.find(p => p.uuid === "{{ mc_uuid }}");
+            if (me) {
+                myPos = parsePos(me.Pos);
+            }
+
+            updateVolumes(players);
+        } catch (err) {
+            console.warn("Failed to update positions", err);
+        }
+    }, 500);
 });
 </script>
-
