@@ -51,11 +51,11 @@
     </div>
     
     <div id="user-volumes" style="margin-top: 10px;">
-        <h4>User Volumes</h4>
+        <h4>Connected Users</h4>
     </div>
 </body>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
     const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
@@ -68,9 +68,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const targetPositions = {};
     const smoothedPositions = {};
+    const unboundAudioElements = [];
 
     let localStream;
-    let myPos = [0,0,0];
+    let myPos = [0, 0, 0];
 
     let isMuted = false;
     let isDeafened = false;
@@ -96,9 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function getLocalStream(deviceId = null) {
-        if (localStream) {
-            localStream.getTracks().forEach(t => t.stop());
-        }
+        if (localStream) localStream.getTracks().forEach(t => t.stop());
 
         localStream = await navigator.mediaDevices.getUserMedia({
             audio: deviceId ? { deviceId } : true
@@ -126,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         isDeafened = !isDeafened;
         deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
     };
-    
+
     socket.on("existing-peers", async sids => {
         for (const sid of sids) await createPeerConnection(sid, true);
     });
@@ -160,13 +159,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
         pc.ontrack = (e) => {
-            const audio = document.createElement("audio");
-            audio.srcObject = e.streams[0];
-            audio.autoplay = true;
-            audio.muted = false;
-            document.body.appendChild(audio);
+            const audioEl = document.createElement("audio");
+            audioEl.srcObject = e.streams[0];
+            audioEl.autoplay = true;
+            audioEl.volume = 1;
 
-            audioElementsByUUID[peerSid] = audio;
+            document.body.appendChild(audioEl);
+            unboundAudioElements.push(audioEl);
+
+            console.log("VOICE: new audio track received");
         };
 
         pc.onicecandidate = e => {
@@ -209,13 +210,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         return Math.exp(-FALL_OFF * dist);
     }
 
-    function updateVolumes(players) {
-        players.forEach(p => {
-            if (!Array.isArray(p.Pos)) return;
+    function handlePlayerUpdate(players) {
+        console.groupCollapsed("VOICE UPDATE");
+
+        for (const p of players) {
+            if (!Array.isArray(p.Pos)) continue;
 
             if (p.uuid === "{{ mc_uuid }}") {
                 myPos = p.Pos;
-                return;
+                continue;
+            }
+
+            if (!audioElementsByUUID[p.uuid] && unboundAudioElements.length > 0) {
+                audioElementsByUUID[p.uuid] = unboundAudioElements.shift();
+                console.log("Bound audio to", p.uuid);
             }
 
             targetPositions[p.uuid] = p.Pos;
@@ -252,10 +260,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 row.append(img, label, slider);
                 userVolumesDiv.appendChild(row);
             }
-        });
+
+            console.log("Player", p.uuid, "pos", p.Pos);
+        }
+
+        console.groupEnd();
     }
 
-    socket.on("update", updateVolumes);
+    socket.on("update", handlePlayerUpdate);
 
     function smoothAudioLoop() {
         for (const uuid in smoothedPositions) {
@@ -273,7 +285,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             audio.volume = isDeafened
                 ? 0
-                : baseVol * parseFloat(slider.value);
+                : Math.max(0, Math.min(1, baseVol * slider.value));
+
+            if (Math.random() < 0.01) {
+                console.log("VOL APPLY", {
+                    uuid,
+                    dist,
+                    baseVol,
+                    slider: slider.value,
+                    final: audio.volume
+                });
+            }
         }
 
         requestAnimationFrame(smoothAudioLoop);
