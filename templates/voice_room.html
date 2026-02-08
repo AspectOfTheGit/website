@@ -49,6 +49,17 @@
         <label for="mic-select">Mic:</label>
         <select id="mic-select"></select>
     </div>
+    
+    <div id="voice-controls" style="margin: 10px 0;">
+        <button id="mute-btn">Mute</button>
+        <button id="deafen-btn">Deafen</button>
+        <label for="mic-select">Mic:</label>
+        <select id="mic-select"></select>
+    </div>
+    
+    <div id="user-volumes" style="margin-top: 10px;">
+        <h4>User Volumes</h4>
+    </div>
 </body>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
@@ -59,6 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const peers = {};
     const audioElementsByUUID = {};
+    const volumeControlsByUUID = {};
     let localStream;
     let myPos = [0,0,0];
     const MAX_DISTANCE = 10;
@@ -69,6 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const muteBtn = document.getElementById("mute-btn");
     const deafenBtn = document.getElementById("deafen-btn");
     const micSelect = document.getElementById("mic-select");
+    const userVolumesDiv = document.getElementById("user-volumes");
 
     async function populateMicrophones() {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -83,20 +96,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function getLocalStream(deviceId=null) {
-        if (localStream) {
+        if(localStream){
             localStream.getTracks().forEach(t => t.stop());
         }
         localStream = await navigator.mediaDevices.getUserMedia({
             audio: deviceId ? { deviceId } : true
         });
-
         localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
 
         Object.values(peers).forEach(pc => {
             const sender = pc.getSenders().find(s => s.track && s.kind === "audio");
-            if (sender) {
-                sender.replaceTrack(localStream.getAudioTracks()[0]);
-            }
+            if(sender) sender.replaceTrack(localStream.getAudioTracks()[0]);
         });
     }
 
@@ -122,35 +132,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket.emit("join", room);
 
     socket.on("existing-peers", async (peerSids) => {
-        for (const sid of peerSids) await createPeerConnection(sid, true);
+        for(const sid of peerSids) await createPeerConnection(sid, true);
     });
     socket.on("new-peer", async (peerSid) => {
-        if (!peers[peerSid]) await createPeerConnection(peerSid, false);
+        if(!peers[peerSid]) await createPeerConnection(peerSid, false);
     });
     socket.on("signal", async (data) => {
         const from = data.from;
         const signal = data.signal;
 
-        if (!peers[from]) await createPeerConnection(from, false);
+        if(!peers[from]) await createPeerConnection(from, false);
         const pc = peers[from];
 
-        if (signal.type === "offer") {
+        if(signal.type === "offer"){
             await pc.setRemoteDescription(signal);
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            socket.emit("signal", { to: from, signal: pc.localDescription });
-        } else if (signal.type === "answer") {
+            socket.emit("signal",{to:from, signal: pc.localDescription});
+        }else if(signal.type==="answer"){
             await pc.setRemoteDescription(signal);
-        } else if (signal.candidate) {
-            try { await pc.addIceCandidate(signal.candidate); } catch(e){ console.warn(e); }
+        }else if(signal.candidate){
+            try{ await pc.addIceCandidate(signal.candidate);}catch(e){ console.warn(e);}
         }
     });
 
-    async function createPeerConnection(peerSid, isInitiator) {
-        const pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-        });
-
+    async function createPeerConnection(peerSid,isInitiator){
+        const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
         pc.ontrack = (event) => {
@@ -160,32 +167,31 @@ document.addEventListener("DOMContentLoaded", async () => {
             audioEl.controls = false;
             audioEl.muted = isDeafened;
             document.body.appendChild(audioEl);
-
-            audioElementsByUUID[audioEl.dataset.uuid] = audioEl;
         };
 
         pc.onicecandidate = (event) => {
-            if (event.candidate) socket.emit("signal", { to: peerSid, signal: { candidate: event.candidate } });
+            if(event.candidate) socket.emit("signal",{to:peerSid,signal:{candidate:event.candidate}});
         };
 
         peers[peerSid] = pc;
 
-        if (isInitiator) {
+        if(isInitiator){
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            socket.emit("signal", { to: peerSid, signal: pc.localDescription });
+            socket.emit("signal",{to:peerSid, signal: pc.localDescription});
         }
     }
 
-    function parsePos(posStr) {
-        return posStr.replace(/\[|\]/g,"").split(",").map(s => parseFloat(s.replace("d","")));
+    function parsePos(posStr){
+        return posStr.replace(/\[|\]/g,"").split(",").map(s=>parseFloat(s.replace("d","")));
     }
-    function distance3D(a,b) {
+    function distance3D(a,b){
         const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
         return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
-    function updateVolumes(players) {
-        players.forEach(player => {
+
+    function updateVolumes(players){
+        players.forEach(player=>{
             const pos = parsePos(player.Pos);
             const dist = distance3D(myPos,pos);
             let vol = Math.max(0, Math.min(1, 1 - dist/MAX_DISTANCE));
@@ -203,14 +209,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
-            if(audioEl) audioEl.volume = isDeafened ? 0 : vol;
+
+            if(!volumeControlsByUUID[player.uuid]){
+                const container = document.createElement("div");
+                const label = document.createElement("label");
+                label.textContent = player.uuid;
+                const slider = document.createElement("input");
+                slider.type = "range";
+                slider.min = 0;
+                slider.max = 1;
+                slider.step = 0.01;
+                slider.value = 1;
+                slider.addEventListener("input", ()=>{
+                    if(audioEl) audioEl.volume = vol * parseFloat(slider.value);
+                });
+                container.appendChild(label);
+                container.appendChild(slider);
+                userVolumesDiv.appendChild(container);
+                volumeControlsByUUID[player.uuid] = slider;
+            }
+
+            if(audioEl){
+                audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
+            }
         });
     }
 
-    socket.on("update", (players) => {
+    socket.on("update", (players)=>{
         updateVolumes(players);
     });
 
 });
 </script>
-
