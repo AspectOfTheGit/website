@@ -56,7 +56,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const audioElementsByUUID = {};
 
     let myPos = [0, 0, 0];
-
     const MAX_DISTANCE = 10;
 
     const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -138,14 +137,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function distance3D(a, b) {
-        const dx = a[0] - b[0];
-        const dy = a[1] - b[1];
-        const dz = a[2] - b[2];
+        const dx = a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
         return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
 
     function updateVolumes(players) {
-        players.forEach((player, i) => {
+        players.forEach(player => {
             const pos = parsePos(player.Pos);
             const dist = distance3D(myPos, pos);
 
@@ -165,23 +162,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
+
+            if (player.uuid === "{{ mc_uuid }}") {
+                myPos = pos;
+            }
         });
     }
 
-    setInterval(async () => {
-        try {
-            const res = await fetch(`/voice_positions/{{ world_uuid }}`);
-            const players = await res.json();
+    socket.on("update", (players) => {
+        updateVolumes(players);
+    });
 
-            const me = players.find(p => p.uuid === "{{ mc_uuid }}");
-            if (me) {
-                myPos = parsePos(me.Pos);
-            }
-
-            updateVolumes(players);
-        } catch (err) {
-            console.warn("Failed to update positions", err);
-        }
-    }, 500);
 });
 </script>
+
