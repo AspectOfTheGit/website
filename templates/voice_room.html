@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let localStream;
     let myPos = [0,0,0];
-    let myRot = [0,0]; // yaw, pitch
+    let myRot = [0,0];
     const MAX_DISTANCE = 10;
 
     let isMuted = false;
@@ -217,58 +217,66 @@ document.addEventListener("DOMContentLoaded", async () => {
     /* Volume and Volume control UI */
 
     function updateVolumes(players){
-
-        players.forEach(p=>{
-            if(p.uuid && p.peerSid){
-                peerSidToUUID[p.peerSid] = p.uuid;
-            }
-        });
-
-        players.forEach(player=>{
-            if(!Array.isArray(player.Pos)) return;
-
-            if(player.uuid === "{{ mc_uuid }}"){
+        players.forEach(player => {
+            if (!Array.isArray(player.Pos)) return;
+    
+            /* your data */
+            if (player.uuid === "{{ mc_uuid }}") {
                 myPos = player.Pos;
                 myRot = player.Rot || [0,0];
                 return;
             }
-
-            const dist = distance3D(myPos, player.Pos);
-            const baseVol = clamp(1 - dist / MAX_DISTANCE, 0, 1);
-
-            const gain = gainNodesByUUID[player.uuid];
-            const pan = panNodesByUUID[player.uuid];
-            if(!gain || !pan) return;
-
-            const userSlider = volumeControlsByUUID[player.uuid] || 1;
-            gain.gain.value = isDeafened ? 0 : baseVol * userSlider;
-
-            pan.pan.value = computePan(myPos, myRot[0], player.Pos);
-
-            if(!volumeControlsByUUID[player.uuid]){
+    
+            /* UI */
+            if (!volumeControlsByUUID[player.uuid]) {
+    
                 const row = document.createElement("div");
-                row.style.display="flex";
-                row.style.alignItems="center";
-                row.style.gap="8px";
-                row.style.marginBottom="6px";
-
+                row.style.display = "flex";
+                row.style.alignItems = "center";
+                row.style.gap = "8px";
+                row.style.marginBottom = "6px";
+    
                 const img = document.createElement("img");
                 img.src = `https://mc-heads.net/avatar/${player.uuid}/32`;
                 img.width = 32;
-
-                const name = document.createElement("span");
-                name.textContent = player.Name;
-                name.style.minWidth="150px";
-
+                img.height = 32;
+    
+                const label = document.createElement("span");
+                label.textContent = player.Name || player.uuid;
+                label.style.minWidth = "160px";
+                label.style.fontFamily = "monospace";
+                label.style.fontSize = "12px";
+    
                 const slider = document.createElement("input");
-                slider.type="range";
-                slider.min=0; slider.max=1; slider.step=0.01; slider.value=1;
-                slider.oninput = ()=>gain.gain.value = baseVol * slider.value;
-
-                row.append(img,name,slider);
-                userVolumesDiv.appendChild(row);
-
+                slider.type = "range";
+                slider.min = 0;
+                slider.max = 1;
+                slider.step = 0.01;
+                slider.value = 1;
+                slider.style.flex = "1";
+    
                 volumeControlsByUUID[player.uuid] = slider;
+    
+                row.appendChild(img);
+                row.appendChild(label);
+                row.appendChild(slider);
+                userVolumesDiv.appendChild(row);
+            }
+    
+            /* audio math */
+            const dist = distance3D(myPos, player.Pos);
+            const baseVol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
+    
+            const gain = gainNodesByUUID[player.uuid];
+            const pan  = panNodesByUUID[player.uuid];
+    
+            if (gain) {
+                const userVol = parseFloat(volumeControlsByUUID[player.uuid].value);
+                gain.gain.value = isDeafened ? 0 : baseVol * userVol;
+            }
+    
+            if (pan) {
+                pan.pan.value = computePan(myPos, myRot[0], player.Pos);
             }
         });
     }
