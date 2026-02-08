@@ -63,4 +63,4 @@ def apivoiceupdate():
 
     # no need to save data, its not very important.
 
-    return jsonify({"players": voice_rooms[world]["players"]}), 200
+    return jsonify(voice_rooms[world]["players"]), 200
