@@ -51,7 +51,7 @@ def apivoiceupdate():
 
     for player in value:
         uuid = ''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])
-        if uuid not in voice_rooms[world]["players"]:
+        if not any(p["uuid"] == uuid for p in voice_rooms[world]["players"]):
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36))
             voice_rooms[world]["players"].append({"uuid":uuid,"world":world,"auth":auth})
