@@ -73,7 +73,7 @@ def apivoiceupdate():
         if p["uuid"] in request_uuids
     ]
 
-    emit_log('update',"HI, i'm an update",f"voice-{world}")
+    emit_log('update',voice_rooms[world]["players"],f"voice-{world}")
 
     # no need to save data, its not very important.
 
