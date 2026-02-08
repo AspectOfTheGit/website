@@ -16,6 +16,7 @@ from src.utils.player_api import get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
+from src.api.voice import voice_rooms
 
 from src.utils.data_api import (
     refresh_account_info,
@@ -244,20 +245,27 @@ def world_edit(world):
 def voice_room(world):
     world = world.strip()
 
-    if not session.get("mc_uuid"):
-        return redirect("/login")
+    auth = request.args.get('auth', False)
+    
+    if not auth:
+        return jsonify({"error": "Unauthorized"}), 401
 
     data.setdefault("world", {})
 
     if world not in data["world"]:
         return jsonify({"error": "Voice room not found"}), 400
 
+    uuid=next((p["uuid"] for p in voice_rooms[world]["players"] if p["auth"] == auth), None)
+
+    if uuid == None:
+        return jsonify({"error": "Unauthorized"}), 401
+
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
-    if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update in 800ms
+    if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
         return jsonify({"error": f"Voice room closed (since {timediff-MAX_TIME_TILL_VOICE_ROOM_CLOSE}ms ago)"}), 400
 
     return render_template(
         "voice_room.html",
-        mc_uuid=session["mc_uuid"],
+        mc_uuid=uuid,
         world_uuid=world
     )
