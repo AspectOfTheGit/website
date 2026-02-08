@@ -13,7 +13,7 @@ utils = Blueprint(
 )
 
 
-@debug.post("/get-world-uuid")
+@utils.post("/get-world-uuid")
 def getworlduuid():
     match = re.search(r"world:([a-zA-Z0-9-]+)", request.headers.get("User-Agent", ""))
     match = match.group(1) if match else None
