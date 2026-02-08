@@ -55,6 +55,17 @@
     </div>
 </body>
 
+<div id="voice-controls" style="margin: 10px 0;">
+    <button id="mute-btn">Mute</button>
+    <button id="deafen-btn">Deafen</button>
+    <label for="mic-select">Mic:</label>
+    <select id="mic-select"></select>
+</div>
+
+<div id="user-volumes" style="margin-top: 10px;">
+    <h4>User Volumes</h4>
+</div>
+
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -190,10 +201,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             const pos = player.Pos;
             const dist = distance3D(myPos, pos);
             let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
-            console.log("Pos:", pos, "| Distance:", dist, "| uuid", player.uuid, "| volume:", vol);
+    
+            console.log(
+                "Pos:", pos,
+                "| Distance:", dist,
+                "| uuid", player.uuid,
+                "| volume:", vol
+            );
     
             if(player.uuid === "{{ mc_uuid }}") myPos = pos;
-
             console.log("your pos:", myPos);
     
             let audioEl = audioElementsByUUID[player.uuid];
@@ -210,24 +226,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
-                const label = document.createElement("label");
-                label.textContent = player.uuid;
+                container.style.display = "flex";
+                container.style.alignItems = "center";
+                container.style.gap = "8px";
+                container.style.marginBottom = "6px";
+    
+                // Player head
+                const head = document.createElement("img");
+                head.src = `https://mc-heads.net/head/${player.uuid}/left`;
+                head.width = 32;
+                head.height = 32;
+                head.style.borderRadius = "4px";
+    
+                // UUID label
+                const label = document.createElement("span");
+                label.textContent = player.Name;
+                label.style.minWidth = "260px";
+                label.style.fontFamily = "monospace";
+                label.style.fontSize = "12px";
+    
+                // Volume slider
                 const slider = document.createElement("input");
                 slider.type = "range";
                 slider.min = 0;
                 slider.max = 1;
                 slider.step = 0.01;
                 slider.value = 1;
+                slider.style.flex = "1";
+    
                 slider.addEventListener("input", ()=>{
-                    if(audioEl) audioEl.volume = vol * parseFloat(slider.value);
+                    if(audioEl){
+                        audioEl.volume = vol * parseFloat(slider.value);
+                    }
                 });
+    
+                container.appendChild(head);
                 container.appendChild(label);
                 container.appendChild(slider);
+    
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
     
-            if(audioEl) audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
+            if(audioEl){
+                audioEl.volume = isDeafened
+                    ? 0
+                    : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
+            }
         });
     }
 
