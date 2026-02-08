@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const room = "voice-{{ world_uuid }}";
 
     const peers = {};
+    const peerSidToUUID = {};
     const audioElementsByUUID = {};
     const volumeControlsByUUID = {};
     let localStream;
@@ -162,7 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             audioEl.controls = false;
             audioEl.muted = isDeafened;
             document.body.appendChild(audioEl);
-
+        
             audioElementsByUUID[peerSid] = audioEl;
         };
 
@@ -185,62 +186,61 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function updateVolumes(players){
         players.forEach(player => {
-            if(!player.Pos || !Array.isArray(player.Pos)) return;
-
-            if(player.uuid === "{{ mc_uuid }}") {
+            if (!player.Pos || !Array.isArray(player.Pos)) return;
+        
+            if (player.uuid === "{{ mc_uuid }}") {
                 myPos = player.Pos;
                 return;
             }
-
-            if(audioElementsByUUID[player.uuid] === undefined){
-                const tempEl = audioElementsByUUID[player.socketSid || player.uuid] || null;
-                if(tempEl) audioElementsByUUID[player.uuid] = tempEl;
+        
+            let audioEl = audioElementsByUUID[player.uuid];
+            if (!audioEl) {
+                for (const sid in audioElementsByUUID) {
+                    if (!peerSidToUUID[sid]) {
+                        peerSidToUUID[sid] = player.uuid;
+                        audioEl = audioElementsByUUID[sid];
+                        audioElementsByUUID[player.uuid] = audioEl;
+                        break;
+                    }
+                }
             }
-
-            const audioEl = audioElementsByUUID[player.uuid];
-            if(!audioEl) return;
-
-            if(!volumeControlsByUUID[player.uuid]){
+        
+            if (!audioEl) return;
+        
+            if (!volumeControlsByUUID[player.uuid]) {
                 const container = document.createElement("div");
-                container.style.display="flex";
-                container.style.alignItems="center";
-                container.style.gap="8px";
-                container.style.marginBottom="6px";
-
+                container.style.display = "flex";
+                container.style.alignItems = "center";
+                container.style.gap = "8px";
+                container.style.marginBottom = "6px";
+        
                 const head = document.createElement("img");
                 head.src = `https://mc-heads.net/head/${player.uuid}/left`;
-                head.width = 32;
-                head.height = 32;
-                head.style.borderRadius="4px";
-
+                head.width = 32; head.height = 32; head.style.borderRadius = "4px";
+        
                 const label = document.createElement("span");
                 label.textContent = player.Name || player.uuid;
-                label.style.minWidth="260px";
-                label.style.fontFamily="monospace";
-                label.style.fontSize="12px";
-
+                label.style.minWidth = "260px";
+                label.style.fontFamily = "monospace";
+                label.style.fontSize = "12px";
+        
                 const slider = document.createElement("input");
-                slider.type="range";
-                slider.min = 0; slider.max = 1;
-                slider.step = 0.01;
-                slider.value = 1;
+                slider.type = "range"; slider.min = 0; slider.max = 1; slider.step = 0.01; slider.value = 1;
                 slider.style.flex = "1";
-
-                slider.addEventListener("input", ()=>{
+                slider.addEventListener("input", () => {
                     const dist = distance3D(myPos, player.Pos);
-                    const baseVol = clamp(1 - dist / MAX_DISTANCE, 0, 1);
+                    const baseVol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
                     audioEl.volume = isDeafened ? 0 : baseVol * parseFloat(slider.value);
                 });
-
-                container.append(head,label,slider);
+        
+                container.append(head, label, slider);
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
-
+        
             const dist = distance3D(myPos, player.Pos);
-            const baseVol = clamp(1 - dist / MAX_DISTANCE, 0, 1);
+            const baseVol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
             const sliderVal = parseFloat(volumeControlsByUUID[player.uuid].value);
-
             audioEl.volume = isDeafened ? 0 : baseVol * sliderVal;
         });
     }
