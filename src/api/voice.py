@@ -43,14 +43,17 @@ def apivoiceupdate():
     except:
         return jsonify({"error": "No Token Generated"}), 400
 
-    timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
-    if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
-        print(f"[api/voice.py] NEW world connected voice room: {world}")
-        voice_rooms[world] = {"players":[],"new":[]}
-
     if world not in voice_rooms:
         print(f"[api/voice.py] NEW world connected voice room (for the first time): {world}")
         voice_rooms[world] = {"players":[],"new":[]}
+        data["world"][world]["voice"] = time.time_ns() // 1000000
+
+    timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
+    if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
+        print(f"[api/voice.py] NEW world connected voice room: {world} (last connection {timediff}ms ago)")
+        voice_rooms[world] = {"players":[],"new":[]}
+
+    data["world"][world]["voice"] = time.time_ns() // 1000000
 
     voice_rooms[world]["new"] = []
 
@@ -63,7 +66,6 @@ def apivoiceupdate():
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
 
-    data["world"][world]["voice"] = time.time_ns() // 1000000
     emit_log('update',"HI, i'm an update",f"voice-{world}")
 
     # no need to save data, its not very important.
