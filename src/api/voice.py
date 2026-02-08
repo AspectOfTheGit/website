@@ -64,7 +64,7 @@ def apivoiceupdate():
         if not any(p["uuid"] == uuid for p in voice_rooms[world]["players"]):
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36))
-            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth})
+            voice_rooms[world]["players"].append({"uuid":uuid,"Pos":player["Pos"]})
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
 
