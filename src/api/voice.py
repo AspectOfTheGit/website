@@ -64,7 +64,7 @@ def apivoiceupdate():
         if not any(p["uuid"] == uuid for p in voice_rooms[world]["players"]):
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36))
-            voice_rooms[world]["players"].append({"uuid":uuid,"Pos":player["Pos"]})
+            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth,"socket":{"Pos":player["Pos"],"uuid":uuid}})
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
 
@@ -73,7 +73,9 @@ def apivoiceupdate():
         if p["uuid"] in request_uuids
     ]
 
-    emit_log('update',voice_rooms[world]["players"],f"voice-{world}")
+    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"]]
+
+    emit_log('update',voice_rooms[world]["socket"],f"voice-{world}")
 
     # no need to save data, its not very important.
 
