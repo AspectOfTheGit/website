@@ -61,12 +61,17 @@ def apivoiceupdate():
     for player in value:
         uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"]))
         request_uuids.append(uuid)
-        if not any(p["uuid"] == uuid for p in voice_rooms[world]["players"]):
+
+        existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None)
+        
+        if not existing:
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36))
             voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth,"socket":{"Pos":player["Pos"],"uuid":uuid}})
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
+        else:
+            existing_player["socket"] = {"Pos": player["Pos"], "uuid": uuid}
 
     voice_rooms[world]["players"] = [
         p for p in voice_rooms[world]["players"]
