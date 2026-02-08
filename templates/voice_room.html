@@ -190,11 +190,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const pos = player.Pos;
             const dist = distance3D(myPos, pos);
             let vol = Math.max(0, Math.min(1, 1 - dist / MAX_DISTANCE));
-            console.log("Pos:", pos, "| Distance:", dist, "| uuid", player.uuid, "| volume:", vol);
     
             if(player.uuid === "{{ mc_uuid }}") myPos = pos;
-
-            console.log("your pos:", myPos);
     
             let audioEl = audioElementsByUUID[player.uuid];
             if(!audioEl){
@@ -210,24 +207,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     
             if(!volumeControlsByUUID[player.uuid]){
                 const container = document.createElement("div");
-                const label = document.createElement("label");
+                container.style.display = "flex";
+                container.style.alignItems = "center";
+                container.style.gap = "8px";
+                container.style.marginBottom = "6px";
+    
+                const head = document.createElement("img");
+                head.src = `https://mc-heads.net/avatar/${player.uuid}/32`;
+                head.width = 32;
+                head.height = 32;
+                head.style.borderRadius = "4px";
+    
+                const label = document.createElement("span");
                 label.textContent = player.uuid;
+                label.style.minWidth = "260px";
+                label.style.fontFamily = "monospace";
+                label.style.fontSize = "12px";
+    
                 const slider = document.createElement("input");
                 slider.type = "range";
                 slider.min = 0;
                 slider.max = 1;
                 slider.step = 0.01;
                 slider.value = 1;
+                slider.style.flex = "1";
+    
                 slider.addEventListener("input", ()=>{
-                    if(audioEl) audioEl.volume = vol * parseFloat(slider.value);
+                    if(audioEl){
+                        audioEl.volume = vol * parseFloat(slider.value);
+                    }
                 });
+    
+                container.appendChild(head);
                 container.appendChild(label);
                 container.appendChild(slider);
+    
                 userVolumesDiv.appendChild(container);
                 volumeControlsByUUID[player.uuid] = slider;
             }
     
-            if(audioEl) audioEl.volume = isDeafened ? 0 : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
+            if(audioEl){
+                audioEl.volume = isDeafened
+                    ? 0
+                    : vol * parseFloat(volumeControlsByUUID[player.uuid].value);
+            }
         });
     }
 
