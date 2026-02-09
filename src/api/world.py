@@ -46,7 +46,7 @@ def apiworldbotpermissions(world):
 @world.get("/<world>/getpermissions")
 def apiworldgetbotpermissions(world):
     if world not in data["world"]:
-        return jsonify({"error": "No world page"}), 400
+        return jsonify({"success": True, "permissions": BOT_PERMISSION_DEFAULTS})
 
     return jsonify({"success": True, "permissions": data["world"][world].get("permissions",BOT_PERMISSION_DEFAULTS)})
 
