@@ -71,6 +71,7 @@ def apivoiceupdate():
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth}) # To tell the game the auth URL
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
         # Update data for all users (this data is sent to all other users connected to voice room)
+        existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None)
         existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Name": player.get("Name",uuid), "Rot": player["Rotation"]}
 
     voice_rooms[world]["players"] = [
