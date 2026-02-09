@@ -51,7 +51,7 @@ def apivoiceupdate():
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
     if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
         print(f"[api/voice.py] NEW world connected voice room: {world} (last connection {timediff}ms ago)")
-        voice_rooms[world] = {"players":[],"new":[]}
+        voice_rooms[world] = {"players":[],"new":[],"socket":[]}
 
     data["world"][world]["voice"] = time.time_ns() // 1000000
 
@@ -59,29 +59,31 @@ def apivoiceupdate():
     request_uuids = []
 
     for player in value:
-        uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"]))
+        uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])) # Convert UUID from array to hex
         request_uuids.append(uuid)
 
-        existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None)
+        existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None) # Find UUID in current voice room session.
         
-        if not existing:
+        if not existing: # If user is new to the voice room
             chars = string.ascii_letters + string.digits
-            auth = ''.join(secrets.choice(chars) for _ in range(36))
-            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth,"socket":{"Pos":player["Pos"],"uuid":uuid}})
-            voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth})
+            auth = ''.join(secrets.choice(chars) for _ in range(36)) # Generate a new auth string for that user
+            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth}) # Init data for them
+            voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth}) # To tell the game the auth URL
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
-        else:
-            existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Name": player.get("Name",uuid), "Rot": player["Rotation"]}
+        # Update data for all users (this data is sent to all other users connected to voice room)
+        existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Name": player.get("Name",uuid), "Rot": player["Rotation"]}
 
     voice_rooms[world]["players"] = [
         p for p in voice_rooms[world]["players"]
         if p["uuid"] in request_uuids
-    ]
+    ] # Remove any players from voice room data that werent sent by the game (they disconnected from voice room)
 
-    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"]]
+    # todo, fully disconnect old users on client
+    
+    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"]] # Construct list to send to users
 
-    emit_log('update',voice_rooms[world]["socket"],f"voice-{world}")
+    emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 
     # no need to save data, its not very important.
 
-    return jsonify(voice_rooms[world]["new"]), 200
+    return jsonify(voice_rooms[world]["new"]), 200 # Return with any new users with auth URL for them to join voice room
