@@ -6,8 +6,8 @@ from src.data import data
 
 # todo - store channels that have been created to reduce requests sent
 
-def notify(account: str, message: str, type_: str):
-    match = re.search(r"^([^.]+)", type_)
+def notify(account: str, message: str, type: str):
+    match = re.search(r"^([^.]+)", type)
     typeroot = match.group(1) if match else None
 
     if typeroot != "bot":
