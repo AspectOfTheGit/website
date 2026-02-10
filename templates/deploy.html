@@ -136,7 +136,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
                     if (res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -159,7 +159,7 @@
                     canPress = false;
             
                     try {
-                        const res = await fetch('/api/deploy', {
+                        const res = await fetch('api.aspectofthe.site/deploy', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -272,7 +272,7 @@
             loadingWorlds = true;
     
             try {
-                const res = await fetch("https://api.legiti.dev/top/0");
+                const res = await fetch("https:/api.aspectofthe.site.legiti.dev/top/0");
                 allworlds = await res.json();
             } catch (err) {
                 console.error("Failed to fetch all worlds:", err);
@@ -283,7 +283,7 @@
     
             try {
                 const formatted = formatUUID("{{ mcuuid }}");
-                const res2 = await fetch(`https://api.legiti.dev/owner/${formatted}`);
+                const res2 = await fetch(`https:/api.aspectofthe.site.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res2.json();
             } catch (err) {
                 console.error("Failed to fetch owned worlds:", err);
