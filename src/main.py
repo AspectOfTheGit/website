@@ -49,9 +49,9 @@ def create_app():
         print("URL ROOT:", request.url_root)
         print(request.headers.get("X-Forwarded-Host"))
 
-    @app.route("/test", subdomain="api")
-    def api_test():
-        return "api subdomain works"
+    @app.route("/test", subdomain="<subdomain>")
+    def api_test(subdomain):
+        return f"Subdomain: {subdomain}", 200
 
     @app.errorhandler(404)
     def not_found(error):
