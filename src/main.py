@@ -41,16 +41,6 @@ def create_app():
     app.register_blueprint(voice)
     app.register_blueprint(utils)
 
-    @app.before_request
-    def before_request():
-        print("HOST:", request.host)
-        print("URL ROOT:", request.url_root)
-        print(request.headers.get("X-Forwarded-Host"))
-
-    @app.route("/test", subdomain="<subdomain>")
-    def api_test(subdomain):
-        return f"Subdomain: {subdomain}", 200
-
     @app.errorhandler(404)
     def not_found(error):
         return render_template("404.html",error=error), 404
