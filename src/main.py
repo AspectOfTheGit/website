@@ -15,7 +15,7 @@ def create_app():
     )
     app.secret_key = CLIENT_SECRET
 
-    app.config["SERVER_NAME"] = "aspectofthe.site"
+    #app.config["SERVER_NAME"] = "aspectofthe.site"
 
     load_data()
 
