@@ -2,6 +2,7 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from src.socket import socketio
 from src.data import load_data
 from src.config import CLIENT_SECRET
@@ -13,7 +14,11 @@ def create_app():
         static_folder="../static"
     )
     app.secret_key = CLIENT_SECRET
-    app.config["SERVER_NAME"] = "aspectofthe.site:433"
+
+    app.url_map.host_matching = True
+    app.config["SERVER_NAME"] = "aspectofthe.site"
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     load_data()
 
