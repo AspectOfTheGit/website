@@ -15,7 +15,6 @@ def create_app():
     )
     app.secret_key = CLIENT_SECRET
 
-    app.url_map.host_matching = True
     app.config["SERVER_NAME"] = "aspectofthe.site"
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
