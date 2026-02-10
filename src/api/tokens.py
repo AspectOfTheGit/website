@@ -12,7 +12,7 @@ import secrets
 token = Blueprint(
     "token",
     __name__,
-    url_prefix="/api"
+    subdomain="api"
 )
 
 @token.post("/refresh-token/<token>")
