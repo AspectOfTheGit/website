@@ -9,7 +9,8 @@ import re
 utils = Blueprint(
     "utils",
     __name__,
-    url_prefix="/api/utils"
+    subdomain="api",
+    url_prefix="/utils"
 )
 
 
