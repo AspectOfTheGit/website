@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
 from src.socket import socketio
 from src.data import load_data
