@@ -14,7 +14,8 @@ from src.bots.manager import refresh_bot_info
 debug = Blueprint(
     "debug",
     __name__,
-    url_prefix="/api/debug"
+    url_prefix="/api/debug",
+    subdomain="api"
 )
 
 
