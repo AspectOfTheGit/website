@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask
+from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 from src.socket import socketio
 from src.data import load_data
@@ -42,6 +42,11 @@ def create_app():
     app.register_blueprint(deploy)
     app.register_blueprint(voice)
     app.register_blueprint(utils)
+
+    @app.before_request
+    def before_request():
+        print("HOST:", request.host)
+        print("URL ROOT:", request.url_root)
 
     @app.route("/test", subdomain="api")
     def api_test():
