@@ -23,7 +23,7 @@ def create_app():
         supports_credentials=True
     )
 
-    app.config["SERVER_NAME"] = "aspectofthe.site"
+    app.config["SERVER_NAME"] = "website-660d:10000"
     app.config["PREFERRED_URL_SCHEME"] = "https"
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
