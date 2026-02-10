@@ -1,9 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template
-from flask_cors import CORS
 from src.socket import socketio
 from src.data import load_data
 from src.config import CLIENT_SECRET
@@ -17,16 +15,7 @@ def create_app():
     )
     app.secret_key = CLIENT_SECRET
 
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": "https://aspectofthe.site"}},
-        supports_credentials=True
-    )
-
-    app.config["SERVER_NAME"] = "website-660d:10000"
-    app.config["PREFERRED_URL_SCHEME"] = "https"
-
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    app.config["SERVER_NAME"] = "aspectofthe.site"
 
     load_data()
 
