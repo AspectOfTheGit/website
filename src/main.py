@@ -11,7 +11,8 @@ def create_app():
     app = Flask(
         __name__,
         template_folder="../templates",
-        static_folder="../static"
+        static_folder="../static",
+        host_matching=True
     )
     app.secret_key = CLIENT_SECRET
 
