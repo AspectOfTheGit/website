@@ -19,7 +19,7 @@ deploy = Blueprint(
     "deploy",
     __name__,
     subdomain="api",
-    url_prefix="bots"
+    url_prefix="/bots"
 )
 
 @deploy.post("/deploy") # WORK IN PROGRESS
