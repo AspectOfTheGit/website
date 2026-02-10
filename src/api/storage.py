@@ -10,7 +10,8 @@ from src.socket import emit_storage_log
 storage = Blueprint(
     "storage",
     __name__,
-    url_prefix="/api/storage"
+    subdomain="api",
+    url_prefix="/storage"
 )
 
 
