@@ -47,6 +47,7 @@ def create_app():
     def before_request():
         print("HOST:", request.host)
         print("URL ROOT:", request.url_root)
+        print(request.headers.get("X-Forwarded-Host"))
 
     @app.route("/test", subdomain="api")
     def api_test():
