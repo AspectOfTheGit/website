@@ -595,7 +595,7 @@
         
             try {
                 const formatted = formatUUID(accountUUID);
-                const res = await fetch(`https:/https://api.aspectofthe.site.legiti.dev/owner/${formatted}`);
+                const res = await fetch(`https://api.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res.json();
                 populateWorldDropdown();
             } catch (err) {
