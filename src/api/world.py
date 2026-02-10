@@ -15,7 +15,8 @@ from src.socket import emit_log
 world = Blueprint(
     "world",
     __name__,
-    url_prefix="/api/world"
+    subdomain="api",
+    url_prefix="/world"
 )
 
 @world.post("/<world>/permissions")
