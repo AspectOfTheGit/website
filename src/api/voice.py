@@ -16,7 +16,8 @@ import secrets
 voice = Blueprint(
     "voice",
     __name__,
-    url_prefix="/api/voice"
+    subdomain="api",
+    url_prefix="/voice"
 )
 
 voice_rooms = {}
