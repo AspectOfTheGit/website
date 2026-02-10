@@ -39,6 +39,10 @@ def create_app():
     app.register_blueprint(voice)
     app.register_blueprint(utils)
 
+    @app.route("/test", subdomain="api")
+    def api_test():
+        return "api subdomain works"
+
     socketio.init_app(app)
     return app
 
