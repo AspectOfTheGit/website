@@ -13,7 +13,7 @@ def create_app():
         static_folder="../static"
     )
     app.secret_key = CLIENT_SECRET
-    app.config["SERVER_NAME"] = "aspectofthe.site"
+    app.config["SERVER_NAME"] = "aspectofthe.site:433"
 
     load_data()
 
