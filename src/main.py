@@ -53,6 +53,10 @@ def create_app():
     def api_test():
         return "api subdomain works"
 
+    @app.errorhandler(404)
+    def not_found():
+        return "404" # todo make 404 page
+
     socketio.init_app(app)
     return app
 
