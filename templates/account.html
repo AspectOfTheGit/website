@@ -190,12 +190,12 @@
           <p class="plaintext">
               Example http request to write:<br>
               <code>
-                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.site/api/storage/write" POST
+                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://aspectofthe.siteapi.aspectofthe.site/storage/write" POST
               </code>
               <br><br>
               Example http request to read:<br>
               <code>
-                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.site/api/storage/read" POST
+                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://aspectofthe.siteapi.aspectofthe.site/storage/read" POST
               </code>
           </p>
       </div>
@@ -294,7 +294,7 @@
                 status.textContent = "Saving...";
     
                 try {
-                    const res = await fetch('/api/storage/write', {
+                    const res = await fetch('api.aspectofthe.site/storage/write', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -340,7 +340,7 @@
                     idsaveBtn.classList.remove('pressed');
                 }, 1000);
                 try {
-                    const res = await fetch('/api/set-discord', {
+                    const res = await fetch('api.aspectofthe.site/set-discord', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -382,7 +382,7 @@
                 }
             });
         
-            await fetch("/api/set-notifs", {
+            await fetch("api.aspectofthe.site/set-notifs", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prefs: notifs })
@@ -414,7 +414,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`/api/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
                     if(res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -434,7 +434,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`/api/refresh-world-token/${type}`, {
+                    const res = await fetch(`api.aspectofthe.site/refresh-world-token/${type}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -595,7 +595,7 @@
         
             try {
                 const formatted = formatUUID(accountUUID);
-                const res = await fetch(`https://api.legiti.dev/owner/${formatted}`);
+                const res = await fetch(`https:/api.aspectofthe.site.legiti.dev/owner/${formatted}`);
                 ownedworlds = await res.json();
                 populateWorldDropdown();
             } catch (err) {
@@ -670,7 +670,7 @@
             });
 
             try {
-                const res = await fetch(`/api/world/${selected_world_uuid}/permissions`, {
+                const res = await fetch(`api.aspectofthe.site/world/${selected_world_uuid}/permissions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -684,7 +684,7 @@
 
         async function loadWorldPermissions(worldUUID) {
             try {
-                const res = await fetch(`/api/world/${worldUUID}/getpermissions`);
+                const res = await fetch(`api.aspectofthe.site/world/${worldUUID}/getpermissions`);
                 const perms = await res.json();
         
                 const permSet = new Set(perms.permissions);
