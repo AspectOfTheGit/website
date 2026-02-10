@@ -21,7 +21,7 @@ from src.bots.manager import (
 bots = Blueprint(
     "bots",
     __name__,
-    url_prefix="/bots"
+    subdomain="bot"
 )
 
 
