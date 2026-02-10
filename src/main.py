@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from werkzeug.middleware.proxy_fix import ProxyFixcz
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template
 from flask_cors import CORS
 from src.socket import socketio
