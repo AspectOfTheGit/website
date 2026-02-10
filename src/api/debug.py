@@ -15,7 +15,7 @@ debug = Blueprint(
     "debug",
     __name__,
     subdomain="api",
-    url_prefix="/debug",
+    url_prefix="/debug"
 )
 
 
