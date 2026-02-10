@@ -13,7 +13,7 @@ from src.config import DISCORD_TOKEN, GUILD_ID
 discord = Blueprint(
     "discord",
     __name__,
-    url_prefix="/api"
+    subdomain="api",
 )
 
 @discord.post("/set-discord")
