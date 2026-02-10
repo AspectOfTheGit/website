@@ -18,7 +18,7 @@ import time
 deploy = Blueprint(
     "deploy",
     __name__,
-    url_prefix="/api"
+    subdomain="api"
 )
 
 @deploy.post("/deploy") # WORK IN PROGRESS
