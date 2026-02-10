@@ -11,8 +11,7 @@ def create_app():
     app = Flask(
         __name__,
         template_folder="../templates",
-        static_folder="../static",
-        host_matching=True
+        static_folder="../static"
     )
     app.secret_key = CLIENT_SECRET
 
@@ -55,8 +54,8 @@ def create_app():
         return "api subdomain works"
 
     @app.errorhandler(404)
-    def not_found():
-        return "404" # todo make 404 page
+    def not_found(error):
+        return render_template("404.html",error=error), 404
 
     socketio.init_app(app)
     return app
