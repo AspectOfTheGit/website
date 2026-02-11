@@ -2,6 +2,7 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask, request, render_template
+from flask_cors import CORS
 from src.socket import socketio
 from src.data import load_data
 from src.config import CLIENT_SECRET
@@ -16,6 +17,8 @@ def create_app():
     app.secret_key = CLIENT_SECRET
 
     app.config["SERVER_NAME"] = "aspectofthe.site"
+
+    CORS(app, origins=["https://aspectofthe.site"])
 
     load_data()
 
