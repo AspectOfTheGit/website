@@ -94,6 +94,7 @@ def account():
     mc_uuid = session["mc_uuid"]
     username = session["mc_username"]
     refresh_account_info(username, mc_uuid)
+    trusted=data["account"][mc_uuid].get("trusted",False)
 
     return render_template(
         "account.html",
@@ -102,7 +103,8 @@ def account():
         mcuuid=mc_uuid,
         notifs=data["account"][mc_uuid].get("notifs", []),
         discord=data["account"][mc_uuid].get("discord", ""),
-        validbotperms=VALID_BOT_PERMISSIONS
+        validbotperms=VALID_BOT_PERMISSIONS,
+        trusted=trusted
     )
 
 
