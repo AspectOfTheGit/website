@@ -11,7 +11,7 @@ REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
 ALL_BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"] # Registered bots
-BOTS = ["AspectOfTheBot","AspectOfThePoop"] # Processed bots
+BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop"] # Processed bots
 VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"}
 BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
@@ -19,6 +19,7 @@ TIMEOUT = 10
 
 WHITELISTED_COMMANDS = ["listall","find","uuid","list"]
 DEPLOYER_COMMANDS = ["trigger"]
+TRUSTED_COMMANDS = ["shout","msg","tell"]
 
 USER_SOCKET_LIMIT = 1024 * 10
 
