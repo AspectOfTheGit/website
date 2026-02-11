@@ -136,7 +136,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
                     if (res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -159,7 +159,7 @@
                     canPress = false;
             
                     try {
-                        const res = await fetch('api.aspectofthe.site/deploy', {
+                        const res = await fetch('https://api.aspectofthe.site/deploy', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
