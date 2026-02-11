@@ -97,6 +97,12 @@
                     <td>Storage Capacity</td>
                     <td class="plaintext">{{ account.storage.size if account.storage.size is defined else 0 }}B/{{ account.abilities.capacity if account.abilities.capacity is defined else 1 }}MB</td>
                 </tr>
+                <tr data-tip="Whether you can send messages through bots">
+                    <td>Send Messages</td>
+                    <td class="status {{ 'unavailable' if account.abilities.unowned is defined else 'available' }}">
+                        {{ '✔️' if account.abilities.send is defined else '❌' }}
+                    </td>
+                </tr>
             </tbody>
         </table>
       </div>
