@@ -43,6 +43,26 @@ def changeaccountpermission():
     return jsonify({"success": True}), 200
 
 
+@debug.post("/trusted")
+def toggletrusted():
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data["account"].setdefault(account, {})
+    if data["account"][account].get("trusted",False):
+        data["account"][account]["trusted"] = False
+    else:
+        data["account"][account]["trusted"] = True
+
+    save_data()
+
+    return jsonify({"success": True,"value":data["account"][account]["trusted"]}), 200
+
+
 @debug.post("/deletebotdata")
 def deletebotdata():
     rdata = request.get_json()
