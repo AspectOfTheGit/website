@@ -192,7 +192,7 @@ def bot_chat(rdata):
         if match:
             if session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
                 if match.group(1) not in DEPLOYER_COMMANDS and match.group(1) not in WHITELISTED_COMMANDS:
-                    if account["account"][session["mc_uuid"]].get("trusted", False):
+                    if data["account"][session["mc_uuid"]].get("trusted", False):
                         if match.group(1) not in TRUSTED_COMMANDS:
                             print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                             return
@@ -201,7 +201,7 @@ def bot_chat(rdata):
                         return
             else:
                 if match.group(1) not in WHITELISTED_COMMANDS:
-                    if account["account"][session["mc_uuid"]].get("trusted", False):
+                    if data["account"][session["mc_uuid"]].get("trusted", False):
                         if match.group(1) not in TRUSTED_COMMANDS:
                             print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                             return
