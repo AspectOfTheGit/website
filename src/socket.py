@@ -2,7 +2,7 @@ from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
-from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS
+from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS
 import time
 import base64
 import re
@@ -55,6 +55,7 @@ def emit_image(type, file, room):
 @socketio.on('connect')
 def handle_connect():
     print('[socket.py] Client connected')
+    
 
 @socketio.on("disconnect")
 def disconnect():
@@ -65,6 +66,7 @@ def disconnect():
             members.remove(sid)
             leave_room(room)
             break
+            
 
 @socketio.on('join')
 def handle_join(room):
@@ -101,6 +103,7 @@ def screenshot_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
+    
 
 @socketio.on("bot_disconnect")
 def disconnect_request(rdata):
@@ -121,6 +124,7 @@ def disconnect_request(rdata):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
     data["bot"][bot_name]["deployer"] = ""
+    
 
 @socketio.on("bot_switch_server")
 def switch_request(rdata):
@@ -145,6 +149,7 @@ def switch_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid
+    
 
 @socketio.on("bot_chat")
 def bot_chat(rdata):
@@ -191,8 +196,12 @@ def bot_chat(rdata):
                     return
             else:
                 if match.group(1) not in WHITELISTED_COMMANDS:
-                    print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
-                    return
+                    if account["account"][session["mc_uuid"]].get("trusted", False):
+                        if match.group(1) not in TRUSTED_COMMANDS:
+                            print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
+                    else:
+                        print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
+                        return
         else:
             print(f"[socket.py] Chat message failed (Couldn't find match for command) through {bot_name} by {account} | Message: {msg}")
             return
@@ -211,6 +220,7 @@ def bot_chat(rdata):
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
+    
 
 @socketio.on("signal")
 def handle_signal(data):
