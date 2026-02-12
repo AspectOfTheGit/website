@@ -915,16 +915,6 @@ button.generic:hover, #save-storage-btn:hover, #save-user-id-btn:hover, #server-
     transition: opacity 0.25s ease;
 }
 
-.status.available {
-    color: #3cfc4d;
-    font-weight: bold;
-}
-
-.status.unavailable {
-    color: #fc3c3c;
-    font-weight: bold;
-}
-
 .layout {
     display: flex;
     min-height: calc(100vh - 15rem);
