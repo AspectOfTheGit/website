@@ -40,6 +40,15 @@ def mark_online(bot: str) -> bool:
     return was_offline
 
 
+def mark_available(bot: str) -> bool:
+    botdata = _ensure_bot(bot)
+
+    botdata["available"] = True
+    botdata["last_menu_ping"] = _now()
+
+    save_data()
+
+
 def mark_offline(bot: str):
     botdata = _ensure_bot(bot)
 
@@ -59,7 +68,9 @@ def refresh_bot_info():
         data["bot"].setdefault(bot, {})
         data["bot"][bot]["uuid"] = get_uuid(bot)
         data["bot"][bot].setdefault("last_ping", 0)
+        data["bot"][bot].setdefault("last_menu_ping", 0)
         data["bot"][bot].setdefault("status", False)
+        data["bot"][bot].setdefault("available", False)
         data["bot"][bot].setdefault("deployer", "")
         data["bot"][bot].setdefault("world", {})
         data["bot"][bot]["world"].setdefault("name", "")
@@ -75,6 +86,8 @@ def refresh_bot_info():
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
                 contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}"]
                 emit_log('log', contents, bot)
+        if data["bot"][bot]["last_menu_ping"] != 0 and now - data["bot"][bot]["last_menu_ping"] > TIMEOUT*2 and data["bot"][bot]["available"]:
+            data["bot"][bot]["available"] = False
     save_data()
 
 
