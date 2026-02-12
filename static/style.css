@@ -260,6 +260,11 @@ code {
     color: #000;
 }
 
+.status.available {
+    background: #fade28;
+    color: #000;
+}
+
 .status.offline {
     background: #fc3c3c;
     color: #fff;
