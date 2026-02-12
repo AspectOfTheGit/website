@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             logContainer.appendChild(document.createElement('br'));
         }
     
-        retryMessageSpan.textContent = `[INFO] Failed to connect to logs. Retrying... ${retryCount > 1 ? `[x${retryCount}]` : ''}`;
+        retryMessageSpan.textContent = `[INFO] Failed to connect to logs. Retrying...${retryCount > 1 ? ` [x${retryCount}]` : ''}`;
         logContainer.scrollTop = logContainer.scrollHeight;
     
         setTimeout(() => {
@@ -148,9 +148,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     socket.on("log", (contents) => {
-        const time = contents[0];
+        const prefix = contents[0];
         const msg = contents[1].replace(/<br\s*\/?>/gi, "\n");
-        logContainer.innerHTML += `[${time}] ${msg}<br>`;
+        logContainer.innerHTML += `[${prefix}] ${msg}<br>`;
         logContainer.scrollTop = logContainer.scrollHeight;
     });
 
