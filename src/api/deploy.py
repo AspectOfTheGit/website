@@ -43,7 +43,7 @@ def apideploybot():
     if bot not in data["bot"]:
         return jsonify({"error": "Bot doesn't exist"}), 400
     # Is bot in use?
-    if data["bot"][bot]["status"] == True or data["bot"][bot]["deployer"] != "":
+    if data["bot"][bot]["status"] == True or data["bot"][bot]["available"] == False or data["bot"][bot]["deployer"] != "":
         return ({"error": "Bot is unavailable"}), 400
     # Can account deploy to unowned world?
     try:
