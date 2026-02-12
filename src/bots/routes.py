@@ -9,6 +9,7 @@ from src.utils.text_api import mc_to_html
 
 from src.bots.manager import (
     mark_online,
+    mark_available,
     update_world,
     get_instructions,
     complete_instruction,
@@ -138,4 +139,6 @@ def bot_what(bot):
     if bot not in data.get("bot", {}):
         abort(400, description="Unknown bot")
 
+    if request.headers.get("Authorization") == BOT_TOKEN:
+        mark_available(bot)
     return jsonify(get_instructions(bot))
