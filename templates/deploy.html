@@ -58,7 +58,7 @@
             {% for name, bot in bots.items() %}
                 <option 
                     value="{{ name }}"
-                    data-status="{{ 'online' if bot.status else 'online' if bot.available else 'offline' }}"
+                    data-status="{{ 'unavailable' if bot.status else 'available' if bot.available else 'unavailable' }}"
                 >
                     {{ name }}
                 </option>
@@ -108,7 +108,7 @@
         let loadingWorlds = false;
     
         options.forEach(option => {
-            if (option.dataset.status === "online") {
+            if (option.dataset.status === "unavailable") {
                 option.style.background = "#240303";
                 option.style.color = "#f8e2e2";
             }
