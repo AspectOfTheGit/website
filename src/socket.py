@@ -120,6 +120,7 @@ def disconnect_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
+    data["bot"][bot_name]["deployer"] = ""
 
 @socketio.on("bot_switch_server")
 def switch_request(rdata):
