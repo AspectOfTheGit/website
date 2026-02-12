@@ -77,8 +77,8 @@
                 {% endif %}
                 {% endif %}
 
-                <p class="status {% if bot.status %}online{% else %}offline{% endif %}">
-                    {% if bot.status %}Online{% else %}Offline{% endif %}
+                <p class="status {% if bot.status %}online{% elif bot.available %}available{% else %}offline{% endif %}">
+                    {% if bot.status %}Online{% elif bot.available %}Available{% else %}Offline{% endif %}
                 </p>
             </div>
         </div>
