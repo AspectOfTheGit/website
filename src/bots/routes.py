@@ -141,4 +141,6 @@ def bot_what(bot):
 
     if request.headers.get("Authorization") == BOT_TOKEN:
         mark_available(bot)
+    else:
+        print("DEBUG INCORRECT TOKEN") # temp debug, remove
     return jsonify(get_instructions(bot))
