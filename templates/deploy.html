@@ -52,20 +52,13 @@
         </div>
     </nav>
 
-    <p class="plaintext">
-        WARNING<br>
-        Some bots currently cannot be deployed.<br>
-        AspectOfTheBot is usually reliable.<br>
-        If it does not deploy, please DM me.<br>
-    </p>
-
     <div class="dropdown-wrapper">
         <label for="bot-select" class="headerlabel">Choose a bot:</label>
         <select id="bot-select" class="dropdown">
             {% for name, bot in bots.items() %}
                 <option 
                     value="{{ name }}"
-                    data-status="{{ 'online' if bot.status else 'offline' }}"
+                    data-status="{{ 'online' if bot.status else 'online' if bot.available else 'offline' }}"
                 >
                     {{ name }}
                 </option>
