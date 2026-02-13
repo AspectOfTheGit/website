@@ -10,6 +10,7 @@ from src.config import OTHER_TOKEN
 from src.utils.player_api import get_uuid
 from src.utils.data_api import refresh_account_info
 from src.bots.manager import refresh_bot_info
+from src.discord.announce import announce
 
 debug = Blueprint(
     "debug",
@@ -134,6 +135,21 @@ def debug_setdata():
 
     return jsonify({"success": True}), 200
 
+
+@debug.post("/announce")
+def debug_announce():
+    rdata = request.get_json()
+    token = rdata.get("token", "")
+    message = rdata.get("message", "")
+    type = rdata.get("type", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    announce(message, type)
+
+    return jsonify({"success": True}), 200
+    
 
 @debug.post("/forcelogin")
 def debug_forcelogin():
