@@ -1,10 +1,7 @@
-import time
-import re
 import requests
 from src.config import DISCORD_TOKEN, GUILD_ID
-from src.data import data
 
-def notify(message: str, type: str):
+def announce(message: str, type: str):
     headers = {
         "Authorization": f"Bot {DISCORD_TOKEN}",
         "Content-Type": "application/json"
