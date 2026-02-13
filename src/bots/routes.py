@@ -89,7 +89,7 @@ def bot_log():
     require_bot_auth()
     
     try:
-        msg = mc_to_html(request.json.get('value').replace("\n","<br>"))
+        msg = mc_to_html(request.json.get('value').replace("\n","<br>").replace("\\","\\\\"))
         if '[{&quot;text&quot;:&quot;' in msg:
             print("[bots/routes.py] Error during bot log (parsing issue) msg:", msg)
             print("Original message:", request.json.get('value'))
