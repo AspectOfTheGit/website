@@ -299,6 +299,7 @@
                 try {
                     const res = await fetch('https://api.aspectofthe.site/storage/write', {
                         method: 'POST',
+                        credentials: "include",
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contents: newContent,
@@ -345,6 +346,7 @@
                 try {
                     const res = await fetch('https://api.aspectofthe.site/set-discord', {
                         method: 'POST',
+                        credentials: "include",
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             new_id: newID
@@ -387,6 +389,7 @@
         
             await fetch("https://api.aspectofthe.site/set-notifs", {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prefs: notifs })
             });
@@ -417,7 +420,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST', credentials: "include" });
                     if(res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -439,6 +442,7 @@
                 try {
                     const res = await fetch(`https://api.aspectofthe.site/refresh-world-token/${type}`, {
                         method: 'POST',
+                        credentials: "include",
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -675,6 +679,7 @@
             try {
                 const res = await fetch(`https://api.aspectofthe.site/world/${selected_world_uuid}/permissions`, {
                     method: 'POST',
+                    credentials: "include",
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         permissions: permissions
