@@ -4,7 +4,6 @@ from flask import (
     request,
     redirect,
     session,
-    make_response,
     jsonify,
     abort
 )
@@ -84,14 +83,7 @@ def login():
 @web.route("/logout")
 def logout():
     session.clear()
-
-    response = make_response(redirect("/"))
-    response.delete_cookie(
-        key="session",
-        domain=".aspectofthe.site"
-    )
-
-    return response
+    return redirect("/")
 
 
 @web.route("/account")
