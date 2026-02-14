@@ -15,16 +15,26 @@ def create_app():
         static_folder="../static",
         subdomain_matching=True
     )
-    
+
     app.secret_key = CLIENT_SECRET
-    
+
     app.config.update(
+        SERVER_NAME="aspectofthe.site",
         SESSION_COOKIE_DOMAIN=".aspectofthe.site",
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="None",
     )
-    
+
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-    CORS(app, origins=["https://aspectofthe.site"])
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=[
+            "https://aspectofthe.site",
+            "https://api.aspectofthe.site",
+        ]
+    )
 
     load_data()
 
