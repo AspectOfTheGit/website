@@ -129,7 +129,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST' });
+                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST', credentials: "include" });
                     if (res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -154,6 +154,7 @@
                     try {
                         const res = await fetch('https://api.aspectofthe.site/bots/deploy', {
                             method: 'POST',
+                            credentials: "include",
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 account: accountUUID,
