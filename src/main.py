@@ -15,13 +15,13 @@ def create_app():
         static_folder="../static",
         subdomain_matching=True
     )
+    
     app.secret_key = CLIENT_SECRET
-
+    
     app.config.update(
-        SERVER_NAME="aspectofthe.site",
         SESSION_COOKIE_DOMAIN=".aspectofthe.site",
     )
-
+    
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     CORS(app, origins=["https://aspectofthe.site"])
