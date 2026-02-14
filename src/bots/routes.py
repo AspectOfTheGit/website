@@ -140,7 +140,6 @@ def bot_what(bot):
         abort(400, description="Unknown bot")
 
     if request.headers.get("Authorization") == BOT_TOKEN:
-        print("botwhat successfully authorized") # debug
-    mark_available(bot)
+        mark_available(bot)
         
     return jsonify(get_instructions(bot))
