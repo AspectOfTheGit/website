@@ -1,7 +1,8 @@
 from flask import (
     Blueprint,
     session,
-    jsonify
+    jsonify,
+    request
 )
 
 from src.data import data, save_data
