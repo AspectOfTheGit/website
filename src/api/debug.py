@@ -160,10 +160,12 @@ def debug_forcelogin():
     if token != OTHER_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
 
+    accountuuid = get_uuid(account)
+
     session["mc_username"] = account
-    session["mc_uuid"] = get_uuid(account)
+    session["mc_uuid"] = accountuuid
     session["mc_access_token"] = True
 
-    refresh_account_info()
+    refresh_account_info(account, accountuuid)
 
     return jsonify({"success": True}), 200
