@@ -6,9 +6,6 @@ from src.config import COLOURS
 
 HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 
-import json
-import html
-
 def mc_to_html(message):
     if isinstance(message, str):
         try:
