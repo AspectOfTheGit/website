@@ -163,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!span) return;
     
         activeHoverSpan = span;
-    
         removeTooltip();
     
         const popup = document.createElement("div");
@@ -173,6 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const hoverData = JSON.parse(span.dataset.hover);
     
             function renderHover(data) {
+                if (Array.isArray(data)) {
+                    return data.map(renderHover).join("");
+                }
+    
                 if (data.components) {
                     return data.components.map(renderHover).join("");
                 }
@@ -191,7 +194,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
     
             popup.innerHTML = renderHover(hoverData);
-        } catch {
+        } catch (err) {
+            console.error("Hover parse error:", err);
             popup.textContent = span.dataset.hover;
         }
     
@@ -209,7 +213,6 @@ document.addEventListener("DOMContentLoaded", () => {
     logContainer.addEventListener("mouseout", e => {
         const span = e.target.closest("span[data-hover]");
         if (!span || !activeTooltip) return;
-    
         removeTooltip();
     });
     
