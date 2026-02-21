@@ -992,19 +992,22 @@ button.generic:hover, #save-storage-btn:hover, #save-user-id-btn:hover, #server-
 }
 
 .hover-popup {
+    position: fixed;
     display: none;
-    position: absolute;
-    background: #1e1e1e;
-    color: #ffffff;
-    padding: 8px;
-    border-radius: 5px;
-    z-index: 1000;
-    max-width: 400px;
+    pointer-events: none;
+
+    background: rgba(16, 0, 16, 0.95);
+    border: 1px solid #2a002a;
+    box-shadow: 0 0 0 1px #000 inset;
+
+    padding: 6px 8px;
     font-family: 'MinecraftDefault';
     font-size: 14px;
     line-height: 1.2;
     white-space: pre-wrap;
-    box-shadow: 0 0 8px rgba(0,0,0,0.7);
+
+    color: #ffffff;
+    z-index: 5000;
 }
 
 span.hovered .hover-popup {
