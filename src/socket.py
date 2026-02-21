@@ -213,7 +213,7 @@ def bot_chat(rdata):
             return
     else:
         msg = msg.replace("<","\\<")
-        prefix = f"<light_purple>{session["mc_username"]}<dark_gray> | > <gray>"
+        prefix = f"<light_purple>{session['mc_username']}<dark_gray> | > <gray>"
         msg = f"{prefix}{msg}"
 
     print(f"[socket.py] Chat message sent through {bot_name} by {account} | Message: {msg}")
