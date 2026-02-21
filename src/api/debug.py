@@ -164,6 +164,6 @@ def debug_forcelogin():
     session["mc_uuid"] = get_uuid(account)
     session["mc_access_token"] = True
 
-    refreshaccountinfo()
+    refresh_account_info()
 
     return jsonify({"success": True}), 200
