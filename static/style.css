@@ -1043,7 +1043,8 @@ span.hovered .hover-popup {
     cursor: pointer;
 }
 
-.click-confirm button.confirm {
+.click-confirm button.copy,
+.click-confirm button.open {
     background: #092630;
     color: #000;
 }
