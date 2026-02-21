@@ -6,6 +6,9 @@ from src.config import COLOURS
 
 HEX_COLOUR = re.compile(r'^#?[0-9A-Fa-f]{6}$')
 
+import json
+import html
+
 def mc_to_html(message):
     if isinstance(message, str):
         try:
@@ -16,19 +19,19 @@ def mc_to_html(message):
     def render_part(part):
         if not isinstance(part, dict):
             return html.escape(str(part)).replace("\n", "<br>")
-    
+
         text = html.escape(part.get("text", "")).replace("\n", "<br>")
-    
+
         style_info = part.get("style", {})
         color = style_info.get("color")
         if isinstance(color, int):
             color = f"#{color:06X}"
-    
+
         bold = style_info.get("isBold", False)
         italic = style_info.get("isItalic", False)
         underline = style_info.get("isUnderlined", False)
         strikethrough = style_info.get("isStrikethrough", False)
-    
+
         styles = []
         if color:
             styles.append(f"color:{color}")
@@ -42,12 +45,24 @@ def mc_to_html(message):
             styles.append("text-decoration:underline")
         elif strikethrough:
             styles.append("text-decoration:line-through")
-    
-        span_start = f'<span style="{";".join(styles)}">' if styles else ""
-        span_end = "</span>" if styles else ""
-    
+
+        data_attrs = ""
+        hover_event = style_info.get("hoverText")
+        if hover_event:
+            hover_json = html.escape(json.dumps(hover_event))
+            data_attrs += f' data-hover="{hover_json}"'
+
+        click_type = style_info.get("clickEventType")
+        click_cmd = style_info.get("clickCommand") or style_info.get("url")
+        if click_type and click_cmd:
+            click_info = {"type": click_type, "command": click_cmd}
+            data_attrs += f' data-click="{html.escape(json.dumps(click_info))}"'
+
+        span_start = f'<span style="{";".join(styles)}"{data_attrs}>' if styles or data_attrs else ""
+        span_end = "</span>" if styles or data_attrs else ""
+
         extra_html = "".join(render_part(e) for e in part.get("extra", []))
-    
+
         return f"{span_start}{text}{extra_html}{span_end}"
 
     if isinstance(message, dict) and "components" in message:
