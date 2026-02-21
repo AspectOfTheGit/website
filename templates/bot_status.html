@@ -147,18 +147,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 8000);
     });
 
-    socket.on("log", (contents) => {
-        const prefix = contents[0];
-        const msg = contents[1].replace(/<br\s*\/?>/gi, "\n");
-        logContainer.innerHTML += `[${prefix}] ${msg}<br>`;
-        logContainer.scrollTop = logContainer.scrollHeight;
-    });
-
     let activeTooltip = null;
-
+    let activeHoverSpan = null;
+    
+    function removeTooltip() {
+        if (activeTooltip) {
+            activeTooltip.remove();
+            activeTooltip = null;
+            activeHoverSpan = null;
+        }
+    }
+    
     logContainer.addEventListener("mouseover", e => {
         const span = e.target.closest("span[data-hover]");
         if (!span) return;
+    
+        activeHoverSpan = span;
+    
+        removeTooltip();
     
         const popup = document.createElement("div");
         popup.classList.add("hover-popup");
@@ -196,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     document.addEventListener("mousemove", e => {
         if (!activeTooltip) return;
-    
         activeTooltip.style.left = (e.clientX + 12) + "px";
         activeTooltip.style.top = (e.clientY + 12) + "px";
     });
@@ -205,8 +210,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const span = e.target.closest("span[data-hover]");
         if (!span || !activeTooltip) return;
     
-        activeTooltip.remove();
-        activeTooltip = null;
+        removeTooltip();
+    });
+    
+    socket.on("log", (contents) => {
+        const prefix = contents[0];
+        const msg = contents[1].replace(/<br\s*\/?>/gi, "\n");
+    
+        const nearBottom = logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight < 50;
+    
+        logContainer.innerHTML += `[${prefix}] ${msg}<br>`;
+    
+        if (!document.querySelector("span[data-hover]:hover")) {
+            removeTooltip();
+        }
+    
+
+        if (nearBottom) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
     });
 
     logContainer.addEventListener("click", e => {
