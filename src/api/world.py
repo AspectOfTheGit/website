@@ -24,7 +24,7 @@ def apiworldbotpermissions(world):
     rdata = request.get_json()
     permissions = rdata.get("permissions", "")
 
-    account = session["mc_uuid"]
+    account = session.get("mc_uuid")
     
     if not account:
         return jsonify({"error": "Unauthorized"}), 401
