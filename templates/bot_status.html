@@ -154,6 +154,78 @@ document.addEventListener("DOMContentLoaded", () => {
         logContainer.scrollTop = logContainer.scrollHeight;
     });
 
+    logContainer.addEventListener("mouseover", e => {
+        const span = e.target.closest("span[data-hover]");
+        if (!span) return;
+    
+        let popup = span.querySelector(".hover-popup");
+        if (!popup) {
+            popup = document.createElement("div");
+            popup.classList.add("hover-popup");
+    
+            try {
+                const hoverData = JSON.parse(span.dataset.hover);
+                function renderHover(data) {
+                    if (data.components) {
+                        return data.components.map(renderHover).join("");
+                    }
+                    let style = "";
+                    if (data.style) {
+                        if (data.style.color) style += `color:${data.style.color};`;
+                        if (data.style.isBold) style += "font-weight:bold;";
+                        if (data.style.isItalic) style += "font-style:italic;";
+                        if (data.style.isUnderlined) style += "text-decoration:underline;";
+                        if (data.style.isStrikethrough) style += "text-decoration:line-through;";
+                    }
+                    return `<span style="${style}">${data.text || ""}</span>`;
+                }
+    
+                popup.innerHTML = renderHover(hoverData);
+            } catch {
+                popup.textContent = span.dataset.hover;
+            }
+    
+            span.appendChild(popup);
+        }
+    
+        span.classList.add("hovered");
+    });
+    
+    logContainer.addEventListener("mouseout", e => {
+        const span = e.target.closest("span[data-hover]");
+        if (!span) return;
+        span.classList.remove("hovered");
+    });
+
+    logContainer.addEventListener("click", e => {
+        const span = e.target.closest("span[data-click]");
+        if (!span) return;
+    
+        const clickData = JSON.parse(span.dataset.click);
+        const overlay = document.createElement("div");
+        overlay.classList.add("click-confirm");
+    
+        let html = `<p>Would you like to ${clickData.type === "OPEN_URL" ? "open this URL?" : "copy to clipboard?"}</p>`;
+        html += `<pre>${clickData.command}</pre>`;
+        html += `<button class="copy">Copy</button>`;
+        if (clickData.type === "OPEN_URL") html += `<button class="open">Open URL</button>`;
+        html += `<button class="cancel">Cancel</button>`;
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+    
+        overlay.style.display = "block";
+    
+        overlay.querySelector("button.copy")?.addEventListener("click", () => {
+            navigator.clipboard.writeText(clickData.command);
+            overlay.remove();
+        });
+        overlay.querySelector("button.open")?.addEventListener("click", () => {
+            window.open(clickData.command, "_blank");
+            overlay.remove();
+        });
+        overlay.querySelector("button.cancel").addEventListener("click", () => overlay.remove());
+    });
+
     socket.on("screenshot", (data) => {
         const img = document.createElement("img");
         img.src = "data:image/png;base64," + data.image;
