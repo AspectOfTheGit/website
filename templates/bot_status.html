@@ -154,47 +154,59 @@ document.addEventListener("DOMContentLoaded", () => {
         logContainer.scrollTop = logContainer.scrollHeight;
     });
 
+    let activeTooltip = null;
+
     logContainer.addEventListener("mouseover", e => {
         const span = e.target.closest("span[data-hover]");
         if (!span) return;
     
-        let popup = span.querySelector(".hover-popup");
-        if (!popup) {
-            popup = document.createElement("div");
-            popup.classList.add("hover-popup");
+        const popup = document.createElement("div");
+        popup.classList.add("hover-popup");
     
-            try {
-                const hoverData = JSON.parse(span.dataset.hover);
-                function renderHover(data) {
-                    if (data.components) {
-                        return data.components.map(renderHover).join("");
-                    }
-                    let style = "";
-                    if (data.style) {
-                        if (data.style.color) style += `color:${data.style.color};`;
-                        if (data.style.isBold) style += "font-weight:bold;";
-                        if (data.style.isItalic) style += "font-style:italic;";
-                        if (data.style.isUnderlined) style += "text-decoration:underline;";
-                        if (data.style.isStrikethrough) style += "text-decoration:line-through;";
-                    }
-                    return `<span style="${style}">${data.text || ""}</span>`;
+        try {
+            const hoverData = JSON.parse(span.dataset.hover);
+    
+            function renderHover(data) {
+                if (data.components) {
+                    return data.components.map(renderHover).join("");
                 }
     
-                popup.innerHTML = renderHover(hoverData);
-            } catch {
-                popup.textContent = span.dataset.hover;
+                let style = "";
+                if (data.style) {
+                    if (data.style.color) style += `color:${data.style.color};`;
+                    if (data.style.isBold) style += "font-weight:bold;";
+                    if (data.style.isItalic) style += "font-style:italic;";
+                    if (data.style.isUnderlined) style += "text-decoration:underline;";
+                    if (data.style.isStrikethrough) style += "text-decoration:line-through;";
+                }
+    
+                const text = (data.text || "").replace(/\n/g, "<br>");
+                return `<span style="${style}">${text}</span>`;
             }
     
-            span.appendChild(popup);
+            popup.innerHTML = renderHover(hoverData);
+        } catch {
+            popup.textContent = span.dataset.hover;
         }
     
-        span.classList.add("hovered");
+        document.body.appendChild(popup);
+        popup.style.display = "block";
+        activeTooltip = popup;
+    });
+    
+    document.addEventListener("mousemove", e => {
+        if (!activeTooltip) return;
+    
+        activeTooltip.style.left = (e.clientX + 12) + "px";
+        activeTooltip.style.top = (e.clientY + 12) + "px";
     });
     
     logContainer.addEventListener("mouseout", e => {
         const span = e.target.closest("span[data-hover]");
-        if (!span) return;
-        span.classList.remove("hovered");
+        if (!span || !activeTooltip) return;
+    
+        activeTooltip.remove();
+        activeTooltip = null;
     });
 
     logContainer.addEventListener("click", e => {
