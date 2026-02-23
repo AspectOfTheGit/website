@@ -95,7 +95,7 @@
                 </tr>
                 <tr data-tip="Whether you can send messages through bots">
                     <td>Send Messages</td>
-                    <td class="plaintext">{{ '✔️' if account.abilities.send is defined else '❌' }}</td>
+                    <td class="plaintext">{{ '❌' if account.abilities.send is defined and account.abilities.send is false else '✔️' }}</td>
                 </tr>
             </tbody>
         </table>
