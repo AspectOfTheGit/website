@@ -2,7 +2,7 @@ from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
-from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
+from src.config import BOTS, DEFAULT_ABILITIES, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
 import time
 import base64
 import re
@@ -165,7 +165,8 @@ def bot_chat(rdata):
         if data["account"][account]["abilities"]["send"] not in [True,"true"]:
             return
     except:
-        return
+        if DEFAULT_ABILITIES["send"] == False:
+            return
 
     ts = time.time()
 
