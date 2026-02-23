@@ -15,7 +15,7 @@ from src.utils.world_api import get_world_info
 from src.utils.player_api import get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
 from src.api.voice import voice_rooms
 
 from src.utils.data_api import (
@@ -163,7 +163,12 @@ def bot_status(bot):
         return redirect(f"/bots/status/{bot}?deployer")
 
     if session.get("mc_uuid","") in data["account"]:
-        can_chat = data["account"][session.get("mc_uuid",None)]["abilities"].get("send",False) in [True,"true"]
+        if data["account"][session.get("mc_uuid",None)]["abilities"].get("send",False) in [True,"true"]:
+            can_chat = True
+        elif DEFAULT_ABILITIES["send"] == True:
+            can_chat = True
+        else:
+            can_chat = False
     else:
         can_chat = False
 
