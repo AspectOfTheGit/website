@@ -19,6 +19,7 @@ TIMEOUT = 10
 WHITELISTED_COMMANDS = ["listall","find","uuid","list"]
 DEPLOYER_COMMANDS = ["trigger"]
 TRUSTED_COMMANDS = ["shout","msg","tell"]
+PREFIXED_COMMANDS = ["shout","msg","tell"]
 
 USER_SOCKET_LIMIT = 1024 * 10
 
