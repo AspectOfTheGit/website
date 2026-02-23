@@ -2,7 +2,7 @@ from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
-from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS
+from src.config import BOTS, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
 import time
 import base64
 import re
@@ -30,15 +30,6 @@ def emit_log(type, contents, room, notify=False, event=None):
 
 def emit_image(type, file, room):
     encoded = base64.b64encode(file).decode("utf-8")
-    # debug
-    try:
-        print(f"[socket.py] file: {file}")
-    except:
-        print("[socket.py] Failed to print file_bytes")
-    try:
-        print(f"[socket.py] encoded: {encoded}")
-    except:
-        print("[socket.py] Failed to print encoded")
         
     socketio.emit(
         "screenshot",
@@ -188,7 +179,7 @@ def bot_chat(rdata):
         type = "chat"
 
     if type == "command":
-        match = re.search(r'^/?(\w+)', msg)
+        match = re.search(r'^/?(\w+) ?(.*)?', msg)
         if match:
             if session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
                 if match.group(1) not in DEPLOYER_COMMANDS and match.group(1) not in WHITELISTED_COMMANDS:
@@ -208,6 +199,9 @@ def bot_chat(rdata):
                     else:
                         print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                         return
+            if match.group(1) in PREFIXED_COMMANDS:
+                prefix = f"/{match.group(1)} {session['mc_username']} | > "
+                msg = f"{prefix}{match.group(2)}"
         else:
             print(f"[socket.py] Chat message failed (Couldn't find match for command) through {bot_name} by {account} | Message: {msg}")
             return
