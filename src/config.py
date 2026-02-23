@@ -10,8 +10,7 @@ GUILD_ID = 1460692900533899438
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
-ALL_BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"] # Registered bots
-BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop"] # Processed bots
+BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"]
 VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"}
 BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
