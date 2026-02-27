@@ -60,16 +60,17 @@
             This API is intended to be used with the <code>/http</code> command in-game.<br>
             Note: Remember there is a cooldown on <code>/http</code>.<br>
             <br>
-            Example: <code>https://aspectofthe.site/api/worldinfo</code><br>
+            All endpoints should be prefixed <code>https://api.aspectofthe.site/utils</code><br>.
+            Example: <code>https://api.aspectofthe.site/utils/worldinfo</code><br>
             Available endpoints:<br>
-             - <code>/api/worldinfo</code><br>
-             - <code>/api/bots/&lt;bot>/status</code><br>
+             - <code>/worldinfo</code><br>
+             - <code>/profile/&lt;username></code><br>
             <br>
-            <code>/api/worldinfo</code><br>
+            <code>/worldinfo</code><br>
               Returns LegitiDevs info for the world that sent the request.<br>
             <br>
-            <code>/api/bots/&lt;bot>/status</code><br>
-              Returns information of the chosen bot.<br>
+            <code>profile/&lt;username></code><br>
+              Returns minecraft profile of the given username.<br>
         </p>
     </main>
 </body>
