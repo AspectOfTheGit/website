@@ -25,8 +25,8 @@ def getworlduuid():
     return jsonify({"world": match}), 200
 
 
-@utils.post("/profile/<username>")
-def profilewithusername(username):
+@utils.post("/profile/<username>/<key>")
+def profilewithusernamewithkey(username, key):
     if not username:
         return jsonify({"error": "Please provide a username"}), 400
 
@@ -40,4 +40,7 @@ def profilewithusername(username):
     except Exception:
         return return jsonify({"error": "Exception on sending request"}), 500
 
-    return jsonify({"profile": data}), 200
+    if key:
+        data = data[key]
+
+    return jsonify(data), 200
