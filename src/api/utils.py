@@ -38,7 +38,7 @@ def profilewithusernamewithkey(username, key):
         else:
             return jsonify({"error": "Server did not return status 200"}), 500
     except Exception:
-        return return jsonify({"error": "Exception on sending request"}), 500
+        return jsonify({"error": "Exception on sending request"}), 500
 
     if key:
         data = data[key]
