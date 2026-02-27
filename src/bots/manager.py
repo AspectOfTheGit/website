@@ -4,7 +4,7 @@ from src.data import data, save_data
 from src.config import TIMEOUT, BOTS
 from src.discord.notify import notify
 from src.socket import emit_log
-from src.utils.player_api import get_uuid, get_username
+from src.utils.player_api import get_uuid
 from src.utils.world_api import get_world_info
 from src.utils.text_api import raw_to_html
 
@@ -105,7 +105,7 @@ def update_world(bot: str, world_uuid: str):
         try:
             botdata["world"]["name"] = raw_to_html(world_data["raw_name"])
             botdata["world"]["owner"]["uuid"] = world_data["owner_uuid"]
-            botdata["world"]["owner"]["name"] = get_username(world_data["owner_uuid"])
+            botdata["world"]["owner"]["name"] = world_data["owner_name"]
         except:
             botdata["world"]["name"] = "Error fetching world data"
             botdata["world"]["owner"]["uuid"] = "?"
