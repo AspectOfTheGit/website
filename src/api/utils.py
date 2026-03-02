@@ -82,7 +82,7 @@ def requestformatuuid():# todo Add the array format: convert to
 
     # Convert to unhyphenated first (if necessary)
     if isinstance(uuid, list):
-        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in uuid
+        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in uuid)
                        
     # Then convert to desired format
     if format == "hyphenated":
