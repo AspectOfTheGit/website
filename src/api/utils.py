@@ -14,6 +14,19 @@ utils = Blueprint(
     url_prefix="/utils"
 )
 
+def formatuuid(uuid, format):
+    if format == "hyphenated":
+        u = uuid.replace("-", "").strip()
+        return u[:8]+"-"+u[8:12]+"-"+u[12:16]+"-"+u[16:20]+"-"+u[20:]
+    elif format == "unhyphenated":
+        return uuid.replace("-", "").strip()
+    elif format == "array":
+        return "wip format"
+    else:
+        return "invalid format"
+
+
+# Routes
 
 @utils.post("/get-world-uuid")
 def getworlduuid():
@@ -68,7 +81,7 @@ def profilewithusernamewithkey(username, key):
     return jsonify(data), 200
 
 
-@utils.post("/format-uuid")
+@utils.post("/formatuuid")
 def requestformatuuid():# todo Add the array format: convert to
     rdata = request.get_json()
     uuid = rdata.get("uuid")
@@ -77,24 +90,13 @@ def requestformatuuid():# todo Add the array format: convert to
     if not uuid:
         return jsonify({"error": "Please provide a UUID"}), 400
 
-    if not format:
-        return jsonify({"error": "Please provide a format type"}), 400
-
-    # Convert to unhyphenated first (if necessary)
-    if isinstance(uuid, list):
-        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in uuid)
-                       
-    # Then convert to desired format
-    if format == "hyphenated":
-        u = uuid.replace("-", "").strip()
-        uuid = (u[:8]+"-"+u[8:12]+"-"+u[12:16]+"-"+u[16:20]+"-"+u[20:])
-    elif format == "unhyphenated":
-        uuid = uuid.replace("-", "").strip()
-    elif format == "array":
+    uuid = formatuuid(uuid, format)
+    
+    if uuid == "wip format":
         return jsonify({"error": "Array format wip"}), 404
-    else:
+    if uuid == "invalid format":
         return jsonify({"error": "Invalid format type (try 'hypenated', 'unhyphenated' or 'array')"}), 400
-
+        
     return jsonify(uuid), 200
     
 
@@ -105,6 +107,8 @@ def legitidevplayerrank(uuid):
     
     if not uuid:
         return jsonify({"error": "Please provide a UUID"}), 400
+
+    uuid = formatuuid(uuid, "hyphenated")
 
     url = f"https://api.legiti.dev/player/{uuid}"
     try:
