@@ -94,13 +94,10 @@ def requestformatuuid():# todo Add the array format: convert to
             u[16:20] + "-" +
             u[20:]
         )
-
     elif format == "unhyphenated":
         uuid = uuid.replace("-", "").strip()
-
     elif format == "array":
         return jsonify({"error": "Array format wip"}), 404
-
     else:
         return jsonify({"error": "Invalid format type (try 'hypenated', 'unhyphenated' or 'array')"}), 400
 
