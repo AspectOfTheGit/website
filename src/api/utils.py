@@ -15,6 +15,9 @@ utils = Blueprint(
 )
 
 def formatuuid(uuid, format):
+    if isinstance(uuid, list):
+        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in uuid)
+        
     if format == "hyphenated":
         u = uuid.replace("-", "").strip()
         return u[:8]+"-"+u[8:12]+"-"+u[12:16]+"-"+u[16:20]+"-"+u[20:]
