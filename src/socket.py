@@ -38,7 +38,7 @@ def emit_image(type, file, room):
         },
         room=room
     )
-    print(f"[emit_image_bytes] Emitted screenshot to {room}, {len(file)} bytes")
+    print(f"[socket.py] Emitted screenshot to {room}, {len(file)} bytes")
 
 
 # Events
