@@ -25,6 +25,8 @@ PREFIXED_COMMANDS = ["shout","msg","tell"]
 
 USER_SOCKET_LIMIT = 1024 * 10
 
+VALID_WORLD_ELEMENT_KEYS = ["id","value","color"]
+
 MAX_TIME_TILL_VOICE_ROOM_CLOSE = 3000 # in milliseconds
 
 COLOURS = {
