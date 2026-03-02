@@ -6,7 +6,7 @@ from flask import (
 )
 
 from src.data import data, save_data
-from src.config import VALID_BOT_PERMISSIONS, BOT_PERMISSION_DEFAULTS, USER_SOCKET_LIMIT
+from src.config import VALID_BOT_PERMISSIONS, BOT_PERMISSION_DEFAULTS, USER_SOCKET_LIMIT, VALID_WORLD_ELEMENT_KEYS
 from src.utils.data_api import create_world
 from src.utils.player_api import storage_size
 from src.discord.notify import notify
@@ -151,7 +151,7 @@ def apiworldeditupdate(world):
     # Check if keys are valid
     for i in content:
         for key in i:
-            if key not in ["id","value","color"]:
+            if key not in VALID_WORLD_ELEMENT_KEYS:
                 return jsonify({"error": "Invalid key '" + key + "'"}), 400
 
     # update here
