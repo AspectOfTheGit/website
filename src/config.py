@@ -16,7 +16,7 @@ BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
 TIMEOUT = 10
 
-DEFAULT_ABILITIES = {"send":True}
+DEFAULT_ABILITIES = {"send":True,"capacity":1,"uses":10,"simultaneous":1,"uptime":30,"abandoned":True,"unowned":True,}
 
 WHITELISTED_COMMANDS = ["listall","find","uuid","list"]
 DEPLOYER_COMMANDS = ["trigger"]
