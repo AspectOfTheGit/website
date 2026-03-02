@@ -20,7 +20,7 @@ DEFAULT_ABILITIES = {"send":True,"capacity":1,"uses":10,"simultaneous":1,"uptime
 
 WHITELISTED_COMMANDS = ["listall","find","uuid","list"] # Commands that can be sent by anyone through bots
 DEPLOYER_COMMANDS = ["trigger"] # Commands that can only be sent by the deployer through bots
-TRUSTED_COMMANDS = ["shout","msg","tell"] # Commands tht only trusted users can send through bots (deployer or not)
+TRUSTED_COMMANDS = ["shout","msg","tell"] # Commands that only trusted users can send through bots (deployer or not)
 PREFIXED_COMMANDS = ["shout","msg","tell"] # Commands that should include the users name as prefix
 
 USER_SOCKET_LIMIT = 1024 * 10 # in bytes, how much the backend can send through a socket from a user influenced input
