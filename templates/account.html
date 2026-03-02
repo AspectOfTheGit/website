@@ -99,6 +99,10 @@
                 </tr>
             </tbody>
         </table>
+
+        <button class="generic" id="get-my-data-btn">My Data</button>
+
+        <textarea id="user-data"></textarea>
       </div>
       <div id="notifs" class="tab-content">
           <h2>Notifications</h2>
@@ -283,6 +287,30 @@
             logoutBtn.addEventListener('click', () => {
                 window.location.href = "/logout";
             });
+        }
+
+        // Get User Data 
+        const userdata = document.getElementById('user-data');
+        
+        try {
+            const res = await fetch('https://api.aspectofthe.site/userdata', {
+                method: 'POST',
+                credentials: "include",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    account: accountUUID
+                })
+            });
+    
+            if(res.ok) {
+                const data = await res.json();
+                userdata.textContent = data;
+            } else {
+                userdata.textContent = "Error 500 ❌ Try again later";
+            }
+        } catch (e) {
+            userdata.textContent = "Error ❌ See Console";
+            console.error(e);
         }
     
         // Save storage
