@@ -10,22 +10,22 @@ GUILD_ID = 1460692900533899438
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
-BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"]
-VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"}
-BOT_PERMISSION_DEFAULTS = ["baritone","attack"]
-BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"]
-TIMEOUT = 10
+BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"] # Valid bots
+VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"} # Permissions that can be given to the bot
+BOT_PERMISSION_DEFAULTS = ["baritone","attack"] # Permissions given to the bot by default while in any world
+BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"] # Permissions given to the bot while in lobby
+TIMEOUT = 10 # in seconds, how long the backend will wait until the bot is marked as offline
 
-DEFAULT_ABILITIES = {"send":True,"capacity":1,"uses":10,"simultaneous":1,"uptime":30,"abandoned":True,"unowned":True,}
+DEFAULT_ABILITIES = {"send":True,"capacity":1,"uses":10,"simultaneous":1,"uptime":30,"abandoned":True,"unowned":True} # Default capabilities for each account
 
-WHITELISTED_COMMANDS = ["listall","find","uuid","list"]
-DEPLOYER_COMMANDS = ["trigger"]
-TRUSTED_COMMANDS = ["shout","msg","tell"]
-PREFIXED_COMMANDS = ["shout","msg","tell"]
+WHITELISTED_COMMANDS = ["listall","find","uuid","list"] # Commands that can be sent by anyone through bots
+DEPLOYER_COMMANDS = ["trigger"] # Commands that can only be sent by the deployer through bots
+TRUSTED_COMMANDS = ["shout","msg","tell"] # Commands tht only trusted users can send through bots (deployer or not)
+PREFIXED_COMMANDS = ["shout","msg","tell"] # Commands that should include the users name as prefix
 
-USER_SOCKET_LIMIT = 1024 * 10
+USER_SOCKET_LIMIT = 1024 * 10 # in bytes, how much the backend can send through a socket from a user influenced input
 
-VALID_WORLD_ELEMENT_KEYS = ["id","value","color"]
+VALID_WORLD_ELEMENT_KEYS = ["id","value","color"] # Valid world page element properties
 
 MAX_TIME_TILL_VOICE_ROOM_CLOSE = 3000 # in milliseconds
 
@@ -46,4 +46,4 @@ COLOURS = {
     "light_purple": "#FF55FF",
     "yellow": "#FFFF55",
     "white": "#FFFFFF"
-}
+} # Minecraft colours converted to hex
