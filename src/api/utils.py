@@ -87,13 +87,7 @@ def requestformatuuid():# todo Add the array format: convert to
     # Then convert to desired format
     if format == "hyphenated":
         u = uuid.replace("-", "").strip()
-        uuid = (
-            u[:8] + "-" +
-            u[8:12] + "-" +
-            u[12:16] + "-" +
-            u[16:20] + "-" +
-            u[20:]
-        )
+        uuid = (u[:8]+"-"+u[8:12]+"-"+u[12:16]+"-"+u[16:20]+"-"+u[20:])
     elif format == "unhyphenated":
         uuid = uuid.replace("-", "").strip()
     elif format == "array":
