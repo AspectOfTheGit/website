@@ -69,10 +69,10 @@ def profilewithusernamewithkey(username, key):
 
 
 @utils.post("/format-uuid")
-def requestformatuuid():# todo Add the array format: convert to AND convert from
+def requestformatuuid():# todo Add the array format: convert to
     rdata = request.get_json()
-    uuid = rdata.get("uuid", "")
-    format = rdata.get("format", "")
+    uuid = rdata.get("uuid")
+    format = rdata.get("format")
     
     if not uuid:
         return jsonify({"error": "Please provide a UUID"}), 400
@@ -80,6 +80,11 @@ def requestformatuuid():# todo Add the array format: convert to AND convert from
     if not format:
         return jsonify({"error": "Please provide a format type"}), 400
 
+    # Convert to unhyphenated first (if necessary)
+    if isinstance(uuid, list):
+        uuid = ''.join(f'{x & 0xffffffff:08x}' for x in uuid
+                       
+    # Then convert to desired format
     if format == "hyphenated":
         u = uuid.replace("-", "").strip()
         uuid = (
@@ -90,11 +95,14 @@ def requestformatuuid():# todo Add the array format: convert to AND convert from
             u[20:]
         )
 
-    if format == "unhyphenated":
+    elif format == "unhyphenated":
         uuid = uuid.replace("-", "").strip()
 
-    if format == "array":
+    elif format == "array":
         return jsonify({"error": "Array format wip"}), 404
+
+    else:
+        return jsonify({"error": "Invalid format type (try 'hypenated', 'unhyphenated' or 'array')"}), 400
 
     return jsonify(uuid), 200
     
