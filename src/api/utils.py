@@ -78,6 +78,11 @@ def profilewithusernamewithkey(username, key):
         else:
             return jsonify({"error": "Invalid key"}), 400
 
+    if key == "uuid":
+        format == request.get_json().get("format")
+        if format:
+            data = formatuuid(data, format)
+
     return jsonify(data), 200
 
 
