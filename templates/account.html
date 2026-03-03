@@ -295,7 +295,7 @@
         
         if (userdatabtn && userdata) {
             userdatabtn.addEventListener('click', () => {
-                userdata.textContent = {{ account|tojson|safe }};
+                userdata.textContent = JSON.stringify({{ account|tojson|safe }}, null, 4);
             });
         }
     
