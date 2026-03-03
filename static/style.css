@@ -791,6 +791,7 @@ button.generic, #save-storage-btn, #save-user-id-btn, #server-link-btn, #save-no
     margin-top: 8px;
     background: #2fa08c;
     border: none;
+    color: #f7fffc;
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-weight: 600;
