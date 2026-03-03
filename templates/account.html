@@ -100,7 +100,7 @@
             </tbody>
         </table>
 
-        <button class="generic" id="get-my-data-btn">My Data</button>
+        <button class="generic" id="show-my-data-btn">Show My Data</button>
 
         <textarea id="user-data"></textarea>
       </div>
@@ -289,28 +289,14 @@
             });
         }
 
-        // Get User Data 
+        // Show User Data 
+        const userdatabtn = document.getElementById('show-my-data-btn');
         const userdata = document.getElementById('user-data');
         
-        try {
-            const res = await fetch('https://api.aspectofthe.site/userdata', {
-                method: 'POST',
-                credentials: "include",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    account: accountUUID
-                })
+        if (userdatabtn && userdata) {
+            userdatabtn.addEventListener('click', () => {
+                userdata.textContent = "{{ account|tojson|safe }};
             });
-    
-            if(res.ok) {
-                const data = await res.json();
-                userdata.textContent = data;
-            } else {
-                userdata.textContent = "Error 500 ❌ Try again later";
-            }
-        } catch (e) {
-            userdata.textContent = "Error ❌ See Console";
-            console.error(e);
         }
     
         // Save storage
