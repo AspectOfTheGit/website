@@ -712,7 +712,7 @@ code {
     margin-bottom: 1.5rem;
 }
 
-#storage-textarea {
+textarea {
     width: 100%;
     min-height: 150px;
     background: #031014;
