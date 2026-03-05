@@ -6,6 +6,7 @@ import json
 from src.data import data, save_data
 from src.utils.player_api import storage_size
 from src.socket import emit_storage_log
+from src.config import DEFAULT_ABILITIES
 
 storage = Blueprint(
     "storage",
@@ -43,7 +44,7 @@ def can_write(account, new_size):
     account_data.setdefault("storage", {})
     account_data["storage"].setdefault("capacity", {})
 
-    capacity_mb = account_data["abilities"].get("capacity", 1)
+    capacity_mb = account_data["abilities"].get("capacity", DEFAULT_ABILITIES.get("capacity",0))
 
     storage_size(account)
     current_size = account_data["storage"]["size"]
