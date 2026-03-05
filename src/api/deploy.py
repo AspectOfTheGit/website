@@ -11,6 +11,7 @@ from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
 from src.utils.player_api import format_uuid
 from src.socket import emit_log
+from src.config import DEFAULT_ABILITIES
 
 from datetime import datetime
 import time
@@ -53,7 +54,7 @@ def apideploybot():
     except:
         worldinfo = False
         
-    if not data["account"][account]["abilities"].get("unowned", True):
+    if not data["account"][account]["abilities"].get("unowned", DEFAULT_ABILITIES.get("unowned",False)):
         if worldinfo == False or worldinfo.get("owner_uuid",None) != format_uuid(account):
             world = "lobby"
             
@@ -61,11 +62,11 @@ def apideploybot():
     try:
         dlimitu = int(data["account"][account]["abilities"]["uses"])
     except:
-        dlimitu = 10
+        dlimitu = DEFAULT_ABILITIES.get("uses",0)
     try:
         dlimits = int(data["account"][account]["abilities"]["simultaneous"])
     except:
-        dlimits = 1
+        dlimits = DEFAULT_ABILITIES.get("simultaneous",0)
     deployed = 0
     for botname, botdata in data["bot"].items():
         botdata.setdefault("deployer", "")
@@ -106,11 +107,11 @@ def apideploybot():
         else:
             data["bot"][bot]["do"]["deploy"]["abandoned"] = True
     except:
-        data["bot"][bot]["do"]["deploy"]["abandoned"] = True
+        data["bot"][bot]["do"]["deploy"]["abandoned"] = DEFAULT_ABILITIES.get("abandoned",True)
     try:
         data["bot"][bot]["do"]["deploy"]["uptime"] = data["account"][account]["abilities"]["uptime"]
     except:
-        data["bot"][bot]["do"]["deploy"]["uptime"] = 30
+        data["bot"][bot]["do"]["deploy"]["uptime"] = DEFAULT_ABILITIES.get("uptime",0)
 
     contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {accountusername}"]
     emit_log('log', contents, bot)
