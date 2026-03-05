@@ -16,7 +16,14 @@ BOT_PERMISSION_DEFAULTS = ["baritone","attack"] # Permissions given to the bot b
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"] # Permissions given to the bot while in lobby
 TIMEOUT = 10 # in seconds, how long the backend will wait until the bot is marked as offline
 
-DEFAULT_ABILITIES = {"send":True,"capacity":1,"uses":10,"simultaneous":1,"uptime":30,"abandoned":True,"unowned":True} # Default capabilities for each account
+DEFAULT_ABILITIES = {"send":True, # Whether the user can send messages through the bot
+                     "capacity":1, # In MB, how much storage capacity the user has
+                     "uses":10, # How many times the user can deploy a bot per day
+                     "simultaneous":1, # How many bots a user can have deployed at the same time
+                     "uptime":30, # In minutes, how long a user can have a bot deployed
+                     "abandoned":True, # Whether the bot automatically disconnects after being alone for one minute
+                     "unowned":True # Whether the user can deploy bots to worlds they don't own
+                    } # Default capabilities for each account
 
 WHITELISTED_COMMANDS = ["listall","find","uuid","list"] # Commands that can be sent by anyone through bots
 DEPLOYER_COMMANDS = ["trigger"] # Commands that can only be sent by the deployer through bots
