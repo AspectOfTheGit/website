@@ -86,6 +86,14 @@ def apivoiceupdate():
 
     emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 
-    # no need to save data, its not very important.
-
     return jsonify(voice_rooms[world]["new"]), 200 # Return with any new users with auth URL for them to join voice room
+
+    '''
+    Sent to Users:
+    [{"Pos":[x,y,z],"Rot":[x,y],"Name":"PlayerUsername","uuid":"player-uuid"},{...}...]
+    List of Dictionaries. Each dictionary is the data of one player.
+
+    Sent to World:
+    [{"uuid":"new-player-uuid","world":"world-uuid","auth":"authkey"}]
+    List of Dictionaries. Each dictionary is one new player connection (this data is sent so the world can provide the URL to the player)
+    '''
