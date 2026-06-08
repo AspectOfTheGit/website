@@ -59,7 +59,7 @@ def apivoiceupdate():
     voice_rooms[world]["new"] = []
     request_uuids = []
 
-    for player in value:
+    for player in value["players"]:
         uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])) # Convert UUID from array to hex
         request_uuids.append(uuid)
 
