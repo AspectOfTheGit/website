@@ -6,7 +6,7 @@ from flask import (
 
 from src.data import data
 from src.socket import emit_log
-from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE
+from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION
 from src.utils.player_api import format_uuid
 import re
 import time
@@ -21,6 +21,10 @@ voice = Blueprint(
 )
 
 voice_rooms = {}
+
+@voice.get("/version")
+def apivoiceversion():
+    return DATAPACK_VERSION, 200, {'Content-Type': 'text/plain'}
 
 @voice.post("/update")
 def apivoiceupdate():
