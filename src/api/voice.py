@@ -24,7 +24,7 @@ voice_rooms = {}
 
 @voice.get("/version")
 def apivoiceversion():
-    return DATAPACK_VERSION, 200, {'Content-Type': 'text/plain'}
+    return f"\"{DATAPACK_VERSION}\"", 200, {'Content-Type': 'text/plain'}
 
 @voice.post("/update")
 def apivoiceupdate():
