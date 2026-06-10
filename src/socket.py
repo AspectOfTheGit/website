@@ -50,27 +50,27 @@ def handle_connect():
 
 @socketio.on("disconnect")
 def disconnect():
-    sid = request.sid
+    uuid = session.get("mc_uuid", ".anonymous")
 
-    print(f"[socket.py] Client disconnected: {sid}")
+    print(f"[socket.py] Client disconnected: {uuid}")
 
     for room, members in rooms.items():
 
-        if sid not in members:
+        if uuid not in members:
             continue
 
-        members.remove(sid)
+        members.remove(uuid)
 
         emit(
             "peer-left",
-            sid,
+            uuid,
             room=room,
             include_self=False
         )
 
         leave_room(room)
 
-        print(f"[socket.py] Removed {sid} from {room}")
+        print(f"[socket.py] Removed {uuid} from {room}")
 
         if len(members) == 0:
             del rooms[room]
@@ -81,7 +81,6 @@ def disconnect():
 @socketio.on('join')
 def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
-    sid = request.sid
 
     if room in BOTS or uuid == room:
         print(f"[socket.py] {uuid} joined room: {room}")
@@ -89,13 +88,13 @@ def handle_join(room):
         if room not in rooms:
             rooms[room] = set()
 
-        for peer_sid in rooms[room]:
-            emit("new-peer", sid, room=peer_sid)
+        for peer_uuid in rooms[room]:
+            emit("new-peer", uuid, room=peer_uuid)
 
-        rooms[room].add(sid)
+        rooms[room].add(uuid)
         join_room(room)
 
-        existing_peers = [s for s in rooms[room] if s != sid]
+        existing_peers = [s for s in rooms[room] if s != uuid]
         emit("existing-peers", existing_peers)
 
         print(f"[socket.py] {uuid} joined room: {room}")
@@ -247,4 +246,4 @@ def handle_signal(data):
     target = data.get("to")
     signal_data = data.get("signal")
     if target:
-        emit("signal", {"from": request.sid, "signal": signal_data}, room=target)
+        emit("signal", {"from": session.get("mc_uuid"), "signal": signal_data}, room=target)

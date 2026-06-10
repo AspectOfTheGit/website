@@ -147,39 +147,38 @@ deafenBtn.onclick = () => {
 socket.on("existing-peers", existingPeers => {
     console.log("Existing peers:", existingPeers);
 
-    existingPeers.forEach(peerSid => {
-        createPeerConnection(peerSid, true);
+    existingPeers.forEach(peerUUID => {
+        createPeerConnection(peerUUID, true);
     });
 });
 
 //// New peer joined
 
-socket.on("new-peer", peerSid => {
-    console.log("New peer:", peerSid);
+socket.on("new-peer", peerUUID => {
+    console.log("New peer:", peerUUID);
 
-    if (!peers.has(peerSid)) {
-        createPeerConnection(peerSid, false);
+    if (!peers.has(peerUUID)) {
+        createPeerConnection(peerUUID, false);
     }
 
 });
 
 //// Peer left
 
-socket.on("peer-left", peerSid => {
-
-    const pc = peers.get(peerSid);
+socket.on("peer-left", peerUUID => {
+    const pc = peers.get(peerUUID);
     if (pc) {
         pc.close();
-        peers.delete(peerSid);
+        peers.delete(peerUUID);
     }
 
-    const audio = peerAudio.get(peerSid);
+    const audio = peerAudio.get(peerUUID);
     if (audio) {
         audio.remove();
-        peerAudio.delete(peerSid);
+        peerAudio.delete(peerUUID);
     }
 
-    const userDiv = document.getElementById(peerSid);
+    const userDiv = document.getElementById(peerUUID);
     if (userDiv) {
         userDiv.remove();
     }
@@ -188,13 +187,13 @@ socket.on("peer-left", peerSid => {
 //// Incoming signaling
 
 socket.on("signal", async data => {
-    const peerSid = data.from;
+    const peerUUID = data.from;
     const signal = data.signal;
 
-    let pc = peers.get(peerSid);
+    let pc = peers.get(peerUUID);
 
     if (!pc) {
-        pc = createPeerConnection(peerSid, false);
+        pc = createPeerConnection(peerUUID, false);
     }
 
     try {
@@ -209,7 +208,7 @@ socket.on("signal", async data => {
                 await pc.setLocalDescription(answer);
 
                 socket.emit("signal", {
-                    to: peerSid,
+                    to: peerUUID,
                     signal: {
                         type: "answer",
                         sdp: pc.localDescription
@@ -239,17 +238,16 @@ socket.on("signal", async data => {
 
 //// Create Peer Connection
 
-function createPeerConnection(peerSid, initiator) {
-    if (peers.has(peerSid)) {
-        return peers.get(peerSid);
+function createPeerConnection(peerUUID, initiator) {
+    if (peers.has(peerUUID)) {
+        return peers.get(peerUUID);
     }
 
     const pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
-    peers.set(peerSid, pc);
+    peers.set(peerUUID, pc);
 
     // Add microphone track
     if (localStream) {
-
         localStream.getTracks().forEach(track => {
             pc.addTrack(track, localStream);
         });
@@ -258,18 +256,16 @@ function createPeerConnection(peerSid, initiator) {
 
     // ICE candidates
     pc.onicecandidate = event => {
-
         if (!event.candidate)
             return;
 
         socket.emit("signal", {
-            to: peerSid,
+            to: peerUUID,
             signal: {
                 type: "ice-candidate",
                 candidate: event.candidate
             }
         });
-
     };
 
     // audio track received
@@ -277,14 +273,13 @@ function createPeerConnection(peerSid, initiator) {
         const audio = document.createElement("audio");
 
         audio.className = "remote-peer";
-        audio.autoplay = true;
         audio.srcObject = event.streams[0];
 
         document.body.appendChild(audio);
 
-        peerAudio.set(peerSid, audio);
+        peerAudio.set(peerUUID, audio);
 
-        spatialAudio(audio, peerSid);
+        spatialAudio(audio, peerUUID);
     };
 
     // create offer
@@ -296,7 +291,7 @@ function createPeerConnection(peerSid, initiator) {
                 await pc.setLocalDescription(offer);
 
                 socket.emit("signal", {
-                    to: peerSid,
+                    to: peerUUID,
                     signal: {
                         type: "offer",
                         sdp: pc.localDescription
@@ -323,6 +318,11 @@ socket.on("update", data => {
     
     // update player information
     data.forEach(player => {
+        // only update if player is connected
+        if (player.uuid !== mc_uuid && !peers.has(player.uuid)) {
+            return;
+        }
+
         if (player.uuid === mc_uuid) {
             localPlayer.position = player.Pos; // this players pos [x,y,z]
             localPlayer.rotation = player.Rot; // this players rot [x_rot,y_rot]
@@ -339,31 +339,59 @@ socket.on("update", data => {
                 UserDiv.id = player.uuid;
                 // head
                 const headImg = document.createElement("img");
-                headImg.src = `https://crafatar.com/avatars/${player.uuid}?size=64&overlay`;
+                headImg.src = `https://mc-heads.net/avatar/${player.uuid}/256`;
                 headImg.width = 32;
                 headImg.height = 32;
-                headImg.style.borderRadius = "10%";
+                headImg.style.borderRadius = "15%";
                 headImg.style.verticalAlign = "middle";
                 UserDiv.appendChild(headImg);
                 // name
                 const nameSpan = document.createElement("span");
                 nameSpan.textContent = ` ${player.Name} `;
                 UserDiv.appendChild(nameSpan);
-                // mute button (press to toggle mute for this player) (use svg icon later)
+                // mute button (press to toggle mute for this player)
                 const muteBtn = document.createElement("button");
-                muteBtn.textContent = "🔊";
+                muteBtn.textContent = "🔊"; // change this to svg later
+                muteBtn.dataset.muted = false;
+                muteBtn.onclick = () => {
+                    muteBtn.dataset.muted = !muteBtn.dataset.muted;
+                    muteBtn.textContent = muteBtn.dataset.muted ? "🔇" : "🔊"; // temp, replace with svgs later
+                    const userDiv = document.getElementById(player.uuid);
+                    if (userDiv) {
+                        const volumeSlider = userDiv.querySelector('input[type="range"]');
+                        if (volumeSlider) {
+                            if (muteBtn.dataset.muted === true) {
+                                volumeSlider.dataset.prevValue = volumeSlider.value;
+                                volumeSlider.value = 0;
+                            } else {
+                                if (volumeSlider.dataset.prevValue === 0 || !volumeSlider.dataset.prevValue) {
+                                    volumeSlider.dataset.prevValue = 1;
+                                } else {
+                                    volumeSlider.value = volumeSlider.dataset.prevValue || 1;
+                                }
+                            }
+                        }
+                    }
+                };
                 UserDiv.appendChild(muteBtn);
                 // volume slider (todo style this later) (todo make this change the overall volume for this player)
                 const volumeSlider = document.createElement("input");
                 volumeSlider.type = "range";
                 volumeSlider.min = 0; // min 0% (mute)
-                volumeSlider.max = 2; // max 200% allowing louder audio if necessary
+                volumeSlider.max = 2; // max 200% allowing louder if necessary
                 volumeSlider.step = 0.01; // step by 1%
                 volumeSlider.value = 1; // default 100%
+                volumeSlider.oninput = () => {
+                    if (volumeSlider.value === 0) {
+                        muteBtn.textContent = "🔇";
+                    } else {
+                        muteBtn.textContent = "🔊";
+                    }
+                };
                 UserDiv.appendChild(volumeSlider);
                 // options
                 const optionsBtn = document.createElement("button");
-                optionsBtn.textContent = "…"; // change this to an actual icon later
+                optionsBtn.textContent = "…"; // change this to svg later
                 UserDiv.appendChild(optionsBtn);
 
                 connectedUsers.appendChild(UserDiv);
@@ -374,13 +402,31 @@ socket.on("update", data => {
 
 //// Spatial Audio
 
-function spatialAudio(audioElement, peerSid) {
+function spatialAudio(audioElement, peerUUID) {
     // Use Web Audio API to adjust audioElement's volume/panning based on player position (data from "update" events)
     // todo
 
+    otherEffects(audioElement, peerUUID);
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
+
+function otherEffects(audioElement, peerUUID) {
+    // Volume Sliders
+    const userDiv = document.getElementById(peerUUID);
+    if (!userDiv) return;
+    const volumeSlider = userDiv.querySelector('input[type="range"]');
+    if (volumeSlider) {
+        volumeSlider.oninput = () => {
+            audioElement.volume = volumeSlider.value;
+        };
+    }
+
+    // finally, play audio
+    audioElement.play().catch(err => {
+        console.error("Audio play error:", err);
+    });
+}
 
 });
 </script>
