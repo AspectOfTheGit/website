@@ -43,7 +43,7 @@
     <h2>Voice Room</h2>
     <h3>{{ world_uuid }}</h3>
     <p>{{ mc_uuid }}</p>
-    <p>Voice Chat is a big work in progress!</p>
+    <p>Peer to Peer Voice Chat</p>
     <div id="voice-controls" style="margin: 10px 0;">
         <button class="generic" id="mute-btn">Mute</button>
         <button class="generic" id="deafen-btn">Deafen</button>
@@ -51,7 +51,7 @@
         <select class="dropdown" id="mic-select"></select>
     </div>
     
-    <div id="user-volumes" style="margin-top: 10px;">
+    <div id="connected-users" style="margin-top: 10px;">
         <h4>Connected Users</h4>
     </div>
 
@@ -59,27 +59,329 @@
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
 
-const socket = io("https://aspectofthe.site", {transports: ["websocket"]});
+const world_uuid = "{{ world_uuid }}";
+const mc_uuid = "{{ mc_uuid }}";
 
-socket.emit("join", "voice-{{ world_uuid }}");
+const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
+
+const connectedUsers = document.getElementById("connected-users");
+
+const peers = new Map();
+const peerAudio = new Map();
+
+const players = new Map(); // uuid => {name, position, rotation}
+const localPlayer = {
+    uuid: mc_uuid,
+    name: "You",
+    position: [0, 0, 0],
+    rotation: [0, 0]
+};
+
+let localStream = null;
 
 let isMuted = false;
 let isDeafened = false;
-    
+
+//// Get microphone
+
+try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    });
+
+    console.log("Got microphone:", localStream);
+}
+catch (err) {
+    console.error("Failed to get microphone:", err);
+}
+
+socket.emit("join", `voice-${world_uuid}`);
+
+//// Microphone selector
+
+const micSelect = document.getElementById("mic-select");
+
+navigator.mediaDevices.enumerateDevices()
+.then(devices => {
+    const mics = devices.filter(d => d.kind === "audioinput");
+
+    mics.forEach(mic => {
+        const option = document.createElement("option");
+        option.value = mic.deviceId;
+        option.textContent =
+            mic.label || `Microphone ${micSelect.length + 1}`;
+        micSelect.appendChild(option);
+    });
+})
+.catch(console.error);
+
+//// Local User Mute/Deafen
+
 const muteBtn = document.getElementById("mute-btn");
 const deafenBtn = document.getElementById("deafen-btn");
 
-// mute/deafen
 muteBtn.onclick = () => {
-    // mute functionality goes here
+    isMuted = !isMuted;
+
+    if (localStream) {
+        localStream.getAudioTracks().forEach(track => {
+            track.enabled = !isMuted;
+        });
+    }
+
     muteBtn.textContent = isMuted ? "Unmute" : "Mute";
 };
 
 deafenBtn.onclick = () => {
-    // deafen functionality goes here
+    isDeafened = !isDeafened;
+
+    peerAudio.forEach(audio => {
+        audio.muted = isDeafened;
+    });
+
     deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
 };
+
+//// Existing peers (when joining)
+
+socket.on("existing-peers", existingPeers => {
+    console.log("Existing peers:", existingPeers);
+
+    existingPeers.forEach(peerSid => {
+        createPeerConnection(peerSid, true);
+    });
+});
+
+//// New peer joined
+
+socket.on("new-peer", peerSid => {
+    console.log("New peer:", peerSid);
+
+    if (!peers.has(peerSid)) {
+        createPeerConnection(peerSid, false);
+    }
+
+});
+
+//// Peer left
+
+socket.on("peer-left", peerSid => {
+
+    const pc = peers.get(peerSid);
+    if (pc) {
+        pc.close();
+        peers.delete(peerSid);
+    }
+
+    const audio = peerAudio.get(peerSid);
+    if (audio) {
+        audio.remove();
+        peerAudio.delete(peerSid);
+    }
+
+    const userDiv = document.getElementById(peerSid);
+    if (userDiv) {
+        userDiv.remove();
+    }
+});
+
+//// Incoming signaling
+
+socket.on("signal", async data => {
+    const peerSid = data.from;
+    const signal = data.signal;
+
+    let pc = peers.get(peerSid);
+
+    if (!pc) {
+        pc = createPeerConnection(peerSid, false);
+    }
+
+    try {
+        switch (signal.type) {
+            case "offer":
+                await pc.setRemoteDescription(
+                    new RTCSessionDescription(signal.sdp)
+                );
+
+                const answer = await pc.createAnswer();
+
+                await pc.setLocalDescription(answer);
+
+                socket.emit("signal", {
+                    to: peerSid,
+                    signal: {
+                        type: "answer",
+                        sdp: pc.localDescription
+                    }
+                });
+                break;
+            case "answer":
+                await pc.setRemoteDescription(
+                    new RTCSessionDescription(signal.sdp)
+                );
+                break;
+            case "ice-candidate":
+
+                if (signal.candidate) {
+                    await pc.addIceCandidate(
+                        new RTCIceCandidate(signal.candidate)
+                    );
+                }
+                break;
+        }
+
+    }
+    catch (err) {
+        console.error("Signal error:", err);
+    }
+});
+
+//// Create Peer Connection
+
+function createPeerConnection(peerSid, initiator) {
+    if (peers.has(peerSid)) {
+        return peers.get(peerSid);
+    }
+
+    const pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
+    peers.set(peerSid, pc);
+
+    // Add microphone track
+    if (localStream) {
+
+        localStream.getTracks().forEach(track => {
+            pc.addTrack(track, localStream);
+        });
+
+    }
+
+    // ICE candidates
+    pc.onicecandidate = event => {
+
+        if (!event.candidate)
+            return;
+
+        socket.emit("signal", {
+            to: peerSid,
+            signal: {
+                type: "ice-candidate",
+                candidate: event.candidate
+            }
+        });
+
+    };
+
+    // audio track received
+    pc.ontrack = event => {
+        const audio = document.createElement("audio");
+
+        audio.className = "remote-peer";
+        audio.autoplay = true;
+        audio.srcObject = event.streams[0];
+
+        document.body.appendChild(audio);
+
+        peerAudio.set(peerSid, audio);
+
+        spatialAudio(audio, peerSid);
+    };
+
+    // create offer
+    if (initiator) {
+        (async () => {
+            try {
+                const offer = await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+                socket.emit("signal", {
+                    to: peerSid,
+                    signal: {
+                        type: "offer",
+                        sdp: pc.localDescription
+                    }
+                });
+            }
+            catch (err) {
+                console.error(err);
+            }
+        })();
+    }
+
+    return pc;
+}
+
+//// Updates
+/*
+    Each user recieves this information each update:
+    [{"Pos":[x,y,z],"Rot":[x,y],"Name":"PlayerUsername","uuid":"player-uuid"},{...}...]
+    List of Dictionaries. Each dictionary is the data of one player.
+*/
+socket.on("update", data => {
+    console.debug("Voice update:", data);
     
+    // update player information
+    data.forEach(player => {
+        if (player.uuid === mc_uuid) {
+            localPlayer.position = player.Pos; // this players pos [x,y,z]
+            localPlayer.rotation = player.Rot; // this players rot [x_rot,y_rot]
+            localPlayer.name = player.Name;
+        } else {
+            players.set(player.uuid, {
+                name: player.Name,
+                position: player.Pos, // other players pos [x,y,z]
+                rotation: player.Rot // other players rot [x_rot,y_rot]
+            });
+            // update connected users list
+            if (!document.getElementById(player.uuid)) {
+                const UserDiv = document.createElement("div");
+                UserDiv.id = player.uuid;
+                // head
+                const headImg = document.createElement("img");
+                headImg.src = `https://crafatar.com/avatars/${player.uuid}?size=64&overlay`;
+                headImg.width = 32;
+                headImg.height = 32;
+                headImg.style.borderRadius = "10%";
+                headImg.style.verticalAlign = "middle";
+                UserDiv.appendChild(headImg);
+                // name
+                const nameSpan = document.createElement("span");
+                nameSpan.textContent = ` ${player.Name} `;
+                UserDiv.appendChild(nameSpan);
+                // mute button (press to toggle mute for this player) (use svg icon later)
+                const muteBtn = document.createElement("button");
+                muteBtn.textContent = "🔊";
+                UserDiv.appendChild(muteBtn);
+                // volume slider (todo style this later) (todo make this change the overall volume for this player)
+                const volumeSlider = document.createElement("input");
+                volumeSlider.type = "range";
+                volumeSlider.min = 0; // min 0% (mute)
+                volumeSlider.max = 2; // max 200% allowing louder audio if necessary
+                volumeSlider.step = 0.01; // step by 1%
+                volumeSlider.value = 1; // default 100%
+                UserDiv.appendChild(volumeSlider);
+                // options
+                const optionsBtn = document.createElement("button");
+                optionsBtn.textContent = "…"; // change this to an actual icon later
+                UserDiv.appendChild(optionsBtn);
+
+                connectedUsers.appendChild(UserDiv);
+            }
+        }
+    });
+});
+
+//// Spatial Audio
+
+function spatialAudio(audioElement, peerSid) {
+    // Use Web Audio API to adjust audioElement's volume/panning based on player position (data from "update" events)
+    // todo
+
+}
+
+//// Other Audio Effects if applicable (echo, reverb, etc)
+
 });
 </script>
 </body>

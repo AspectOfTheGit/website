@@ -50,13 +50,32 @@ def handle_connect():
 
 @socketio.on("disconnect")
 def disconnect():
-    print('[socket.py] Client disconnected')
     sid = request.sid
+
+    print(f"[socket.py] Client disconnected: {sid}")
+
     for room, members in rooms.items():
-        if sid in members:
-            members.remove(sid)
-            leave_room(room)
-            break
+
+        if sid not in members:
+            continue
+
+        members.remove(sid)
+
+        emit(
+            "peer-left",
+            sid,
+            room=room,
+            include_self=False
+        )
+
+        leave_room(room)
+
+        print(f"[socket.py] Removed {sid} from {room}")
+
+        if len(members) == 0:
+            del rooms[room]
+
+        break
             
 
 @socketio.on('join')
@@ -64,24 +83,24 @@ def handle_join(room):
     uuid = session.get("mc_uuid", ".anonymous")
     sid = request.sid
 
-    if room not in BOTS and uuid != room:
-        if not re.match("^voice-", room):
-            print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room}")
-            return
+    if room in BOTS or uuid == room:
+        print(f"[socket.py] {uuid} joined room: {room}")
+    elif re.match("^voice-", room):
+        if room not in rooms:
+            rooms[room] = set()
 
-    if room not in rooms:
-        rooms[room] = set()
+        for peer_sid in rooms[room]:
+            emit("new-peer", sid, room=peer_sid)
 
-    for peer_sid in rooms[room]:
-        emit("new-peer", sid, room=peer_sid)
+        rooms[room].add(sid)
+        join_room(room)
 
-    rooms[room].add(sid)
-    join_room(room)
+        existing_peers = [s for s in rooms[room] if s != sid]
+        emit("existing-peers", existing_peers)
 
-    existing_peers = [s for s in rooms[room] if s != sid]
-    emit("existing-peers", existing_peers)
-
-    print(f"[socket.py] {uuid} joined room: {room}")
+        print(f"[socket.py] {uuid} joined room: {room}")
+    else:
+        print(f"[socket.py] {uuid} failed to join room (Unauthorized): {room}")
 
 
 @socketio.on("get_screenshot")
