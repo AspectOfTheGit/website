@@ -85,7 +85,7 @@ def apivoiceupdate():
     ] # Remove any players from voice room data that werent sent by the game (they disconnected from voice room)
 
     room = f"voice-{world}"
-    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"] if connected.get(room) and connected[room].contains(p)] # Construct list to send to users
+    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"] if connected.get(room) and connected[room].items().contains(p)] # Construct list to send to users
 
     emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 
