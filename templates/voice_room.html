@@ -69,6 +69,7 @@ const connectedUsers = document.getElementById("connected-users");
 
 const peers = new Map();
 const peerAudio = new Map();
+const spatialNodes = new Map();
 
 const players = new Map(); // uuid => {name, position, rotation}
 const localPlayer = {
@@ -79,9 +80,48 @@ const localPlayer = {
 };
 
 let localStream = null;
+let audioContext = null;
 
 let isMuted = false;
 let isDeafened = false;
+
+function ensureAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    if (audioContext.state === "suspended") {
+        audioContext.resume().catch(console.error);
+    }
+
+    return audioContext;
+}
+
+function updateListener() {
+    if (!audioContext) {
+        return;
+    }
+
+    const [x, y, z] = localPlayer.position || [0, 0, 0];
+    const [pitch, yaw] = localPlayer.rotation || [0, 0];
+    const pitchRad = (pitch * Math.PI) / 180;
+    const yawRad = (yaw * Math.PI) / 180;
+
+    if (audioContext.listener.positionX) {
+        audioContext.listener.positionX.value = x;
+        audioContext.listener.positionY.value = y;
+        audioContext.listener.positionZ.value = z;
+    }
+
+    if (audioContext.listener.forwardX) {
+        audioContext.listener.forwardX.value = Math.sin(yawRad);
+        audioContext.listener.forwardY.value = -Math.sin(pitchRad);
+        audioContext.listener.forwardZ.value = Math.cos(yawRad);
+        audioContext.listener.upX.value = 0;
+        audioContext.listener.upY.value = 1;
+        audioContext.listener.upZ.value = 0;
+    }
+}
 
 //// Get microphone
 
@@ -425,9 +465,13 @@ socket.on("update", data => {
         }
     });
 
+    updateListener();
+
     players.forEach((_, playerUUID) => {
         if (playerUUID !== mc_uuid && !activePlayerUUIDs.has(playerUUID)) {
             removePlayer(playerUUID);
+        } else if (playerUUID !== mc_uuid) {
+            updateSpatialAudioForPeer(playerUUID);
         }
     });
 
