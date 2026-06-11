@@ -86,6 +86,11 @@ def apivoiceupdate():
 
     room = f"voice-{world}"
     voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"] if connected.get(room) and p["uuid"] in connected[room]] # Construct list to send to users
+    # Temporary
+    print(voice_rooms[world]["socket"])
+    print(connected)
+    print(connected.get(room,None))
+    #
 
     emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 

@@ -83,10 +83,13 @@ def disconnect():
 
         break
 
-    for room in connected:
-        for id in room:
-            if room[id] == request.sid:
-                connected[room].remove(id)
+    for room, members in list(connected.items()):
+        for user_id, sid in list(members.items()):
+            if sid == request.sid:
+                del members[user_id]
+
+        if len(members) == 0:
+            del connected[room]
             
 
 @socketio.on('join')
