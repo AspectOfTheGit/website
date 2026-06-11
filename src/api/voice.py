@@ -5,7 +5,7 @@ from flask import (
 )
 
 from src.data import data
-from src.socket import emit_log
+from src.socket import emit_log, connected
 from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION
 from src.utils.player_api import format_uuid
 import re
@@ -84,9 +84,8 @@ def apivoiceupdate():
         if p["uuid"] in request_uuids
     ] # Remove any players from voice room data that werent sent by the game (they disconnected from voice room)
 
-    # todo, fully disconnect old users on client
-    
-    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"]] # Construct list to send to users
+    room = f"voice-{world}"
+    voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"] if connected.get(room) and connected[room].contains(p)] # Construct list to send to users
 
     emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 

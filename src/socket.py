@@ -10,6 +10,7 @@ import re
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
 rooms = {}
+connected = {} # Who's connected in a voice room
 
 #
 
@@ -81,6 +82,11 @@ def disconnect():
             del rooms[room]
 
         break
+
+    for room in connected:
+        for id in room:
+            if room[id] == request.sid:
+                connected[room].remove(id)
             
 
 @socketio.on('join')
@@ -89,6 +95,8 @@ def handle_join(room, uuid=None, auth=None):
         if auth is None or get_uuid_auth(uuid) != auth:
             print(f"[socket.py] Failed join attempt to {room} with uuid {uuid} and auth {auth}")
             return
+        else:
+            connected.setdefault(room,{})[uuid] = request.sid
     else:
         uuid = session.get("mc_uuid", ".anonymous")
 

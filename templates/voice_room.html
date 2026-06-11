@@ -171,7 +171,11 @@ socket.on("new-peer", peerUUID => {
 
 //// Peer left
 
-socket.on("peer-left", peerUUID => {
+function removePlayer(peerUUID) {
+    if (peerUUID === mc_uuid) {
+        return;
+    }
+
     const pc = peers.get(peerUUID);
     if (pc) {
         pc.close();
@@ -188,6 +192,12 @@ socket.on("peer-left", peerUUID => {
     if (userDiv) {
         userDiv.remove();
     }
+
+    players.delete(peerUUID);
+}
+
+socket.on("peer-left", peerUUID => {
+    removePlayer(peerUUID);
 });
 
 //// Incoming signaling
@@ -327,9 +337,13 @@ function createPeerConnection(peerUUID, initiator) {
 */
 socket.on("update", data => {
     console.debug("Voice update:", data);
-    
+
+    const activePlayerUUIDs = new Set();
+
     // update player information
     data.forEach(player => {
+        activePlayerUUIDs.add(player.uuid);
+
         // only update if player is connected
         if (player.uuid !== mc_uuid && !peers.has(player.uuid)) {
             return;
@@ -379,7 +393,7 @@ socket.on("update", data => {
                                 if (volumeSlider.dataset.prevValue === 0 || !volumeSlider.dataset.prevValue) {
                                     volumeSlider.dataset.prevValue = 1;
                                 } else {
-                                    volumeSlider.value = volumeSlider.dataset.prevValue || 1;
+                                    volumeSlider.value = volumeSlider.dataset.prevValue;
                                 }
                             }
                         }
@@ -410,6 +424,18 @@ socket.on("update", data => {
             }
         }
     });
+
+    players.forEach((_, playerUUID) => {
+        if (playerUUID !== mc_uuid && !activePlayerUUIDs.has(playerUUID)) {
+            removePlayer(playerUUID);
+        }
+    });
+
+    if (!activePlayerUUIDs.has(mc_uuid)) {
+        // close the browser tab if the game says this player is no longer in the voice room
+        alert("You have been disconnected from the voice room."); // might remove later
+        window.close();
+    }
 });
 
 //// Spatial Audio
