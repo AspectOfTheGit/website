@@ -98,7 +98,7 @@ catch (err) {
 
 socket.emit(
     "join",
-    room=world_uuid,
+    room=`voice-${world_uuid}`,
     uuid=mc_uuid,
     auth=authToken
 )
