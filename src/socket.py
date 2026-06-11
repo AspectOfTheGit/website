@@ -3,7 +3,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
 from src.config import BOTS, DEFAULT_ABILITIES, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
-from src.web.routes import uuid_auth
 import time
 import base64
 import re
@@ -40,6 +39,11 @@ def emit_image(type, file, room):
         room=room
     )
     print(f"[socket.py] Emitted screenshot to {room}, {len(file)} bytes")
+
+def get_uuid_auth(uuid):
+    # get the uuid_auth variable from web/routes.py
+    from src.web.routes import uuid_auth
+    return uuid_auth.get(uuid)
 
 
 # Events
@@ -82,7 +86,7 @@ def disconnect():
 @socketio.on('join')
 def handle_join(room, uuid=None, auth=None):
     if uuid is not None:
-        if auth is None or uuid_auth.get(uuid) != auth:
+        if auth is None or get_uuid_auth(uuid) != auth:
             print(f"[socket.py] Failed join attempt to {room} with uuid {uuid} and auth {auth}")
             return
     else:
@@ -253,9 +257,9 @@ def handle_signal(data):
     auth = data.get("auth")
     target = data.get("to")
     signal_data = data.get("signal")
-    
+
     if uuid is not None:
-        if auth is None or uuid_auth.get(uuid) != auth:
+        if auth is None or get_uuid_auth(uuid) != auth:
             return
     else:
         uuid = session.get("mc_uuid", ".anonymous")

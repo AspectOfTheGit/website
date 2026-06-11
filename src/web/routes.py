@@ -11,8 +11,6 @@ import requests
 import time
 
 from src.data import data
-#from src.utils.world_api import get_world_info
-from src.utils.player_api import get_username#, get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
