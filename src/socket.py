@@ -109,13 +109,18 @@ def handle_join(room, uuid=None, auth=None):
         if room not in rooms:
             rooms[room] = set()
 
-        for peer_uuid in rooms[room]:
-            emit("new-peer", uuid, room=peer_uuid)
-
         rooms[room].add(uuid)
         join_room(room)
 
-        existing_peers = [s for s in rooms[room] if s != uuid]
+        for peer_uuid in list(rooms[room]):
+            if peer_uuid == uuid:
+                continue
+
+            peer_sid = connected.get(room, {}).get(peer_uuid)
+            if peer_sid:
+                emit("new-peer", uuid, room=peer_sid)
+
+        existing_peers = [s for s in rooms[room] if s != uuid and s in connected.get(room, {})]
         emit("existing-peers", existing_peers)
 
         print(f"[socket.py] {uuid} joined room: {room}")
@@ -276,4 +281,8 @@ def handle_signal(data):
         uuid = session.get("mc_uuid", ".anonymous")
 
     if target:
-        emit("signal", {"from": uuid, "signal": signal_data}, room=target)
+        sender_room = next((room_name for room_name, members in connected.items() if uuid in members), None)
+        if sender_room:
+            target_sid = connected.get(sender_room, {}).get(target)
+            if target_sid:
+                emit("signal", {"from": uuid, "signal": signal_data}, room=target_sid)
