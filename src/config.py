@@ -34,7 +34,7 @@ USER_SOCKET_LIMIT = 1024 * 10 # in bytes, how much the backend can send through 
 
 VALID_WORLD_ELEMENT_KEYS = ["id","value","color"] # Valid world page element properties
 
-MAX_TIME_TILL_VOICE_ROOM_CLOSE = 3000 # in milliseconds, how long until a voice room closes due to no ping sent from world
+MAX_TIME_TILL_VOICE_ROOM_CLOSE = 5000 # in milliseconds, how long until a voice room closes due to no ping sent from world
 
 DATAPACK_VERSION = "1.0" # The version of the voice chat datapack. Used in the api /voice/version endpoint
 

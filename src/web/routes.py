@@ -11,8 +11,8 @@ import requests
 import time
 
 from src.data import data
-from src.utils.world_api import get_world_info
-from src.utils.player_api import get_uuid
+#from src.utils.world_api import get_world_info
+from src.utils.player_api import get_username#, get_uuid
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
@@ -35,6 +35,8 @@ AUTH_REQ_URL = (
     "&scope=profile"
     "&response_type=code"
 )
+
+uuid_auth = {}
 
 # Misc
 
@@ -270,9 +272,13 @@ def voice_room(world):
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
     if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
         return jsonify({"error": f"Voice room closed (since {timediff-MAX_TIME_TILL_VOICE_ROOM_CLOSE}ms ago)"}), 400
+    
+    # Store uuid and auth for socket connection (storing in session is a security risk as world might use session maliciously and can access their entire account)
+    uuid_auth[uuid] = auth
 
     return render_template(
         "voice_room.html",
         mc_uuid=uuid,
-        world_uuid=world
+        world_uuid=world,
+        auth=auth
     )

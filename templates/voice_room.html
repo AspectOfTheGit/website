@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 const world_uuid = "{{ world_uuid }}";
 const mc_uuid = "{{ mc_uuid }}";
+const authToken = "{{ auth }}";
 
 const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
 
@@ -95,7 +96,12 @@ catch (err) {
     console.error("Failed to get microphone:", err);
 }
 
-socket.emit("join", `voice-${world_uuid}`);
+socket.emit(
+    "join",
+    room=world_uuid,
+    uuid=mc_uuid,
+    auth=authToken
+)
 
 //// Microphone selector
 
@@ -209,6 +215,8 @@ socket.on("signal", async data => {
 
                 socket.emit("signal", {
                     to: peerUUID,
+                    from: mc_uuid,
+                    auth: authToken,
                     signal: {
                         type: "answer",
                         sdp: pc.localDescription
@@ -261,6 +269,8 @@ function createPeerConnection(peerUUID, initiator) {
 
         socket.emit("signal", {
             to: peerUUID,
+            from: mc_uuid,
+            auth: authToken,
             signal: {
                 type: "ice-candidate",
                 candidate: event.candidate
@@ -292,6 +302,8 @@ function createPeerConnection(peerUUID, initiator) {
 
                 socket.emit("signal", {
                     to: peerUUID,
+                    from: mc_uuid,
+                    auth: authToken,
                     signal: {
                         type: "offer",
                         sdp: pc.localDescription
