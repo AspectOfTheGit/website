@@ -441,10 +441,72 @@ socket.on("update", data => {
 //// Spatial Audio
 
 function spatialAudio(audioElement, peerUUID) {
-    // Use Web Audio API to adjust audioElement's volume/panning based on player position (data from "update" events)
-    // todo
+    // Create Initial Panner Node
+    const context = ensureAudioContext();
 
+    if (spatialNodes.has(peerUUID)) {
+        updateSpatialAudioForPeer(peerUUID);
+        otherEffects(audioElement, peerUUID);
+        return;
+    }
+
+    const source = context.createMediaElementSource(audioElement);
+    const panner = context.createPanner();
+    const gain = context.createGain();
+
+    panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
+    panner.distanceModel = "inverse";
+    panner.refDistance = 1;
+    panner.maxDistance = 15; // this will be changeable by the world, and default probably won't stay as this
+    panner.rolloffFactor = 1;
+    panner.coneInnerAngle = 360;
+    panner.coneOuterAngle = 0;
+    panner.coneOuterGain = 0;
+
+    gain.gain.value = 1;
+
+    source.connect(panner);
+    panner.connect(gain);
+    gain.connect(context.destination);
+
+    spatialNodes.set(peerUUID, { source, panner, gain });
+
+    updateSpatialAudioForPeer(peerUUID);
     otherEffects(audioElement, peerUUID);
+}
+
+function updateSpatialAudioForPeer(peerUUID) {
+    // Modify Panner Node to peer's position
+    const node = spatialNodes.get(peerUUID);
+    const playerData = players.get(peerUUID);
+    const audioElement = peerAudio.get(peerUUID);
+
+    if (!node || !playerData || !audioElement) {
+        return;
+    }
+
+    const [x, y, z] = localPlayer.position || [0, 0, 0];
+    const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
+    const [pitch, yaw] = playerData.rotation || [0, 0];
+
+    // mathematic stuff to calculate values
+
+    const dx = peerX - x;
+    const dy = peerY - y;
+    const dz = peerZ - z;
+    const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
+    const volume = Math.max(0.05, 1 - (distance / 40));
+
+    const yawRad = (yaw * Math.PI) / 180;
+    const pitchRad = (pitch * Math.PI) / 180;
+
+    node.panner.positionX.value = dx;
+    node.panner.positionY.value = dy;
+    node.panner.positionZ.value = dz;
+    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.orientationY.value = -Math.sin(pitchRad);
+    node.panner.orientationZ.value = Math.cos(yawRad);
+    node.gain.gain.value = volume;
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
@@ -455,7 +517,7 @@ function otherEffects(audioElement, peerUUID) {
     if (!userDiv) return;
     const volumeSlider = userDiv.querySelector('input[type="range"]');
     if (volumeSlider) {
-        volumeSlider.oninput = () => {
+        volumeSlider.oninput = () => {// TODO Audio will not go above 100% volume this way
             audioElement.volume = volumeSlider.value;
         };
     }
