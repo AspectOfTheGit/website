@@ -85,20 +85,6 @@ let audioContext = null;
 let isMuted = false;
 let isDeafened = false;
 
-async function ensureAudioReady() {
-    const context = ensureAudioContext();
-
-    if (context.state === "suspended") {
-        try {
-            await context.resume();
-        } catch (err) {
-            console.error("Audio context resume failed:", err);
-        }
-    }
-
-    return context;
-}
-
 function ensureAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -121,24 +107,13 @@ function updateListener() {
     const pitchRad = (pitch * Math.PI) / 180;
     const yawRad = (yaw * Math.PI) / 180;
 
-    if (typeof audioContext.listener.setPosition === "function") {
-        audioContext.listener.setPosition(x, y, z);
-    } else if (audioContext.listener.positionX) {
+    if (audioContext.listener.positionX) {
         audioContext.listener.positionX.value = x;
         audioContext.listener.positionY.value = y;
         audioContext.listener.positionZ.value = z;
     }
 
-    if (typeof audioContext.listener.setOrientation === "function") {
-        audioContext.listener.setOrientation(
-            Math.sin(yawRad),
-            -Math.sin(pitchRad),
-            Math.cos(yawRad),
-            0,
-            1,
-            0
-        );
-    } else if (audioContext.listener.forwardX) {
+    if (audioContext.listener.forwardX) {
         audioContext.listener.forwardX.value = Math.sin(yawRad);
         audioContext.listener.forwardY.value = -Math.sin(pitchRad);
         audioContext.listener.forwardZ.value = Math.cos(yawRad);
@@ -154,8 +129,6 @@ try {
     localStream = await navigator.mediaDevices.getUserMedia({
         audio: true
     });
-
-    await ensureAudioReady();
 
     console.log("Got microphone:", localStream);
 }
@@ -193,13 +166,7 @@ navigator.mediaDevices.enumerateDevices()
 const muteBtn = document.getElementById("mute-btn");
 const deafenBtn = document.getElementById("deafen-btn");
 
-document.addEventListener("pointerdown", () => {
-    ensureAudioReady().catch(console.error);
-}, { once: true });
-
 muteBtn.onclick = () => {
-    ensureAudioReady().catch(console.error);
-
     isMuted = !isMuted;
 
     if (localStream) {
@@ -212,8 +179,6 @@ muteBtn.onclick = () => {
 };
 
 deafenBtn.onclick = () => {
-    ensureAudioReady().catch(console.error);
-
     isDeafened = !isDeafened;
 
     peerAudio.forEach(audio => {
@@ -259,12 +224,6 @@ function removePlayer(peerUUID) {
 
     const audio = peerAudio.get(peerUUID);
     if (audio) {
-        audio.pause();
-
-        if (audio.srcObject && typeof audio.srcObject.getTracks === "function") {
-            audio.srcObject.getTracks().forEach(track => track.stop());
-        }
-
         audio.remove();
         peerAudio.delete(peerUUID);
     }
@@ -371,27 +330,16 @@ function createPeerConnection(peerUUID, initiator) {
 
     // audio track received
     pc.ontrack = event => {
-        const stream = event.streams[0];
+        const audio = document.createElement("audio");
 
-        if (!stream) {
-            console.warn("No stream received for peer", peerUUID);
-            return;
-        }
+        audio.className = "remote-peer";
+        audio.srcObject = event.streams[0];
 
-        console.log("Remote audio stream received for", peerUUID, stream);
+        document.body.appendChild(audio);
 
-        const audioElement = document.createElement("audio");
-        audioElement.autoplay = true;
-        audioElement.playsInline = true;
-        audioElement.srcObject = stream;
-        audioElement.style.display = "none";
-        document.body.appendChild(audioElement);
+        peerAudio.set(peerUUID, audio);
 
-        peerAudio.set(peerUUID, audioElement);
-
-        ensureAudioReady()
-            .then(() => spatialAudio(audioElement, peerUUID, stream))
-            .catch(console.error);
+        spatialAudio(audio, peerUUID);
     };
 
     // create offer
@@ -428,7 +376,7 @@ function createPeerConnection(peerUUID, initiator) {
     List of Dictionaries. Each dictionary is the data of one player.
 */
 socket.on("update", data => {
-    //console.debug("Voice update:", data);
+    console.debug("Voice update:", data);
 
     const activePlayerUUIDs = new Set();
 
@@ -501,9 +449,9 @@ socket.on("update", data => {
                 volumeSlider.value = 1; // default 100%
                 volumeSlider.oninput = () => {
                     if (volumeSlider.value === 0) {
-                        muteBtn.textContent = "🔇"; // svgs later
+                        muteBtn.textContent = "🔇";
                     } else {
-                        muteBtn.textContent = "🔊"; // svgs later
+                        muteBtn.textContent = "🔊";
                     }
                 };
                 UserDiv.appendChild(volumeSlider);
@@ -529,39 +477,35 @@ socket.on("update", data => {
 
     if (!activePlayerUUIDs.has(mc_uuid)) {
         // close the browser tab if the game says this player is no longer in the voice room
+        alert("You have been disconnected from the voice room."); // might remove later
         window.close();
     }
 });
 
 //// Spatial Audio
 
-function spatialAudio(audioElement, peerUUID, stream) { // Create Initial Panner Node
-    /** @type {AudioContext} */
+function spatialAudio(audioElement, peerUUID) {
+    // Create Initial Panner Node
     const context = ensureAudioContext();
 
     if (spatialNodes.has(peerUUID)) {
         updateSpatialAudioForPeer(peerUUID);
-        otherEffects(peerUUID);
+        otherEffects(audioElement, peerUUID);
         return;
-    }
-
-    const audioTracks = stream ? stream.getAudioTracks() : [];
-    if (audioTracks.length) {
-        audioTracks.forEach(track => {
-            track.enabled = true;
-        });
     }
 
     const source = context.createMediaElementSource(audioElement);
     const panner = context.createPanner();
     const gain = context.createGain();
 
-    panner.panningModel = "HRTF";
+    panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
     panner.distanceModel = "inverse";
     panner.refDistance = 1;
-    // 16 is the maximum distance you can hear most sounds in minecraft. Simple voice chat uses 48. This will be configurable by the world
-    panner.maxDistance = 32; // subject to change
+    panner.maxDistance = 15; // this will be changeable by the world, and default probably won't stay as this
     panner.rolloffFactor = 1;
+    panner.coneInnerAngle = 360;
+    panner.coneOuterAngle = 0;
+    panner.coneOuterGain = 0;
 
     gain.gain.value = 1;
 
@@ -569,22 +513,19 @@ function spatialAudio(audioElement, peerUUID, stream) { // Create Initial Panner
     panner.connect(gain);
     gain.connect(context.destination);
 
-    audioElement.play().catch(err => {
-        console.error("Remote audio play error:", err);
-    });
-
-    spatialNodes.set(peerUUID, { source, panner, gain, audioElement });
+    spatialNodes.set(peerUUID, { source, panner, gain });
 
     updateSpatialAudioForPeer(peerUUID);
-    otherEffects(peerUUID);
+    otherEffects(audioElement, peerUUID);
 }
 
 function updateSpatialAudioForPeer(peerUUID) {
     // Modify Panner Node to peer's position
     const node = spatialNodes.get(peerUUID);
     const playerData = players.get(peerUUID);
+    const audioElement = peerAudio.get(peerUUID);
 
-    if (!node || !playerData) {
+    if (!node || !playerData || !audioElement) {
         return;
     }
 
@@ -592,11 +533,13 @@ function updateSpatialAudioForPeer(peerUUID) {
     const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
     const [pitch, yaw] = playerData.rotation || [0, 0];
 
+    // mathematic stuff to calculate values
+
     const dx = peerX - x;
     const dy = peerY - y;
     const dz = peerZ - z;
-    //const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
-    //const volume = Math.max(0.05, 1 - (distance / 15));
+    const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
+    const volume = Math.max(0.05, 1 - (distance / 40));
 
     const yawRad = (yaw * Math.PI) / 180;
     const pitchRad = (pitch * Math.PI) / 180;
@@ -604,26 +547,16 @@ function updateSpatialAudioForPeer(peerUUID) {
     node.panner.positionX.value = dx;
     node.panner.positionY.value = dy;
     node.panner.positionZ.value = dz;
-    node.panner.orientationX.value = Math.sin(yawRad); // maybe shouldn't be radians might have to check this
-    node.panner.orientationY.value = -Math.sin(pitchRad); // maybe shouldn't be radians might have to check this
-    node.panner.orientationZ.value = Math.cos(yawRad); // maybe shouldn't be radians might have to check this
-
-    console.debug(`Updated node for ${peerUUID}: `, JSON.stringify({
-        positionX: node.panner.positionX.value,
-        positionY: node.panner.positionY.value,
-        positionZ: node.panner.positionZ.value,
-        orientationX: node.panner.orientationX.value,
-        orientationY: node.panner.orientationY.value,
-        orientationZ: node.panner.orientationZ.value,
-    })); // temp
-    
-    //node.gain.gain.value = volume;
+    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.orientationY.value = -Math.sin(pitchRad);
+    node.panner.orientationZ.value = Math.cos(yawRad);
+    node.gain.gain.value = volume;
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
 
 function otherEffects(audioElement, peerUUID) {
-    /*// Volume Slider
+    // Volume Sliders
     const userDiv = document.getElementById(peerUUID);
     if (!userDiv) return;
     const volumeSlider = userDiv.querySelector('input[type="range"]');
@@ -631,7 +564,12 @@ function otherEffects(audioElement, peerUUID) {
         volumeSlider.oninput = () => {// TODO Audio will not go above 100% volume this way
             audioElement.volume = volumeSlider.value;
         };
-    }*/
+    }
+
+    // finally, play audio
+    audioElement.play().catch(err => {
+        console.error("Audio play error:", err);
+    });
 }
 
 });
