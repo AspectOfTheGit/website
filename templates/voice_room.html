@@ -119,7 +119,7 @@ function updateListener() {
         0
     );
 
-    // temp debug
+    /* debug
     console.debug(`Updated Listener: `, JSON.stringify({
         x:audioContext.listener.positionX.value,
         y:audioContext.listener.positionY.value,
@@ -127,7 +127,7 @@ function updateListener() {
         rot_x:audioContext.listener.forwardX.value,
         rot_y:audioContext.listener.forwardY.value,
         rot_z:audioContext.listener.forwardZ.value
-    }))
+    })) */
 }
 
 //// Get microphone
@@ -553,7 +553,7 @@ function updateSpatialAudioForPeer(peerUUID) {
     node.panner.orientationZ.value = Math.cos(yawRad);
     //node.gain.gain.value = volume;
     
-    // temp debug
+    /* debug
     console.debug(`Updated Node for ${peerUUID}: `, JSON.stringify({
         x:node.panner.positionX.value,
         y:node.panner.positionY.value,
@@ -561,7 +561,7 @@ function updateSpatialAudioForPeer(peerUUID) {
         rot_x:node.panner.orientationX.value,
         rot_y:node.panner.orientationY.value,
         rot_z:node.panner.orientationZ.value
-    }))
+    })) */
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
@@ -575,6 +575,54 @@ function otherEffects(audioElement, peerUUID) {
         volumeSlider.oninput = () => {// TODO Audio will not go above 100% volume this way
             audioElement.volume = volumeSlider.value;
         };
+    }
+
+    // permenant debug (for now)
+    if (window.DEBUG_AUDIO) {
+        const node = spatialNodes.get(peerUUID);
+        const playerData = players.get(peerUUID);
+
+        console.debug(`playing audio for ${peerUUID}`, {
+            peerPlayer: playerData ? {
+                position: playerData.position,
+                rotation: playerData.rotation
+            } : null,
+            audioElement: {
+                paused: audioElement.paused,
+                muted: audioElement.muted,
+                volume: audioElement.volume,
+                currentTime: audioElement.currentTime,
+                readyState: audioElement.readyState,
+                srcObjectType: audioElement.srcObject?.constructor?.name || null
+            },
+            panner: node ? {
+                position: {
+                    x: node.panner.positionX.value,
+                    y: node.panner.positionY.value,
+                    z: node.panner.positionZ.value
+                },
+                orientation: {
+                    x: node.panner.orientationX.value,
+                    y: node.panner.orientationY.value,
+                    z: node.panner.orientationZ.value
+                },
+                refDistance: node.panner.refDistance,
+                rolloffFactor: node.panner.rolloffFactor,
+                panningModel: node.panner.panningModel
+            } : null,
+            listener: audioContext ? {
+                position: {
+                    x: audioContext.listener.positionX.value,
+                    y: audioContext.listener.positionY.value,
+                    z: audioContext.listener.positionZ.value
+                },
+                forward: {
+                    x: audioContext.listener.forwardX.value,
+                    y: audioContext.listener.forwardY.value,
+                    z: audioContext.listener.forwardZ.value
+                }
+            } : null
+        });
     }
 
     // finally, play audio
