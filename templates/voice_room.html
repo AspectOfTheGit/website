@@ -372,8 +372,11 @@ function createPeerConnection(peerUUID, initiator) {
         const stream = event.streams[0];
 
         if (!stream) {
+            console.warn("No stream received for peer", peerUUID);
             return;
         }
+
+        console.log("Remote audio stream received for", peerUUID, stream);
 
         peerAudio.set(peerUUID, stream);
 
@@ -553,7 +556,15 @@ function spatialAudio(stream, peerUUID) { // Create Initial Panner Node
     panner.connect(gain);
     gain.connect(context.destination);
 
-    spatialNodes.set(peerUUID, { source, panner, gain });
+    // temporary test
+    const debugAudio = document.createElement("audio");
+    debugAudio.autoplay = true;
+    debugAudio.controls = true;
+    debugAudio.srcObject = stream;
+    debugAudio.style.display = "none";
+    document.body.appendChild(debugAudio);
+
+    spatialNodes.set(peerUUID, { source, panner, gain, debugAudio });
 
     updateSpatialAudioForPeer(peerUUID);
     otherEffects(peerUUID);
