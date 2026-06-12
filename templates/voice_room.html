@@ -87,10 +87,12 @@ let isDeafened = false;
 
 function ensureAudioContext() {
     if (!audioContext) {
+        console.debug("Initialised audioContext");
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
     if (audioContext.state === "suspended") {
+        console.debug("audioContext found in suspended state");
         audioContext.resume().catch(console.error);
     }
 
@@ -107,20 +109,15 @@ function updateListener() {
     const pitchRad = (pitch * Math.PI) / 180;
     const yawRad = (yaw * Math.PI) / 180;
 
-    if (audioContext.listener.positionX) {
-        audioContext.listener.positionX.value = x;
-        audioContext.listener.positionY.value = y;
-        audioContext.listener.positionZ.value = z;
-    }
-
-    if (audioContext.listener.forwardX) {
-        audioContext.listener.forwardX.value = Math.sin(yawRad);
-        audioContext.listener.forwardY.value = -Math.sin(pitchRad);
-        audioContext.listener.forwardZ.value = Math.cos(yawRad);
-        audioContext.listener.upX.value = 0;
-        audioContext.listener.upY.value = 1;
-        audioContext.listener.upZ.value = 0;
-    }
+    audioContext.listener.setPosition(x, y, z);
+    audioContext.listener.setOrientation(
+        Math.sin(yawRad),
+        -Math.sin(pitchRad),
+        Math.cos(yawRad),
+        0,
+        1,
+        0
+    );
 }
 
 //// Get microphone
@@ -486,6 +483,7 @@ socket.on("update", data => {
 
 function spatialAudio(audioElement, peerUUID) {
     // Create Initial Panner Node
+    /** @type {AudioContext} */
     const context = ensureAudioContext();
 
     if (spatialNodes.has(peerUUID)) {
@@ -501,7 +499,6 @@ function spatialAudio(audioElement, peerUUID) {
     panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
     panner.distanceModel = "inverse";
     panner.refDistance = 1;
-    panner.maxDistance = 15; // this will be changeable by the world, and default probably won't stay as this
     panner.rolloffFactor = 1;
     panner.coneInnerAngle = 360;
     panner.coneOuterAngle = 0;
@@ -533,24 +530,22 @@ function updateSpatialAudioForPeer(peerUUID) {
     const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
     const [pitch, yaw] = playerData.rotation || [0, 0];
 
-    // mathematic stuff to calculate values
-
-    const dx = peerX - x;
+    /*const dx = peerX - x;
     const dy = peerY - y;
     const dz = peerZ - z;
     const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
-    const volume = Math.max(0.05, 1 - (distance / 40));
+    const volume = Math.max(0.05, 1 - (distance / 40));*/
 
     const yawRad = (yaw * Math.PI) / 180;
     const pitchRad = (pitch * Math.PI) / 180;
 
-    node.panner.positionX.value = dx;
-    node.panner.positionY.value = dy;
-    node.panner.positionZ.value = dz;
+    node.panner.positionX.value = x;
+    node.panner.positionY.value = y;
+    node.panner.positionZ.value = z;
     node.panner.orientationX.value = Math.sin(yawRad);
     node.panner.orientationY.value = -Math.sin(pitchRad);
     node.panner.orientationZ.value = Math.cos(yawRad);
-    node.gain.gain.value = volume;
+    //node.gain.gain.value = volume;
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
