@@ -118,6 +118,16 @@ function updateListener() {
         1,
         0
     );
+
+    // temp debug
+    console.debug(`Updated Listener: `, JSON.stringify({
+        x:audioContext.listener.positionX.value,
+        y:audioContext.listener.positionY.value,
+        z:audioContext.listener.positionZ.value,
+        rot_x:audioContext.listener.orientationX.value,
+        rot_y:audioContext.listener.orientationY.value,
+        rot_z:audioContext.listener.orientationZ.value
+    }))
 }
 
 //// Get microphone
@@ -373,7 +383,7 @@ function createPeerConnection(peerUUID, initiator) {
     List of Dictionaries. Each dictionary is the data of one player.
 */
 socket.on("update", data => {
-    console.debug("Voice update:", data);
+    //console.debug("Voice update:", data);
 
     const activePlayerUUIDs = new Set();
 
@@ -497,12 +507,8 @@ function spatialAudio(audioElement, peerUUID) {
     const gain = context.createGain();
 
     panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
-    panner.distanceModel = "inverse";
     panner.refDistance = 1;
     panner.rolloffFactor = 1;
-    panner.coneInnerAngle = 360;
-    panner.coneOuterAngle = 0;
-    panner.coneOuterGain = 0;
 
     gain.gain.value = 1;
 
@@ -546,6 +552,16 @@ function updateSpatialAudioForPeer(peerUUID) {
     node.panner.orientationY.value = -Math.sin(pitchRad);
     node.panner.orientationZ.value = Math.cos(yawRad);
     //node.gain.gain.value = volume;
+    
+    // temp debug
+    console.debug(`Updated Node for ${peerUUID}: `, JSON.stringify({
+        x:node.panner.positionX.value,
+        y:node.panner.positionY.value,
+        z:node.panner.positionZ.value,
+        rot_x:node.panner.orientationX.value,
+        rot_y:node.panner.orientationY.value,
+        rot_z:node.panner.orientationZ.value
+    }))
 }
 
 //// Other Audio Effects if applicable (echo, reverb, etc)
