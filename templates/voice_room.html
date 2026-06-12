@@ -259,11 +259,13 @@ function removePlayer(peerUUID) {
 
     const audio = peerAudio.get(peerUUID);
     if (audio) {
-        if (typeof audio.stop === "function") {
-            audio.stop();
-        } else if (audio.getTracks) {
-            audio.getTracks().forEach(track => track.stop());
+        audio.pause();
+
+        if (audio.srcObject && typeof audio.srcObject.getTracks === "function") {
+            audio.srcObject.getTracks().forEach(track => track.stop());
         }
+
+        audio.remove();
         peerAudio.delete(peerUUID);
     }
 
@@ -378,10 +380,17 @@ function createPeerConnection(peerUUID, initiator) {
 
         console.log("Remote audio stream received for", peerUUID, stream);
 
-        peerAudio.set(peerUUID, stream);
+        const audioElement = document.createElement("audio");
+        audioElement.autoplay = true;
+        audioElement.playsInline = true;
+        audioElement.srcObject = stream;
+        audioElement.style.display = "none";
+        document.body.appendChild(audioElement);
+
+        peerAudio.set(peerUUID, audioElement);
 
         ensureAudioReady()
-            .then(() => spatialAudio(stream, peerUUID))
+            .then(() => spatialAudio(audioElement, peerUUID, stream))
             .catch(console.error);
     };
 
@@ -526,7 +535,7 @@ socket.on("update", data => {
 
 //// Spatial Audio
 
-function spatialAudio(stream, peerUUID) { // Create Initial Panner Node
+function spatialAudio(audioElement, peerUUID, stream) { // Create Initial Panner Node
     /** @type {AudioContext} */
     const context = ensureAudioContext();
 
@@ -536,17 +545,14 @@ function spatialAudio(stream, peerUUID) { // Create Initial Panner Node
         return;
     }
 
-    const audioTracks = stream.getAudioTracks();
-    if (!audioTracks.length) {
-        console.warn("No audio tracks available for peer", peerUUID);
-        return;
+    const audioTracks = stream ? stream.getAudioTracks() : [];
+    if (audioTracks.length) {
+        audioTracks.forEach(track => {
+            track.enabled = true;
+        });
     }
 
-    audioTracks.forEach(track => {
-        track.enabled = true;
-    });
-
-    const source = context.createMediaStreamSource(stream);
+    const source = context.createMediaElementSource(audioElement);
     const panner = context.createPanner();
     const gain = context.createGain();
 
@@ -556,9 +562,6 @@ function spatialAudio(stream, peerUUID) { // Create Initial Panner Node
     // 16 is the maximum distance you can hear most sounds in minecraft. Simple voice chat uses 48. This will be configurable by the world
     panner.maxDistance = 32; // subject to change
     panner.rolloffFactor = 1;
-    panner.coneInnerAngle = 360;
-    panner.coneOuterAngle = 0;
-    panner.coneOuterGain = 0;
 
     gain.gain.value = 1;
 
@@ -566,7 +569,11 @@ function spatialAudio(stream, peerUUID) { // Create Initial Panner Node
     panner.connect(gain);
     gain.connect(context.destination);
 
-    spatialNodes.set(peerUUID, { source, panner, gain });
+    audioElement.play().catch(err => {
+        console.error("Remote audio play error:", err);
+    });
+
+    spatialNodes.set(peerUUID, { source, panner, gain, audioElement });
 
     updateSpatialAudioForPeer(peerUUID);
     otherEffects(peerUUID);
