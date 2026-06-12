@@ -85,6 +85,20 @@ let audioContext = null;
 let isMuted = false;
 let isDeafened = false;
 
+async function ensureAudioReady() {
+    const context = ensureAudioContext();
+
+    if (context.state === "suspended") {
+        try {
+            await context.resume();
+        } catch (err) {
+            console.error("Audio context resume failed:", err);
+        }
+    }
+
+    return context;
+}
+
 function ensureAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -141,6 +155,8 @@ try {
         audio: true
     });
 
+    await ensureAudioReady();
+
     console.log("Got microphone:", localStream);
 }
 catch (err) {
@@ -177,7 +193,13 @@ navigator.mediaDevices.enumerateDevices()
 const muteBtn = document.getElementById("mute-btn");
 const deafenBtn = document.getElementById("deafen-btn");
 
+document.addEventListener("pointerdown", () => {
+    ensureAudioReady().catch(console.error);
+}, { once: true });
+
 muteBtn.onclick = () => {
+    ensureAudioReady().catch(console.error);
+
     isMuted = !isMuted;
 
     if (localStream) {
@@ -190,6 +212,8 @@ muteBtn.onclick = () => {
 };
 
 deafenBtn.onclick = () => {
+    ensureAudioReady().catch(console.error);
+
     isDeafened = !isDeafened;
 
     peerAudio.forEach(audio => {
@@ -347,9 +371,15 @@ function createPeerConnection(peerUUID, initiator) {
     pc.ontrack = event => {
         const stream = event.streams[0];
 
+        if (!stream) {
+            return;
+        }
+
         peerAudio.set(peerUUID, stream);
 
-        spatialAudio(stream, peerUUID);
+        ensureAudioReady()
+            .then(() => spatialAudio(stream, peerUUID))
+            .catch(console.error);
     };
 
     // create offer
