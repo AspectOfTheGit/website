@@ -533,25 +533,31 @@ function updateSpatialAudioForPeer(peerUUID) {
     const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
     const [pitch, yaw] = playerData.rotation || [0, 0];
 
-    /* Some maths stuff in case useful later
     const dx = peerX - x;
     const dy = peerY - y;
     const dz = peerZ - z;
-    const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
-    const volume = Math.max(0.05, 1 - (distance / 15));
-    */
+    //const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
+    //const volume = Math.max(0.05, 1 - (distance / 15));
 
     const yawRad = (yaw * Math.PI) / 180;
     const pitchRad = (pitch * Math.PI) / 180;
 
-    node.panner.positionX.value = peerX;
-    node.panner.positionY.value = peerY;
-    node.panner.positionZ.value = peerZ;
-    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.positionX.value = dx;
+    node.panner.positionY.value = dy;
+    node.panner.positionZ.value = dz;
+    node.panner.orientationX.value = Math.sin(yawRad); // maybe shouldn't be radians might have to check this
     node.panner.orientationY.value = -Math.sin(pitchRad); // maybe shouldn't be radians might have to check this
     node.panner.orientationZ.value = Math.cos(yawRad); // maybe shouldn't be radians might have to check this
 
-    console.debug(`Updated node for ${peerUUID}: ${node}`); // temp
+    console.debug(`Updated node for ${peerUUID}: `, JSON.stringify({
+        positionX: node.panner.positionX.value,
+        positionY: node.panner.positionY.value,
+        positionZ: node.panner.positionZ.value,
+        orientationX: node.panner.orientationX.value,
+        orientationY: node.panner.orientationY.value,
+        orientationZ: node.panner.orientationZ.value,
+    })); // temp
+    
     //node.gain.gain.value = volume;
 }
 
