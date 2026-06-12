@@ -107,13 +107,24 @@ function updateListener() {
     const pitchRad = (pitch * Math.PI) / 180;
     const yawRad = (yaw * Math.PI) / 180;
 
-    if (audioContext.listener.positionX) {
+    if (typeof audioContext.listener.setPosition === "function") {
+        audioContext.listener.setPosition(x, y, z);
+    } else if (audioContext.listener.positionX) {
         audioContext.listener.positionX.value = x;
         audioContext.listener.positionY.value = y;
         audioContext.listener.positionZ.value = z;
     }
 
-    if (audioContext.listener.forwardX) {
+    if (typeof audioContext.listener.setOrientation === "function") {
+        audioContext.listener.setOrientation(
+            Math.sin(yawRad),
+            -Math.sin(pitchRad),
+            Math.cos(yawRad),
+            0,
+            1,
+            0
+        );
+    } else if (audioContext.listener.forwardX) {
         audioContext.listener.forwardX.value = Math.sin(yawRad);
         audioContext.listener.forwardY.value = -Math.sin(pitchRad);
         audioContext.listener.forwardZ.value = Math.cos(yawRad);
@@ -477,7 +488,6 @@ socket.on("update", data => {
 
     if (!activePlayerUUIDs.has(mc_uuid)) {
         // close the browser tab if the game says this player is no longer in the voice room
-        alert("You have been disconnected from the voice room."); // might remove later
         window.close();
     }
 });
@@ -496,24 +506,24 @@ function spatialAudio(audioElement, peerUUID) { // Create Initial Panner Node
 
     const source = context.createMediaElementSource(audioElement);
     const panner = context.createPanner();
-    //const gain = context.createGain();
+    const gain = context.createGain();
 
-    panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
+    panner.panningModel = "HRTF";
     panner.distanceModel = "inverse";
     panner.refDistance = 1;
-    panner.maxDistance = 15; // this will be changeable by the world, and default probably won't stay as this
+    panner.maxDistance = 15;
     panner.rolloffFactor = 1;
-    panner.coneInnerAngle = 360;
-    panner.coneOuterAngle = 0;
-    panner.coneOuterGain = 0;
+    panner.coneInnerAngle = 120;
+    panner.coneOuterAngle = 360;
+    panner.coneOuterGain = 0.2;
 
-    //gain.gain.value = 1;
+    gain.gain.value = 1;
 
     source.connect(panner);
-    //panner.connect(gain);
-    //gain.connect(context.destination);
+    panner.connect(gain);
+    gain.connect(context.destination);
 
-    spatialNodes.set(peerUUID, { source, panner/*, gain*/ });
+    spatialNodes.set(peerUUID, { source, panner, gain });
 
     updateSpatialAudioForPeer(peerUUID);
     otherEffects(audioElement, peerUUID);
@@ -564,7 +574,7 @@ function updateSpatialAudioForPeer(peerUUID) {
 //// Other Audio Effects if applicable (echo, reverb, etc)
 
 function otherEffects(audioElement, peerUUID) {
-    // Volume Sliders
+    /*// Volume Slider
     const userDiv = document.getElementById(peerUUID);
     if (!userDiv) return;
     const volumeSlider = userDiv.querySelector('input[type="range"]');
@@ -572,7 +582,7 @@ function otherEffects(audioElement, peerUUID) {
         volumeSlider.oninput = () => {// TODO Audio will not go above 100% volume this way
             audioElement.volume = volumeSlider.value;
         };
-    }
+    }*/
 
     // finally, play audio
     audioElement.play().catch(err => {
