@@ -189,7 +189,12 @@ deafenBtn.onclick = () => {
     isDeafened = !isDeafened;
 
     peerAudio.forEach(audio => {
-        audio.muted = isDeafened;
+        //audio.muted = isDeafened;
+        if (isDeafened) {
+            audio.pause()
+        } else {
+            audio.play()
+        }
     });
 
     deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
