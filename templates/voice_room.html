@@ -81,7 +81,6 @@ const localPlayer = {
 
 let localStream = null;
 let audioContext = null;
-let masterGain = null;
 
 let isMuted = false;
 let isDeafened = false;
@@ -189,15 +188,6 @@ muteBtn.onclick = () => {
 deafenBtn.onclick = () => {
     isDeafened = !isDeafened;
 
-    if (masterGain) {
-        masterGain.gain.value = isDeafened ? 0 : 1;
-    }
-
-    spatialNodes.forEach((node, peerUUID) => {
-        const volume = peerVolumes.get(peerUUID) ?? 1;
-        node.gain.gain.value = isDeafened ? 0 : volume;
-    });
-
     peerAudio.forEach(audio => {
         audio.muted = isDeafened;
     });
@@ -244,14 +234,6 @@ function removePlayer(peerUUID) {
         audio.remove();
         peerAudio.delete(peerUUID);
     }
-
-    const node = spatialNodes.get(peerUUID);
-    if (node) {
-        node.gain.gain.value = 0;
-        spatialNodes.delete(peerUUID);
-    }
-
-    peerVolumes.delete(peerUUID);
 
     const userDiv = document.getElementById(peerUUID);
     if (userDiv) {
@@ -524,21 +506,15 @@ function spatialAudio(stream, peerUUID) {
     const panner = context.createPanner();
     const gain = context.createGain();
 
-    if (!masterGain) {
-        masterGain = context.createGain();
-        masterGain.gain.value = 1;
-        masterGain.connect(context.destination);
-    }
-
     panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
     panner.refDistance = 1;
     panner.rolloffFactor = 1;
 
-    gain.gain.value = peerVolumes.get(peerUUID) ?? 1;
+    gain.gain.value = 1;
 
     source.connect(panner);
     panner.connect(gain);
-    gain.connect(masterGain);
+    gain.connect(context.destination);
 
     spatialNodes.set(peerUUID, { source, panner, gain });
 
