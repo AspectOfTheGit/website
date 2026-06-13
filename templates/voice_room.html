@@ -70,7 +70,6 @@ const connectedUsers = document.getElementById("connected-users");
 const peers = new Map();
 const peerAudio = new Map();
 const spatialNodes = new Map();
-const peerVolumes = new Map();
 
 const players = new Map(); // uuid => {name, position, rotation}
 const localPlayer = {
@@ -101,18 +100,6 @@ function ensureAudioContext() {
     return audioContext;
 }
 
-function getForwardVector(pitch, yaw) {
-    const pitchRad = (pitch * Math.PI) / 180;
-    const yawRad = (yaw * Math.PI) / 180;
-    const cosPitch = Math.cos(pitchRad);
-
-    return {
-        x: -Math.sin(yawRad) * cosPitch,
-        y: Math.sin(pitchRad),
-        z: -Math.cos(yawRad) * cosPitch
-    };
-}
-
 function updateListener() {
     if (!audioContext) {
         return;
@@ -120,13 +107,14 @@ function updateListener() {
 
     const [x, y, z] = localPlayer.position || [0, 0, 0];
     const [pitch, yaw] = localPlayer.rotation || [0, 0];
-    const forward = getForwardVector(pitch, yaw);
+    const pitchRad = (pitch * Math.PI) / 180;
+    const yawRad = (yaw * Math.PI) / 180;
 
     audioContext.listener.setPosition(x, y, z);
     audioContext.listener.setOrientation(
-        forward.x,
-        forward.y,
-        forward.z,
+        Math.sin(yawRad),
+        -Math.sin(pitchRad),
+        Math.cos(yawRad),
         0,
         1,
         0
@@ -571,18 +559,22 @@ function updateSpatialAudioForPeer(peerUUID) {
     const [x, y, z] = localPlayer.position || [0, 0, 0];
     const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
     const [pitch, yaw] = playerData.rotation || [0, 0];
-    const forward = getForwardVector(pitch, yaw);
 
-    const dx = peerX - x;
+    /*const dx = peerX - x;
     const dy = peerY - y;
     const dz = peerZ - z;
+    const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
+    const volume = Math.max(0.05, 1 - (distance / 40));*/
 
-    node.panner.positionX.value = dx;
-    node.panner.positionY.value = dy;
-    node.panner.positionZ.value = dz;
-    node.panner.orientationX.value = forward.x;
-    node.panner.orientationY.value = forward.y;
-    node.panner.orientationZ.value = forward.z;
+    const yawRad = (yaw * Math.PI) / 180;
+    const pitchRad = (pitch * Math.PI) / 180;
+
+    node.panner.positionX.value = peerX;
+    node.panner.positionY.value = peerY;
+    node.panner.positionZ.value = peerZ;
+    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.orientationY.value = -Math.sin(pitchRad);
+    node.panner.orientationZ.value = Math.cos(yawRad);
     //node.gain.gain.value = volume;
     
     /* debug
@@ -605,11 +597,9 @@ function otherEffects(audioElement, peerUUID) {
     const volumeSlider = userDiv.querySelector('input[type="range"]');
     if (volumeSlider) {
         volumeSlider.oninput = () => {
-            const nextVolume = parseFloat(volumeSlider.value);
-            peerVolumes.set(peerUUID, nextVolume);
             const node = spatialNodes.get(peerUUID);
             if (node) {
-                node.gain.gain.value = isDeafened ? 0 : nextVolume;
+                node.gain.gain.value = parseFloat(volumeSlider.value);
             }
         };
     }
