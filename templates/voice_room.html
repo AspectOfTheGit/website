@@ -577,8 +577,9 @@ function otherEffects(audioElement, peerUUID) {
         };
     }
 
-    // permenant debug (for now)
-    if (window.DEBUG_AUDIO) {
+    // permanent debug (for now)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("debug")) {
         const node = spatialNodes.get(peerUUID);
         const playerData = players.get(peerUUID);
 

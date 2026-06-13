@@ -6,7 +6,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 OTHER_TOKEN = os.environ.get("OTHER_TOKEN")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 
-GUILD_ID = 1460692900533899438
+GUILD_ID = 1515347143882182786
 REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
