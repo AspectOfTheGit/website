@@ -105,7 +105,7 @@ function updateListener() {
     }
 
     const [x, y, z] = localPlayer.position || [0, 0, 0];
-    const [pitch, yaw] = localPlayer.rotation || [0, 0];
+    const [yaw, pitch] = localPlayer.rotation || [0, 0];
     const pitchRad = (pitch * Math.PI) / 180;
     const yawRad = (yaw * Math.PI) / 180;
 
@@ -536,7 +536,7 @@ function updateSpatialAudioForPeer(peerUUID) {
 
     const [x, y, z] = localPlayer.position || [0, 0, 0];
     const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
-    const [pitch, yaw] = playerData.rotation || [0, 0];
+    const [yaw, pitch] = playerData.rotation || [0, 0];
 
     /*const dx = peerX - x;
     const dy = peerY - y;
@@ -550,9 +550,9 @@ function updateSpatialAudioForPeer(peerUUID) {
     node.panner.positionX.value = peerX;
     node.panner.positionY.value = peerY;
     node.panner.positionZ.value = peerZ;
-    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.orientationX.value = -Math.sin(yawRad) * Math.cos(pitchRad);
     node.panner.orientationY.value = -Math.sin(pitchRad);
-    node.panner.orientationZ.value = Math.cos(yawRad);
+    node.panner.orientationZ.value = Math.cos(yawRad) * Math.cos(pitchRad);
     //node.gain.gain.value = volume;
     
     /* debug
