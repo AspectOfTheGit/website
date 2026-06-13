@@ -111,9 +111,9 @@ function updateListener() {
 
     audioContext.listener.setPosition(x, y, z);
     audioContext.listener.setOrientation(
-        Math.sin(yawRad),
+        -Math.sin(yawRad) * Math.cos(pitchRad),
         -Math.sin(pitchRad),
-        Math.cos(yawRad),
+        Math.cos(yawRad) * Math.cos(pitchRad),
         0,
         1,
         0
