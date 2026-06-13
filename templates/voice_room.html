@@ -507,8 +507,10 @@ function spatialAudio(stream, peerUUID) {
     const gain = context.createGain();
 
     panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
+    panner.distanceModel = "linear";
     panner.refDistance = 1;
     panner.rolloffFactor = 1;
+    panner.maxDistance = 25;
 
     gain.gain.value = 1;
 
