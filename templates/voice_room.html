@@ -111,9 +111,9 @@ function updateListener() {
 
     audioContext.listener.setPosition(x, y, z);
     audioContext.listener.setOrientation(
-        Math.sin(yawRad),
+        -Math.sin(yawRad),
         -Math.sin(pitchRad),
-        Math.cos(yawRad),
+        -Math.cos(yawRad),
         0,
         1,
         0
@@ -548,9 +548,9 @@ function updateSpatialAudioForPeer(peerUUID) {
     node.panner.positionX.value = peerX;
     node.panner.positionY.value = peerY;
     node.panner.positionZ.value = peerZ;
-    node.panner.orientationX.value = Math.sin(yawRad);
+    node.panner.orientationX.value = -Math.sin(yawRad);
     node.panner.orientationY.value = -Math.sin(pitchRad);
-    node.panner.orientationZ.value = Math.cos(yawRad);
+    node.panner.orientationZ.value = -Math.cos(yawRad);
     //node.gain.gain.value = volume;
     
     /* debug
