@@ -106,11 +106,11 @@ def notify(account: str, message: str, type: str):
     except:
         log_channel = None
     if not log_channel:
-        log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": typeroot,"parent_id": category["id"],"type": 0}).json()
+        log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": typeroot,"parent_id": category.get("id"),"type": 0}).json()
 
     webhooks = requests.get(
-        f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers).json()
-    webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel['id']}/webhooks",headers=headers,json={"name": "Logger"}).json()
+        f"https://discord.com/api/v10/channels/{log_channel.get('id')}/webhooks",headers=headers).json()
+    webhook = webhooks[0] if webhooks else requests.post(f"https://discord.com/api/v10/channels/{log_channel.get('id')}/webhooks",headers=headers,json={"name": "Logger"}).json()
     
     ts = f"<t:{int(time.time())}:R>"
     contents = f"{ts}\n{message}"
