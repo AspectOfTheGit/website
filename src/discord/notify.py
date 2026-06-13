@@ -70,7 +70,10 @@ def notify(account: str, message: str, type: str):
         requests.post(webhook["url"],json={"embeds": [embed]})
         return
         
-    category = next((c for c in channels if c["type"] == 4 and c["name"] == saccount),None)
+    try:
+        category = next((c for c in channels if c.get("type") == 4 and c.get("name") == saccount),None)
+    except:
+        category = None
 
     if not category:
         category = requests.post(
@@ -96,9 +99,12 @@ def notify(account: str, message: str, type: str):
             }
         ).json()
 
-    log_channel = next((c for c in channels
-                        if c["parent_id"] == category["id"] and c["name"] == typeroot),
-                       None)
+    try:
+        log_channel = next((c for c in channels
+                            if c.get("parent_id") == category.get("id") and c.get("name") == typeroot),
+                        None)
+    except:
+        log_channel = None
     if not log_channel:
         log_channel = requests.post(f"https://discord.com/api/v10/guilds/{GUILD_ID}/channels",headers=headers,json={"name": typeroot,"parent_id": category["id"],"type": 0}).json()
 

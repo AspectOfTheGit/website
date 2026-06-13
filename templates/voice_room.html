@@ -341,12 +341,13 @@ function createPeerConnection(peerUUID, initiator) {
 
         audio.className = "remote-peer";
         audio.srcObject = event.streams[0];
+        audio.style.display = "none";
 
         document.body.appendChild(audio);
 
         peerAudio.set(peerUUID, audio);
 
-        spatialAudio(audio, peerUUID);
+        spatialAudio(event.streams[0], peerUUID);
     };
 
     // create offer
@@ -484,25 +485,24 @@ socket.on("update", data => {
 
     if (!activePlayerUUIDs.has(mc_uuid)) {
         // close the browser tab if the game says this player is no longer in the voice room
-        alert("You have been disconnected from the voice room."); // might remove later
         window.close();
     }
 });
 
 //// Spatial Audio
 
-function spatialAudio(audioElement, peerUUID) {
+function spatialAudio(stream, peerUUID) {
     // Create Initial Panner Node
     /** @type {AudioContext} */
     const context = ensureAudioContext();
 
     if (spatialNodes.has(peerUUID)) {
         updateSpatialAudioForPeer(peerUUID);
-        otherEffects(audioElement, peerUUID);
+        otherEffects(null, peerUUID);
         return;
     }
 
-    const source = context.createMediaElementSource(audioElement);
+    const source = context.createMediaStreamSource(stream);
     const panner = context.createPanner();
     const gain = context.createGain();
 
@@ -519,7 +519,7 @@ function spatialAudio(audioElement, peerUUID) {
     spatialNodes.set(peerUUID, { source, panner, gain });
 
     updateSpatialAudioForPeer(peerUUID);
-    otherEffects(audioElement, peerUUID);
+    otherEffects(null, peerUUID);
 }
 
 function updateSpatialAudioForPeer(peerUUID) {
@@ -572,8 +572,11 @@ function otherEffects(audioElement, peerUUID) {
     if (!userDiv) return;
     const volumeSlider = userDiv.querySelector('input[type="range"]');
     if (volumeSlider) {
-        volumeSlider.oninput = () => {// TODO Audio will not go above 100% volume this way
-            audioElement.volume = volumeSlider.value;
+        volumeSlider.oninput = () => {
+            const node = spatialNodes.get(peerUUID);
+            if (node) {
+                node.gain.gain.value = parseFloat(volumeSlider.value);
+            }
         };
     }
 
@@ -588,14 +591,14 @@ function otherEffects(audioElement, peerUUID) {
                 position: playerData.position,
                 rotation: playerData.rotation
             } : null,
-            audioElement: {
+            audioElement: audioElement ? {
                 paused: audioElement.paused,
                 muted: audioElement.muted,
                 volume: audioElement.volume,
                 currentTime: audioElement.currentTime,
                 readyState: audioElement.readyState,
                 srcObjectType: audioElement.srcObject?.constructor?.name || null
-            },
+            } : null,
             panner: node ? {
                 position: {
                     x: node.panner.positionX.value,
@@ -609,7 +612,8 @@ function otherEffects(audioElement, peerUUID) {
                 },
                 refDistance: node.panner.refDistance,
                 rolloffFactor: node.panner.rolloffFactor,
-                panningModel: node.panner.panningModel
+                panningModel: node.panner.panningModel,
+                gain: node.gain.gain.value
             } : null,
             listener: audioContext ? {
                 position: {
@@ -625,11 +629,6 @@ function otherEffects(audioElement, peerUUID) {
             } : null
         });
     }
-
-    // finally, play audio
-    audioElement.play().catch(err => {
-        console.error("Audio play error:", err);
-    });
 }
 
 });
