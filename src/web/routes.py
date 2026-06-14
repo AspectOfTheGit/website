@@ -115,6 +115,12 @@ def utilities():
         username=session.get("mc_username")
     )
 
+
+@web.route("/discord")
+def discord():
+    return redirect("https://discord.gg/MwNxGuGK6T")
+
+
 # Bot Pages
 
 @web.route("/bots")
@@ -247,6 +253,8 @@ def world_edit(world):
         title=data["world"][world]["title"]
     )
 
+
+# Voice Rooms
 
 @web.route("/voice/<world>")
 def voice_room(world):
