@@ -228,6 +228,8 @@ function removePlayer(peerUUID) {
         return;
     }
 
+    console.debug(`Removing Peer Connection with ${peerUUID}`)
+
     const pc = peers.get(peerUUID);
     if (pc) {
         pc.close();
@@ -246,6 +248,9 @@ function removePlayer(peerUUID) {
     }
 
     players.delete(peerUUID);
+    // failsafe to fix this silly reconnect bug
+    peers.delete(peerUUID);
+    peerAudio.delete(peerUUID);
 }
 
 socket.on("peer-left", peerUUID => {
@@ -313,6 +318,8 @@ function createPeerConnection(peerUUID, initiator) {
         return peers.get(peerUUID);
     }
 
+    console.debug(`Creating New Peer Connection with ${peerUUID}`)
+
     const pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
     peers.set(peerUUID, pc);
 
@@ -321,7 +328,6 @@ function createPeerConnection(peerUUID, initiator) {
         localStream.getTracks().forEach(track => {
             pc.addTrack(track, localStream);
         });
-
     }
 
     // ICE candidates
