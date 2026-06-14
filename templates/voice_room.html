@@ -41,8 +41,8 @@
     </nav>
 
     <h2>Voice Room</h2>
-    <h3>{{ world_uuid }}</h3>
-    <p>{{ mc_uuid }}</p>
+    <h3 id="world-uuid-text">{{ world_uuid }}</h3>
+    <p id="local-player-text">{{ mc_uuid }}</p>
     <p>Peer to Peer Voice Chat</p>
     <div id="voice-controls" style="margin: 10px 0;">
         <button class="generic" id="mute-btn">Mute</button>
@@ -103,6 +103,8 @@ function updateListener() {
     if (!audioContext) {
         return;
     }
+
+    document.getElementById("local-player-text").innerText = localPlayer.name;
 
     const [x, y, z] = localPlayer.position || [0, 0, 0];
     const [yaw, pitch] = localPlayer.rotation || [0, 0];
@@ -459,7 +461,7 @@ socket.on("update", data => {
                     }
                 };
                 UserDiv.appendChild(muteBtn);
-                // volume slider (todo style this later) (todo make this change the overall volume for this player)
+                // volume slider (todo style this later)
                 const volumeSlider = document.createElement("input");
                 volumeSlider.type = "range";
                 volumeSlider.min = 0; // min 0% (mute)
@@ -521,7 +523,7 @@ function spatialAudio(stream, peerUUID) {
     panner.distanceModel = "linear";
     panner.refDistance = 1;
     panner.rolloffFactor = 1;
-    panner.maxDistance = 25;
+    panner.maxDistance = 20;
 
     gain.gain.value = 1;
 
