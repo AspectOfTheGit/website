@@ -104,6 +104,7 @@ def handle_join(room, uuid=None, auth=None):
         uuid = session.get("mc_uuid", ".anonymous")
 
     if room in BOTS or uuid == room:
+        join_room(room)
         print(f"[socket.py] {uuid} joined room: {room}")
     elif re.match("^voice-", room):
         if room not in rooms:
