@@ -365,12 +365,10 @@ def handle_audio(data=None, *args):
         emit("voice-status", state)
         return
 
-    encoded_chunk = base64.b64encode(chunk).decode("ascii") if chunk is not None else None
-
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", {"from": uuid, "audio": encoded_chunk}, room=peer_sid)
+        socketio.emit("audio", [uuid, chunk], room=peer_sid)
 
     emit("voice-status", state)
 
