@@ -12,6 +12,7 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
 rooms = {}
 connected = {} # Who's connected in a voice room
+socket_rooms = {}
 voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
@@ -47,6 +48,33 @@ def get_uuid_auth(uuid):
     # get the uuid_auth variable from web/routes.py
     from src.web.routes import uuid_auth
     return uuid_auth.get(uuid)
+
+
+def normalize_audio_chunk(chunk):
+    if isinstance(chunk, (bytes, bytearray)):
+        return bytes(chunk)
+
+    if isinstance(chunk, memoryview):
+        return chunk.tobytes()
+
+    if isinstance(chunk, str):
+        try:
+            return base64.b64decode(chunk)
+        except Exception:
+            return None
+
+    if hasattr(chunk, "tobytes"):
+        try:
+            return chunk.tobytes()
+        except Exception:
+            return None
+
+    if isinstance(chunk, dict):
+        for key in ("audio", "data", "chunk"):
+            if key in chunk:
+                return normalize_audio_chunk(chunk[key])
+
+    return None
 
 
 # Events
@@ -92,6 +120,8 @@ def disconnect():
 
         if len(members) == 0:
             del connected[room]
+
+    socket_rooms.pop(request.sid, None)
             
 
 @socketio.on('join')
@@ -114,6 +144,7 @@ def handle_join(room, uuid=None, auth=None):
 
         rooms[room].add(uuid)
         join_room(room)
+        socket_rooms[request.sid] = room
         state = voice_bandwidth_controller.get_state()
         emit("voice-status", state)
 
@@ -274,30 +305,27 @@ def bot_chat(rdata):
 
 @socketio.on("audio")
 def handle_audio(data):
-    room = data.get("room")
-    uuid = data.get("from") or session.get("mc_uuid")
-    auth = data.get("auth")
-    chunk = data.get("audio")
+    room = socket_rooms.get(request.sid)
+    uuid = session.get("mc_uuid")
+
+    if isinstance(data, dict):
+        room = data.get("room") or room
+        uuid = data.get("from") or uuid
+        chunk = data.get("audio")
+    else:
+        chunk = data
 
     if not room or not re.match("^voice-", room):
         return
 
-    if uuid is not None:
-        if auth is None or get_uuid_auth(uuid) != auth:
-            return
-    else:
+    if uuid is None:
         return
 
     if room not in rooms or uuid not in rooms[room]:
         return
 
-    if isinstance(chunk, str):
-        try:
-            chunk = base64.b64decode(chunk)
-        except Exception:
-            return
-
-    if not isinstance(chunk, (bytes, bytearray)):
+    chunk = normalize_audio_chunk(chunk)
+    if chunk is None:
         return
 
     size = len(chunk)
