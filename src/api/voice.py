@@ -8,6 +8,7 @@ from src.data import data
 from src.socket import emit_log, connected
 from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION
 from src.utils.player_api import format_uuid
+from src.voice_bandwidth import get_voice_bandwidth_controller
 import re
 import time
 import string
@@ -21,6 +22,7 @@ voice = Blueprint(
 )
 
 voice_rooms = {}
+voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 @voice.get("/version")
 def apivoiceversion():
@@ -50,13 +52,13 @@ def apivoiceupdate():
 
     if world not in voice_rooms:
         print(f"[api/voice.py] NEW world connected voice room (for the first time): {world}")
-        voice_rooms[world] = {"players":[],"new":[]}
+        voice_rooms[world] = {"players":[],"new":[],"audio":{},"bandwidth":voice_bandwidth_controller.get_state()}
         data["world"][world]["voice"] = time.time_ns() // 1000000
 
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
     if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
         print(f"[api/voice.py] NEW world connected voice room: {world} (last connection {timediff}ms ago)")
-        voice_rooms[world] = {"players":[],"new":[],"socket":[]}
+        voice_rooms[world] = {"players":[],"new":[],"socket":[],"audio":{},"bandwidth":voice_bandwidth_controller.get_state()}
 
     data["world"][world]["voice"] = time.time_ns() // 1000000
 
@@ -86,6 +88,7 @@ def apivoiceupdate():
 
     room = f"voice-{world}"
     voice_rooms[world]["socket"] = [p["socket"] for p in voice_rooms[world]["players"] if connected.get(room) and p["uuid"] in connected[room]] # Construct list to send to users
+    voice_rooms[world]["bandwidth"] = voice_bandwidth_controller.get_state()
 
     emit_log('update',voice_rooms[world]["socket"],f"voice-{world}") # Send data to users (position, rotation, etc.)
 

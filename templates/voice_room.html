@@ -43,7 +43,7 @@
     <h2>Voice Room</h2>
     <h3 id="world-uuid-text">{{ world_uuid }}</h3>
     <p id="local-player-text">{{ mc_uuid }}</p>
-    <p>Peer to Peer Voice Chat</p>
+    <p>Voice Chat for legitimoose.com</p>
     <div id="voice-controls" style="margin: 10px 0;">
         <button class="generic" id="mute-btn">Mute</button>
         <button class="generic" id="deafen-btn">Deafen</button>
@@ -64,14 +64,10 @@ const mc_uuid = "{{ mc_uuid }}";
 const authToken = "{{ auth }}";
 
 const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-
 const connectedUsers = document.getElementById("connected-users");
 
-const peers = new Map();
-const peerAudio = new Map();
-const spatialNodes = new Map();
-
-const players = new Map(); // uuid => {name, position, rotation}
+const players = new Map();
+const remoteAudio = new Map();
 const localPlayer = {
     uuid: mc_uuid,
     name: "You",
@@ -80,97 +76,139 @@ const localPlayer = {
 };
 
 let localStream = null;
-let audioContext = null;
-
+let mediaRecorder = null;
+let recorderBitrate = 0;
 let isMuted = false;
 let isDeafened = false;
 
 function ensureAudioContext() {
-    if (!audioContext) {
-        console.debug("Initialised audioContext");
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (!window.AudioContext && !window.webkitAudioContext) {
+        return null;
     }
 
-    if (audioContext.state === "suspended") {
-        console.debug("audioContext found in suspended state");
-        audioContext.resume().catch(console.error);
+    if (!window.__voiceAudioContext) {
+        window.__voiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    return audioContext;
+    if (window.__voiceAudioContext.state === "suspended") {
+        window.__voiceAudioContext.resume().catch(console.error);
+    }
+
+    return window.__voiceAudioContext;
 }
 
-function updateListener() {
-    if (!audioContext) {
+function stopRecorder() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    }
+}
+
+function startRecorderForBitrate(bitrateKbps) {
+    if (!localStream || bitrateKbps <= 0) {
         return;
     }
 
-    document.getElementById("local-player-text").innerText = localPlayer.name;
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    }
 
-    const [x, y, z] = localPlayer.position || [0, 0, 0];
-    const [yaw, pitch] = localPlayer.rotation || [0, 0];
-    const pitchRad = (pitch * Math.PI) / 180;
-    const yawRad = (yaw * Math.PI) / 180;
+    const options = {
+        mimeType: "audio/webm;codecs=opus",
+        audioBitsPerSecond: bitrateKbps * 1000
+    };
 
-    audioContext.listener.setPosition(x, y, z);
-    audioContext.listener.setOrientation(
-        -Math.sin(yawRad) * Math.cos(pitchRad),
-        -Math.sin(pitchRad),
-        Math.cos(yawRad) * Math.cos(pitchRad),
-        0,
-        1,
-        0
-    );
+    try {
+        mediaRecorder = new MediaRecorder(localStream, options);
+    } catch (err) {
+        console.warn("Falling back to default MediaRecorder options", err);
+        mediaRecorder = new MediaRecorder(localStream);
+    }
 
-    /* debug
-    console.debug(`Updated Listener: `, JSON.stringify({
-        x:audioContext.listener.positionX.value,
-        y:audioContext.listener.positionY.value,
-        z:audioContext.listener.positionZ.value,
-        rot_x:audioContext.listener.forwardX.value,
-        rot_y:audioContext.listener.forwardY.value,
-        rot_z:audioContext.listener.forwardZ.value
-    })) */
+    mediaRecorder.ondataavailable = async event => {
+        if (!event.data || event.data.size === 0 || isMuted || bitrateKbps <= 0) {
+            return;
+        }
+
+        const audioBuffer = await event.data.arrayBuffer();
+        socket.emit("audio", {
+            room: `voice-${world_uuid}`,
+            from: mc_uuid,
+            auth: authToken,
+            audio: audioBuffer
+        });
+    };
+
+    mediaRecorder.start(250);
+    recorderBitrate = bitrateKbps;
 }
 
-//// Get microphone
+function updateRemoteAudio(peerUUID, audioChunk) {
+    if (peerUUID === mc_uuid) {
+        return;
+    }
+
+    const blob = new Blob([audioChunk], { type: "audio/webm;codecs=opus" });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.autoplay = true;
+    audio.muted = isDeafened;
+    audio.play().catch(() => {});
+
+    const previous = remoteAudio.get(peerUUID);
+    if (previous) {
+        previous.pause();
+        URL.revokeObjectURL(previous.src);
+    }
+
+    remoteAudio.set(peerUUID, audio);
+
+    audio.onended = () => URL.revokeObjectURL(url);
+}
+
+function removePlayer(peerUUID) {
+    if (peerUUID === mc_uuid) {
+        return;
+    }
+
+    const audio = remoteAudio.get(peerUUID);
+    if (audio) {
+        audio.pause();
+        if (audio.src) {
+            URL.revokeObjectURL(audio.src);
+        }
+        remoteAudio.delete(peerUUID);
+    }
+
+    const userDiv = document.getElementById(peerUUID);
+    if (userDiv) {
+        userDiv.remove();
+    }
+
+    players.delete(peerUUID);
+}
 
 try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true
-    });
-
-    console.log("Got microphone:", localStream);
-}
-catch (err) {
-    console.error("Failed to get microphone:", err);
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("Microphone ready", localStream);
+} catch (err) {
+    console.error("Failed to get microphone", err);
 }
 
-socket.emit(
-    "join",
-    room=`voice-${world_uuid}`,
-    uuid=mc_uuid,
-    auth=authToken
-)
-
-//// Microphone selector
+socket.emit("join", `voice-${world_uuid}`, mc_uuid, authToken);
 
 const micSelect = document.getElementById("mic-select");
 
 navigator.mediaDevices.enumerateDevices()
-.then(devices => {
-    const mics = devices.filter(d => d.kind === "audioinput");
-
-    mics.forEach(mic => {
-        const option = document.createElement("option");
-        option.value = mic.deviceId;
-        option.textContent =
-            mic.label || `Microphone ${micSelect.length + 1}`;
-        micSelect.appendChild(option);
-    });
-})
-.catch(console.error);
-
-//// Local User Mute/Deafen
+    .then(devices => {
+        const mics = devices.filter(d => d.kind === "audioinput");
+        mics.forEach(mic => {
+            const option = document.createElement("option");
+            option.value = mic.deviceId;
+            option.textContent = mic.label || `Microphone ${micSelect.length + 1}`;
+            micSelect.appendChild(option);
+        });
+    })
+    .catch(console.error);
 
 const muteBtn = document.getElementById("mute-btn");
 const deafenBtn = document.getElementById("deafen-btn");
@@ -189,462 +227,109 @@ muteBtn.onclick = () => {
 
 deafenBtn.onclick = () => {
     isDeafened = !isDeafened;
-
-    peerAudio.forEach(audio => {
-        //audio.muted = isDeafened;
-        if (isDeafened) {
-            audio.pause()
-        } else {
-            audio.play()
-        }
+    remoteAudio.forEach(audio => {
+        audio.muted = isDeafened;
     });
-
     deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
 };
 
-//// Existing peers (when joining)
-
-socket.on("existing-peers", existingPeers => {
-    console.log("Existing peers:", existingPeers);
-
-    existingPeers.forEach(peerUUID => {
-        createPeerConnection(peerUUID, true);
-    });
-});
-
-//// New peer joined
-
-socket.on("new-peer", peerUUID => {
-    console.log("New peer:", peerUUID);
-
-    if (!peers.has(peerUUID)) {
-        createPeerConnection(peerUUID, false);
-    }
-
-});
-
-//// Peer left
-
-function removePlayer(peerUUID) {
-    if (peerUUID === mc_uuid) {
+socket.on("voice-status", state => {
+    if (!state || !state.enabled) {
+        stopRecorder();
         return;
     }
 
-    console.debug(`Removing Peer Connection with ${peerUUID}`)
-
-    const pc = peers.get(peerUUID);
-    if (pc) {
-        pc.close();
-        peers.delete(peerUUID);
-    }
-
-    const audio = peerAudio.get(peerUUID);
-    if (audio) {
-        audio.remove();
-        peerAudio.delete(peerUUID);
-    }
-
-    const userDiv = document.getElementById(peerUUID);
-    if (userDiv) {
-        userDiv.remove();
-    }
-
-    players.delete(peerUUID);
-    // failsafe to fix this silly reconnect bug (it didn't fix it)
-    peers.delete(peerUUID);
-    peerAudio.delete(peerUUID);
-}
-
-socket.on("peer-left", peerUUID => {
-    removePlayer(peerUUID);
-});
-
-//// Incoming signaling
-
-socket.on("signal", async data => {
-    const peerUUID = data.from;
-    const signal = data.signal;
-
-    let pc = peers.get(peerUUID);
-
-    if (!pc) {
-        pc = createPeerConnection(peerUUID, false);
-    }
-
-    try {
-        switch (signal.type) {
-            case "offer":
-                await pc.setRemoteDescription(
-                    new RTCSessionDescription(signal.sdp)
-                );
-
-                const answer = await pc.createAnswer();
-
-                await pc.setLocalDescription(answer);
-
-                socket.emit("signal", {
-                    to: peerUUID,
-                    from: mc_uuid,
-                    auth: authToken,
-                    signal: {
-                        type: "answer",
-                        sdp: pc.localDescription
-                    }
-                });
-                break;
-            case "answer":
-                await pc.setRemoteDescription(
-                    new RTCSessionDescription(signal.sdp)
-                );
-                break;
-            case "ice-candidate":
-
-                if (signal.candidate) {
-                    await pc.addIceCandidate(
-                        new RTCIceCandidate(signal.candidate)
-                    );
-                }
-                break;
-        }
-
-    }
-    catch (err) {
-        console.error("Signal error:", err);
+    if (state.bitrate_kbps && state.bitrate_kbps !== recorderBitrate) {
+        startRecorderForBitrate(state.bitrate_kbps);
     }
 });
 
-//// Create Peer Connection
-
-function createPeerConnection(peerUUID, initiator) {
-    if (peers.has(peerUUID)) {
-        return peers.get(peerUUID);
+socket.on("audio", data => {
+    if (!data || data.from === mc_uuid) {
+        return;
     }
 
-    console.debug(`Creating New Peer Connection with ${peerUUID}`)
+    updateRemoteAudio(data.from, data.audio);
+});
 
-    const pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
-    peers.set(peerUUID, pc);
-
-    // Add microphone track
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            pc.addTrack(track, localStream);
-        });
-    }
-
-    // ICE candidates
-    pc.onicecandidate = event => {
-        if (!event.candidate)
-            return;
-
-        socket.emit("signal", {
-            to: peerUUID,
-            from: mc_uuid,
-            auth: authToken,
-            signal: {
-                type: "ice-candidate",
-                candidate: event.candidate
-            }
-        });
-    };
-
-    // audio track received
-    pc.ontrack = event => {
-        const audio = document.createElement("audio");
-
-        audio.className = "remote-peer";
-        audio.srcObject = event.streams[0];
-        audio.style.display = "none";
-
-        document.body.appendChild(audio);
-
-        peerAudio.set(peerUUID, audio);
-
-        spatialAudio(event.streams[0], peerUUID);
-    };
-
-    // create offer
-    if (initiator) {
-        (async () => {
-            try {
-                const offer = await pc.createOffer();
-
-                await pc.setLocalDescription(offer);
-
-                socket.emit("signal", {
-                    to: peerUUID,
-                    from: mc_uuid,
-                    auth: authToken,
-                    signal: {
-                        type: "offer",
-                        sdp: pc.localDescription
-                    }
-                });
-            }
-            catch (err) {
-                console.error(err);
-            }
-        })();
-    }
-
-    return pc;
-}
-
-//// Updates
-/*
-    Each user recieves this information each update:
-    [{"Pos":[x,y,z],"Rot":[x,y],"Name":"PlayerUsername","uuid":"player-uuid"},{...}...]
-    List of Dictionaries. Each dictionary is the data of one player.
-*/
 socket.on("update", data => {
-    //console.debug("Voice update:", data);
-
     const activePlayerUUIDs = new Set();
 
-    // update player information
     data.forEach(player => {
         activePlayerUUIDs.add(player.uuid);
 
-        // only update if player is connected
-        if (player.uuid !== mc_uuid && !peers.has(player.uuid)) {
+        if (player.uuid === mc_uuid) {
+            localPlayer.position = player.Pos;
+            localPlayer.rotation = player.Rot;
+            localPlayer.name = player.Name;
             return;
         }
 
-        if (player.uuid === mc_uuid) {
-            localPlayer.position = player.Pos; // this players pos [x,y,z]
-            localPlayer.rotation = player.Rot; // this players rot [x_rot,y_rot]
-            localPlayer.name = player.Name;
-        } else {
-            players.set(player.uuid, {
-                name: player.Name,
-                position: player.Pos, // other players pos [x,y,z]
-                rotation: player.Rot // other players rot [x_rot,y_rot]
-            });
-            // update connected users list
-            if (!document.getElementById(player.uuid)) {
-                const UserDiv = document.createElement("div");
-                UserDiv.id = player.uuid;
-                // head
-                const headImg = document.createElement("img");
-                headImg.src = `https://mc-heads.net/avatar/${player.uuid}/256`;
-                headImg.width = 32;
-                headImg.height = 32;
-                headImg.style.borderRadius = "15%";
-                headImg.style.verticalAlign = "middle";
-                UserDiv.appendChild(headImg);
-                // name
-                const nameSpan = document.createElement("span");
-                nameSpan.textContent = ` ${player.Name} `;
-                UserDiv.appendChild(nameSpan);
-                // mute button (press to toggle mute for this player)
-                const muteBtn = document.createElement("button");
-                muteBtn.textContent = "🔊"; // change this to svg later
-                muteBtn.dataset.muted = false;
-                muteBtn.onclick = () => {
-                    muteBtn.dataset.muted = !muteBtn.dataset.muted;
-                    muteBtn.textContent = muteBtn.dataset.muted ? "🔇" : "🔊"; // temp, replace with svgs later
-                    const userDiv = document.getElementById(player.uuid);
-                    if (userDiv) {
-                        const volumeSlider = userDiv.querySelector('input[type="range"]');
-                        if (volumeSlider) {
-                            if (muteBtn.dataset.muted === true) {
-                                volumeSlider.dataset.prevValue = volumeSlider.value;
-                                volumeSlider.value = 0;
-                            } else {
-                                if (volumeSlider.dataset.prevValue === 0 || !volumeSlider.dataset.prevValue) {
-                                    volumeSlider.dataset.prevValue = 1;
-                                } else {
-                                    volumeSlider.value = volumeSlider.dataset.prevValue;
-                                }
-                            }
-                        }
-                    }
-                };
-                UserDiv.appendChild(muteBtn);
-                // volume slider (todo style this later)
-                const volumeSlider = document.createElement("input");
-                volumeSlider.type = "range";
-                volumeSlider.min = 0; // min 0% (mute)
-                volumeSlider.max = 2; // max 200% allowing louder if necessary
-                volumeSlider.step = 0.01; // step by 1%
-                volumeSlider.value = 1; // default 100%
-                volumeSlider.oninput = () => {
-                    if (volumeSlider.value === 0) {
-                        muteBtn.textContent = "🔇";
-                    } else {
-                        muteBtn.textContent = "🔊";
-                    }
-                };
-                UserDiv.appendChild(volumeSlider);
-                // options
-                const optionsBtn = document.createElement("button");
-                optionsBtn.textContent = "…"; // change this to svg later
-                UserDiv.appendChild(optionsBtn);
+        players.set(player.uuid, {
+            name: player.Name,
+            position: player.Pos,
+            rotation: player.Rot
+        });
 
-                connectedUsers.appendChild(UserDiv);
-            }
+        if (!document.getElementById(player.uuid)) {
+            const userDiv = document.createElement("div");
+            userDiv.id = player.uuid;
+
+            const headImg = document.createElement("img");
+            headImg.src = `https://mc-heads.net/avatar/${player.uuid}/256`;
+            headImg.width = 32;
+            headImg.height = 32;
+            headImg.style.borderRadius = "15%";
+            headImg.style.verticalAlign = "middle";
+            userDiv.appendChild(headImg);
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = ` ${player.Name} `;
+            userDiv.appendChild(nameSpan);
+
+            const muteBtn = document.createElement("button");
+            muteBtn.textContent = "🔊";
+            muteBtn.dataset.muted = false;
+            muteBtn.onclick = () => {
+                muteBtn.dataset.muted = !muteBtn.dataset.muted;
+                muteBtn.textContent = muteBtn.dataset.muted ? "🔇" : "🔊";
+                const audio = remoteAudio.get(player.uuid);
+                if (audio) {
+                    audio.muted = muteBtn.dataset.muted === "true";
+                }
+            };
+            userDiv.appendChild(muteBtn);
+
+            const volumeSlider = document.createElement("input");
+            volumeSlider.type = "range";
+            volumeSlider.min = 0;
+            volumeSlider.max = 2;
+            volumeSlider.step = 0.01;
+            volumeSlider.value = 1;
+            volumeSlider.oninput = () => {
+                const audio = remoteAudio.get(player.uuid);
+                if (audio) {
+                    audio.volume = parseFloat(volumeSlider.value);
+                }
+            };
+            userDiv.appendChild(volumeSlider);
+
+            connectedUsers.appendChild(userDiv);
         }
     });
-
-    updateListener();
 
     players.forEach((_, playerUUID) => {
         if (playerUUID !== mc_uuid && !activePlayerUUIDs.has(playerUUID)) {
             removePlayer(playerUUID);
-        } else if (playerUUID !== mc_uuid) {
-            updateSpatialAudioForPeer(playerUUID);
         }
     });
 
+    document.getElementById("local-player-text").innerText = localPlayer.name;
+
     if (!activePlayerUUIDs.has(mc_uuid)) {
-        // close the browser tab if the game says this player is no longer in the voice room
         window.close();
     }
 });
-
-//// Spatial Audio
-
-function spatialAudio(stream, peerUUID) {
-    // Create Initial Panner Node
-    /** @type {AudioContext} */
-    const context = ensureAudioContext();
-
-    if (spatialNodes.has(peerUUID)) {
-        updateSpatialAudioForPeer(peerUUID);
-        otherEffects(null, peerUUID);
-        return;
-    }
-
-    const source = context.createMediaStreamSource(stream);
-    const panner = context.createPanner();
-    const gain = context.createGain();
-
-    panner.panningModel = "HRTF"; // for now, likely to stay as HRTF
-    panner.distanceModel = "linear";
-    panner.refDistance = 1;
-    panner.rolloffFactor = 1;
-    panner.maxDistance = 20;
-
-    gain.gain.value = 1;
-
-    source.connect(panner);
-    panner.connect(gain);
-    gain.connect(context.destination);
-
-    spatialNodes.set(peerUUID, { source, panner, gain });
-
-    updateSpatialAudioForPeer(peerUUID);
-    otherEffects(null, peerUUID);
-}
-
-function updateSpatialAudioForPeer(peerUUID) {
-    // Modify Panner Node to peer's position
-    const node = spatialNodes.get(peerUUID);
-    const playerData = players.get(peerUUID);
-    const audioElement = peerAudio.get(peerUUID);
-
-    if (!node || !playerData || !audioElement) {
-        return;
-    }
-
-    const [x, y, z] = localPlayer.position || [0, 0, 0];
-    const [peerX, peerY, peerZ] = playerData.position || [0, 0, 0];
-    const [yaw, pitch] = playerData.rotation || [0, 0];
-
-    /*const dx = peerX - x;
-    const dy = peerY - y;
-    const dz = peerZ - z;
-    const distance = Math.sqrt(dx * dx + dz * dz + dy * dy);
-    const volume = Math.max(0.05, 1 - (distance / 40));*/
-
-    const yawRad = (yaw * Math.PI) / 180;
-    const pitchRad = (pitch * Math.PI) / 180;
-
-    node.panner.positionX.value = peerX;
-    node.panner.positionY.value = peerY;
-    node.panner.positionZ.value = peerZ;
-    node.panner.orientationX.value = -Math.sin(yawRad) * Math.cos(pitchRad);
-    node.panner.orientationY.value = -Math.sin(pitchRad);
-    node.panner.orientationZ.value = Math.cos(yawRad) * Math.cos(pitchRad);
-    //node.gain.gain.value = volume;
-    
-    /* debug
-    console.debug(`Updated Node for ${peerUUID}: `, JSON.stringify({
-        x:node.panner.positionX.value,
-        y:node.panner.positionY.value,
-        z:node.panner.positionZ.value,
-        rot_x:node.panner.orientationX.value,
-        rot_y:node.panner.orientationY.value,
-        rot_z:node.panner.orientationZ.value
-    })) */
-}
-
-//// Other Audio Effects if applicable (echo, reverb, etc)
-
-function otherEffects(audioElement, peerUUID) {
-    // Volume Sliders
-    const userDiv = document.getElementById(peerUUID);
-    if (!userDiv) return;
-    const volumeSlider = userDiv.querySelector('input[type="range"]');
-    if (volumeSlider) {
-        volumeSlider.oninput = () => {
-            const node = spatialNodes.get(peerUUID);
-            if (node) {
-                node.gain.gain.value = parseFloat(volumeSlider.value);
-            }
-        };
-    }
-
-    // permanent debug (for now)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("debug")) {
-        const node = spatialNodes.get(peerUUID);
-        const playerData = players.get(peerUUID);
-
-        console.debug(`playing audio for ${peerUUID}`, {
-            peerPlayer: playerData ? {
-                position: playerData.position,
-                rotation: playerData.rotation
-            } : null,
-            audioElement: audioElement ? {
-                paused: audioElement.paused,
-                muted: audioElement.muted,
-                volume: audioElement.volume,
-                currentTime: audioElement.currentTime,
-                readyState: audioElement.readyState,
-                srcObjectType: audioElement.srcObject?.constructor?.name || null
-            } : null,
-            panner: node ? {
-                position: {
-                    x: node.panner.positionX.value,
-                    y: node.panner.positionY.value,
-                    z: node.panner.positionZ.value
-                },
-                orientation: {
-                    x: node.panner.orientationX.value,
-                    y: node.panner.orientationY.value,
-                    z: node.panner.orientationZ.value
-                },
-                refDistance: node.panner.refDistance,
-                rolloffFactor: node.panner.rolloffFactor,
-                panningModel: node.panner.panningModel,
-                gain: node.gain.gain.value
-            } : null,
-            listener: audioContext ? {
-                position: {
-                    x: audioContext.listener.positionX.value,
-                    y: audioContext.listener.positionY.value,
-                    z: audioContext.listener.positionZ.value
-                },
-                forward: {
-                    x: audioContext.listener.forwardX.value,
-                    y: audioContext.listener.forwardY.value,
-                    z: audioContext.listener.forwardZ.value
-                }
-            } : null
-        });
-    }
-}
 
 });
 </script>

@@ -36,6 +36,11 @@ VALID_WORLD_ELEMENT_KEYS = ["id","value","color"] # Valid world page element pro
 
 MAX_TIME_TILL_VOICE_ROOM_CLOSE = 5000 # in milliseconds, how long until a voice room closes due to no ping sent from world
 
+VOICE_ROOM_START_BITRATE_KBPS = 64
+VOICE_ROOM_MIN_BITRATE_KBPS = 16
+VOICE_ROOM_BANDWIDTH_LIMIT_BYTES = 1024 * 1024 * 512
+VOICE_ROOM_BANDWIDTH_DETERIORATION_THRESHOLD_RATIO = 0.5
+
 DATAPACK_VERSION = "1.0" # The version of the voice chat datapack. Used in the api /voice/version endpoint
 
 COLOURS = {

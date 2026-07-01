@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
 from src.config import BOTS, DEFAULT_ABILITIES, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
+from src.voice_bandwidth import get_voice_bandwidth_controller
 import time
 import base64
 import re
@@ -11,6 +12,7 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
 rooms = {}
 connected = {} # Who's connected in a voice room
+voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
 
@@ -112,6 +114,8 @@ def handle_join(room, uuid=None, auth=None):
 
         rooms[room].add(uuid)
         join_room(room)
+        state = voice_bandwidth_controller.get_state()
+        emit("voice-status", state)
 
         for peer_uuid in list(rooms[room]):
             if peer_uuid == uuid:
@@ -267,6 +271,50 @@ def bot_chat(rdata):
 
     save_data()
     
+
+@socketio.on("audio")
+def handle_audio(data):
+    room = data.get("room")
+    uuid = data.get("from") or session.get("mc_uuid")
+    auth = data.get("auth")
+    chunk = data.get("audio")
+
+    if not room or not re.match("^voice-", room):
+        return
+
+    if uuid is not None:
+        if auth is None or get_uuid_auth(uuid) != auth:
+            return
+    else:
+        return
+
+    if room not in rooms or uuid not in rooms[room]:
+        return
+
+    if isinstance(chunk, str):
+        try:
+            chunk = base64.b64decode(chunk)
+        except Exception:
+            return
+
+    if not isinstance(chunk, (bytes, bytearray)):
+        return
+
+    size = len(chunk)
+    voice_bandwidth_controller.record_bytes(size)
+    state = voice_bandwidth_controller.get_state()
+
+    if not state["enabled"]:
+        emit("voice-status", state)
+        return
+
+    for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
+        if peer_uuid == uuid:
+            continue
+        socketio.emit("audio", {"from": uuid, "audio": chunk}, room=peer_sid, binary=True)
+
+    emit("voice-status", state)
+
 
 @socketio.on("signal")
 def handle_signal(data):
