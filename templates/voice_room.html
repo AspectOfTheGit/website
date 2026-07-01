@@ -130,12 +130,7 @@ function startRecorderForBitrate(bitrateKbps) {
         }
 
         const audioBuffer = await event.data.arrayBuffer();
-        socket.emit("audio", {
-            room: `voice-${world_uuid}`,
-            from: mc_uuid,
-            auth: authToken,
-            audio: audioBuffer
-        });
+        socket.emit("audio", audioBuffer);
     };
 
     mediaRecorder.start(250);
@@ -245,11 +240,32 @@ socket.on("voice-status", state => {
 });
 
 socket.on("audio", data => {
-    if (!data || data.from === mc_uuid) {
+    if (!data) {
         return;
     }
 
-    updateRemoteAudio(data.from, data.audio);
+    if (Array.isArray(data) && data.length >= 2) {
+        const [from, audioChunk] = data;
+        if (from === mc_uuid) {
+            return;
+        }
+
+        updateRemoteAudio(from, audioChunk);
+        return;
+    }
+
+    if (data.from && data.audio) {
+        if (data.from === mc_uuid) {
+            return;
+        }
+
+        updateRemoteAudio(data.from, data.audio);
+        return;
+    }
+
+    if (data instanceof ArrayBuffer || data instanceof Blob || data instanceof Uint8Array) {
+        updateRemoteAudio("remote", data);
+    }
 });
 
 socket.on("update", data => {
