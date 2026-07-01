@@ -130,11 +130,24 @@ function startRecorderForBitrate(bitrateKbps) {
         }
 
         const audioBuffer = await event.data.arrayBuffer();
-        socket.emit("audio", audioBuffer);
+        socket.emit("audio", { audio: arrayBufferToBase64(audioBuffer) });
     };
 
     mediaRecorder.start(250);
     recorderBitrate = bitrateKbps;
+}
+
+function arrayBufferToBase64(buffer) {
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode(...chunk);
+    }
+
+    return btoa(binary);
 }
 
 function updateRemoteAudio(peerUUID, audioChunk) {
@@ -142,7 +155,18 @@ function updateRemoteAudio(peerUUID, audioChunk) {
         return;
     }
 
-    const blob = new Blob([audioChunk], { type: "audio/webm;codecs=opus" });
+    let payload = audioChunk;
+    if (typeof audioChunk === "string") {
+        try {
+            const bytes = Uint8Array.from(atob(audioChunk), char => char.charCodeAt(0));
+            payload = bytes;
+        } catch (err) {
+            console.error("Failed to decode audio payload", err);
+            return;
+        }
+    }
+
+    const blob = new Blob([payload], { type: "audio/webm;codecs=opus" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audio.autoplay = true;
