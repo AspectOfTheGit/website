@@ -13,7 +13,6 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 rooms = {}
 connected = {} # Who's connected in a voice room
 socket_rooms = {}
-socket_users = {} # Socket ID -> UUID for voice room participants
 voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
@@ -150,7 +149,6 @@ def disconnect():
             del connected[room]
 
     socket_rooms.pop(request.sid, None)
-    socket_users.pop(request.sid, None)
             
 
 @socketio.on('join')
@@ -161,10 +159,8 @@ def handle_join(room, uuid=None, auth=None):
             return
         else:
             connected.setdefault(room,{})[uuid] = request.sid
-            socket_users[request.sid] = uuid
     else:
         uuid = session.get("mc_uuid", ".anonymous")
-        socket_users[request.sid] = uuid
 
     if room in BOTS or uuid == room:
         join_room(room)
@@ -337,11 +333,17 @@ def bot_chat(rdata):
 @socketio.on("audio")
 def handle_audio(data=None, *args):
     room = socket_rooms.get(request.sid)
-    uuid = socket_users.get(request.sid) or session.get("mc_uuid")
+    uuid = session.get("mc_uuid")
 
     payload_room, payload_uuid, chunk = parse_audio_event_payload(data, next((arg for arg in args if arg is not None), None))
     room = payload_room or room
     uuid = payload_uuid or uuid
+
+    if uuid is None:
+        for room_name, members in connected.items():
+            if request.sid in members.values():
+                uuid = next((member_uuid for member_uuid, member_sid in members.items() if member_sid == request.sid), None)
+                break
 
     if not room or not re.match("^voice-", room):
         return
@@ -366,7 +368,7 @@ def handle_audio(data=None, *args):
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", {"from": uuid, "audio": chunk}, room=peer_sid, binary=True)
+        socketio.emit("audio", [uuid, chunk], room=peer_sid)
 
     emit("voice-status", state)
 
