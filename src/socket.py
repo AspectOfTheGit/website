@@ -366,7 +366,7 @@ def handle_audio(data=None, *args):
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", [uuid, chunk], room=peer_sid, binary=True)
+        socketio.emit("audio", {"from": uuid, "audio": chunk}, room=peer_sid, binary=True)
 
     emit("voice-status", state)
 
