@@ -8,7 +8,6 @@ ACCESS_KEY = os.environ["R2_ACCESS_KEY_ID"]
 SECRET_KEY = os.environ["R2_SECRET_ACCESS_KEY"]
 
 BUCKET = "render"
-LEGACY_KEY = "data.json"
 MANIFEST_KEY = "data/manifest.json"
 
 s3 = boto3.client(
@@ -148,24 +147,12 @@ class DataStore:
         self._collections = {}
         self._manifest = {}
         self._dirty_items = set()
-        self._legacy_data = None
         self._load_manifest()
 
     def _load_manifest(self):
         manifest = _load_json_object(MANIFEST_KEY) or {}
-        if not manifest:
-            legacy = _load_json_object(LEGACY_KEY)
-            if legacy is not None:
-                self._legacy_data = legacy
-                self._manifest = {
-                    "account": {},
-                    "world": {},
-                    "bot": {},
-                }
-                return
-        self._legacy_data = None
         self._manifest = {
-            "account": manifest.get("account", manifest.get("accounts", {})),
+            "account": manifest.get("account", {}),
             "world": manifest.get("world", {}),
             "bot": manifest.get("bot", {}),
         }
@@ -229,34 +216,6 @@ class DataStore:
         self._collections.clear()
         self._dirty_items.clear()
         self._manifest = {}
-        self._legacy_data = None
-
-    def _migrate_from_legacy(self):
-        if not self._legacy_data:
-            return
-
-        for kind in ("account", "world", "bot"):
-            for key, value in (self._legacy_data.get(kind, {}) or {}).items():
-                item = DirtyTrackingDict(self, kind, key, value)
-                self._get_collection(kind)._items[key] = item
-                self._manifest.setdefault(kind, {})[key] = {"path": _default_path(kind, key)}
-                _write_json_object(_default_path(kind, key), dict(item))
-
-        manifest = {
-            "version": 2,
-            "account": {},
-            "world": {},
-            "bot": {},
-        }
-        for kind in ("account", "world", "bot"):
-            manifest[kind] = dict(self._manifest.get(kind, {}))
-
-        _write_json_object(MANIFEST_KEY, manifest)
-        _write_json_object(LEGACY_KEY, {
-            "account": {k: dict(v) for k, v in self["account"].items()},
-            "world": {k: dict(v) for k, v in self["world"].items()},
-            "bot": {k: dict(v) for k, v in self["bot"].items()},
-        })
 
     def update(self, other):
         for key, value in other.items():
@@ -315,12 +274,6 @@ def load_data():
 
     with _lock:
         data = DataStore()
-        if data._legacy_data:
-            print("Migrating legacy data store to split storage")
-            data._migrate_from_legacy()
-            print("Legacy data migration complete")
-        else:
-            print("No legacy data found; using existing split storage")
 
 
 def save_data():
@@ -359,13 +312,6 @@ def _write_data_locked():
                 manifest[kind][key] = entry
 
     _write_json_object(MANIFEST_KEY, manifest)
-
-    # Easier in backend to just do this
-    _write_json_object(LEGACY_KEY, {
-        "account": {k: dict(v) for k, v in data["account"].items()},
-        "world": {k: dict(v) for k, v in data["world"].items()},
-        "bot": {k: dict(v) for k, v in data["bot"].items()},
-    })
 
 
 data = DataStore()
