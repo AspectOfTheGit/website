@@ -250,7 +250,7 @@ function removePlayer(peerUUID) {
     }
 
     players.delete(peerUUID);
-    // failsafe to fix this silly reconnect bug
+    // failsafe to fix this silly reconnect bug (it didn't fix it)
     peers.delete(peerUUID);
     peerAudio.delete(peerUUID);
 }
