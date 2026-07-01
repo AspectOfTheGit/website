@@ -13,6 +13,7 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 rooms = {}
 connected = {} # Who's connected in a voice room
 socket_rooms = {}
+socket_users = {} # Socket ID -> UUID for voice room participants
 voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
@@ -77,6 +78,33 @@ def normalize_audio_chunk(chunk):
     return None
 
 
+def parse_audio_event_payload(data=None, binary_payload=None):
+    room = None
+    sender_uuid = None
+    chunk = None
+
+    if isinstance(data, dict):
+        room = data.get("room")
+        sender_uuid = data.get("from")
+        chunk = data.get("audio") or data.get("data") or data.get("chunk")
+    elif isinstance(data, (list, tuple)):
+        for item in data:
+            if isinstance(item, dict):
+                room = item.get("room") or room
+                sender_uuid = item.get("from") or sender_uuid
+                chunk = item.get("audio") or item.get("data") or item.get("chunk") or chunk
+            elif chunk is None and (isinstance(item, (bytes, bytearray, memoryview)) or hasattr(item, "tobytes")):
+                chunk = item
+
+    if chunk is None and binary_payload is not None:
+        chunk = binary_payload
+
+    if chunk is None and data is not None and not isinstance(data, (dict, list, tuple)):
+        chunk = data
+
+    return room, sender_uuid, normalize_audio_chunk(chunk)
+
+
 # Events
 
 @socketio.on('connect')
@@ -122,6 +150,7 @@ def disconnect():
             del connected[room]
 
     socket_rooms.pop(request.sid, None)
+    socket_users.pop(request.sid, None)
             
 
 @socketio.on('join')
@@ -132,8 +161,10 @@ def handle_join(room, uuid=None, auth=None):
             return
         else:
             connected.setdefault(room,{})[uuid] = request.sid
+            socket_users[request.sid] = uuid
     else:
         uuid = session.get("mc_uuid", ".anonymous")
+        socket_users[request.sid] = uuid
 
     if room in BOTS or uuid == room:
         join_room(room)
@@ -304,16 +335,13 @@ def bot_chat(rdata):
     
 
 @socketio.on("audio")
-def handle_audio(data):
+def handle_audio(data=None, *args):
     room = socket_rooms.get(request.sid)
-    uuid = session.get("mc_uuid")
+    uuid = socket_users.get(request.sid) or session.get("mc_uuid")
 
-    if isinstance(data, dict):
-        room = data.get("room") or room
-        uuid = data.get("from") or uuid
-        chunk = data.get("audio")
-    else:
-        chunk = data
+    payload_room, payload_uuid, chunk = parse_audio_event_payload(data, next((arg for arg in args if arg is not None), None))
+    room = payload_room or room
+    uuid = payload_uuid or uuid
 
     if not room or not re.match("^voice-", room):
         return
@@ -324,7 +352,6 @@ def handle_audio(data):
     if room not in rooms or uuid not in rooms[room]:
         return
 
-    chunk = normalize_audio_chunk(chunk)
     if chunk is None:
         return
 
