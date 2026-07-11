@@ -82,6 +82,7 @@ let recorderBitrate = 0;
 let recorderMimeType = "audio/webm;codecs=opus";
 let latestVoiceState = { enabled: false, bitrateKbps: 0 };
 const peerRestartRequests = new Map();
+const peerAwaitingInit = new Map();
 let isMuted = false;
 let isDeafened = false;
 
@@ -471,13 +472,25 @@ function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
     const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
 
     // If we start receiving mid-stream for an existing peer, ask them for a recorder restart
-    // so we get a fresh init segment and can decode continuously.
-    if (!remoteAudioStreams.has(peerUUID)) {
+    // and wait for a fresh init segment before starting playback.
+    const hasActiveStream = remoteAudioStreams.has(peerUUID);
+    if (!hasActiveStream) {
         const now = Date.now();
         const lastRequestAt = peerRestartRequests.get(peerUUID) || 0;
         if ((now - lastRequestAt) > 2000) {
             peerRestartRequests.set(peerUUID, now);
             socket.emit("voice-request-restart", { peer: peerUUID });
+        }
+
+        const awaiting = peerAwaitingInit.has(peerUUID) ? peerAwaitingInit.get(peerUUID) : true;
+        peerAwaitingInit.set(peerUUID, awaiting);
+
+        if (awaiting && !detectedMimeType) {
+            return;
+        }
+
+        if (detectedMimeType) {
+            peerAwaitingInit.set(peerUUID, false);
         }
     }
 
@@ -508,6 +521,8 @@ function removePlayer(peerUUID) {
     }
 
     destroyRemoteStream(peerUUID);
+    peerAwaitingInit.delete(peerUUID);
+    peerRestartRequests.delete(peerUUID);
 
     const userDiv = document.getElementById(peerUUID);
     if (userDiv) {
