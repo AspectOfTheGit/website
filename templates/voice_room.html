@@ -3,41 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aspect Voice Room</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <title>Aspect Voice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
     <style>
-        :root {
-            --bg: #0a1018;
-            --bg-alt: #111d2a;
-            --panel: rgba(16, 26, 39, 0.78);
-            --panel-strong: rgba(13, 21, 31, 0.94);
-            --text: #e6f0ff;
-            --muted: #97abc4;
-            --line: rgba(151, 171, 196, 0.24);
-            --accent: #53d2ae;
-            --danger: #ff6f7a;
-            --warn: #ffce6a;
-            --shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
+        .voice-shell {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 2rem;
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: "Outfit", sans-serif;
-            background:
-                radial-gradient(circle at 10% 20%, rgba(83, 210, 174, 0.14), transparent 28%),
-                radial-gradient(circle at 90% 0%, rgba(113, 160, 255, 0.22), transparent 32%),
-                linear-gradient(150deg, var(--bg) 8%, #0c1420 45%, #121b2b 100%);
-            color: var(--text);
-            padding: 20px;
-        }
-
-        .shell { max-width: 1080px; margin: 0 auto; }
-        .topbar {
+        .voice-topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -45,7 +22,7 @@
             margin-bottom: 16px;
         }
 
-        .brand {
+        .voice-brand {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -53,86 +30,129 @@
             letter-spacing: 0.02em;
         }
 
-        .brand-badge {
+        .voice-brand-badge {
             width: 14px;
             height: 14px;
             border-radius: 999px;
-            background: var(--accent);
+            background: #53d2ae;
             box-shadow: 0 0 0 8px rgba(83, 210, 174, 0.15);
         }
 
-        .meta { color: var(--muted); font-size: 0.9rem; text-align: right; }
+        .voice-meta {
+            color: #97abc4;
+            font-size: 0.9rem;
+            text-align: right;
+        }
 
-        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+        .voice-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
+        }
 
-        .panel {
-            border: 1px solid var(--line);
+        .voice-panel {
+            border: 1px solid rgba(151, 171, 196, 0.24);
             border-radius: 16px;
-            background: var(--panel);
-            box-shadow: var(--shadow);
+            background: rgba(16, 26, 39, 0.78);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
             backdrop-filter: blur(8px);
         }
 
-        .panel.left { padding: 16px; }
-        .panel.right { overflow: hidden; }
+        .voice-panel.left {
+            padding: 16px;
+        }
 
-        .controls { display: grid; gap: 10px; }
-        .controls h2 { margin: 0; font-size: 1.2rem; }
+        .voice-panel.right {
+            overflow: hidden;
+        }
 
-        .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+        .voice-controls {
+            display: grid;
+            gap: 10px;
+            text-align: left;
+        }
 
-        .status-dot {
+        .voice-controls h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #97abc4;
+            font-size: 0.9rem;
+        }
+
+        .voice-status-dot {
             width: 10px;
             height: 10px;
             border-radius: 999px;
-            background: var(--warn);
+            background: #ffce6a;
         }
 
-        .status-dot.ok { background: var(--accent); }
-        .status-dot.bad { background: var(--danger); }
+        .voice-status-dot.ok {
+            background: #53d2ae;
+        }
 
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+        .voice-status-dot.bad {
+            background: #ff6f7a;
+        }
 
-        button {
+        .voice-btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .voice-btn {
             border: 1px solid transparent;
             border-radius: 12px;
             background: #1a2c40;
-            color: var(--text);
+            color: #e6f0ff;
             padding: 10px 12px;
             cursor: pointer;
-            font-family: inherit;
+            font-family: 'Poppins', sans-serif;
             font-weight: 600;
         }
 
-        button.active {
-            border-color: var(--accent);
+        .voice-btn.active {
+            border-color: #53d2ae;
             background: rgba(83, 210, 174, 0.15);
         }
 
-        select {
+        .voice-select {
             width: 100%;
             border-radius: 12px;
-            border: 1px solid var(--line);
-            background: var(--panel-strong);
-            color: var(--text);
+            border: 1px solid rgba(151, 171, 196, 0.24);
+            background: rgba(13, 21, 31, 0.94);
+            color: #e6f0ff;
             padding: 10px;
-            font-family: inherit;
+            font-family: 'Poppins', sans-serif;
         }
 
-        .small { color: var(--muted); font-size: 0.85rem; }
+        .voice-small {
+            color: #97abc4;
+            font-size: 0.85rem;
+        }
 
-        .users-header {
+        .voice-users-header {
             padding: 16px;
-            border-bottom: 1px solid var(--line);
+            border-bottom: 1px solid rgba(151, 171, 196, 0.24);
             background: rgba(10, 15, 22, 0.55);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .users-header h3 { margin: 0; font-size: 1rem; }
+        .voice-users-header h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
 
-        .users-list {
+        .voice-users-list {
             display: grid;
             gap: 10px;
             padding: 14px;
@@ -140,109 +160,176 @@
             overflow: auto;
         }
 
-        .user-card {
-            border: 1px solid var(--line);
+        .voice-user-card {
+            border: 1px solid rgba(151, 171, 196, 0.24);
             border-radius: 14px;
             background: rgba(14, 23, 34, 0.9);
             padding: 12px;
             display: grid;
             gap: 8px;
+            text-align: left;
         }
 
-        .user-main {
+        .voice-user-main {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 10px;
         }
 
-        .user-left {
+        .voice-user-left {
             display: flex;
             align-items: center;
             gap: 10px;
             min-width: 0;
         }
 
-        .avatar {
+        .voice-avatar {
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(151, 171, 196, 0.24);
             object-fit: cover;
             background: #0d1622;
             flex-shrink: 0;
         }
 
-        .user-name {
+        .voice-user-name {
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .peer-state { color: var(--muted); font-size: 0.8rem; }
+        .voice-peer-state {
+            color: #97abc4;
+            font-size: 0.8rem;
+        }
 
-        .user-actions { display: flex; align-items: center; gap: 8px; }
-        .user-actions button { padding: 6px 8px; min-width: 44px; }
-        .user-actions input[type="range"] { width: 140px; }
+        .voice-user-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-        .empty {
-            color: var(--muted);
-            border: 1px dashed var(--line);
+        .voice-user-actions .voice-btn {
+            padding: 6px 8px;
+            min-width: 44px;
+        }
+
+        .voice-user-actions input[type="range"] {
+            width: 140px;
+        }
+
+        .voice-empty {
+            color: #97abc4;
+            border: 1px dashed rgba(151, 171, 196, 0.24);
             border-radius: 12px;
             padding: 18px;
             text-align: center;
         }
 
         @media (max-width: 900px) {
-            body { padding: 14px; }
-            .grid { grid-template-columns: 1fr; }
-            .users-list { max-height: none; }
-            .meta { text-align: left; }
+            .voice-shell {
+                padding: 1rem;
+            }
+
+            .voice-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .voice-users-list {
+                max-height: none;
+            }
+
+            .voice-meta {
+                text-align: left;
+            }
         }
     </style>
 </head>
+<footer class="site-footer">
+  <div class="footer-left">
+    <a href="https://store.legitimoose.com" target="_blank" rel="noopener noreferrer">
+        <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Store" width="64" height="64">
+    </a>
+  </div>
+
+  <div class="footer-center">
+    <p>
+      This is not an official Moose project and is made by the community.<br>
+      We have no affiliation with any real-world brands.<br>
+      Not affiliated with Mojang AB or Partners.
+    </p>
+  </div>
+
+  <div class="footer-right">
+    <a href="https://www.youtube.com/@Legitimoose" target="_blank" rel="noopener noreferrer">
+        <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" width="64" height="64">
+    </a>
+  </div>
+</footer>
 <body>
-    <main class="shell">
-        <header class="topbar">
-            <div class="brand">
-                <span class="brand-badge"></span>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="https://aspectofthe.site/" class="logo">
+                <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
+            </a>
+            Aspect's Site
+        </div>
+        <div class="nav-links">
+            <a href="/bots">Bots</a>
+            <a href="/utils">Utilities</a>
+        </div>
+        <div class="login">
+            {% if username %}
+                <a href="/account">{{ username }}</a>
+            {% else %}
+                <a href="/login">Log in</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="voice-shell">
+        <header class="voice-topbar">
+            <div class="voice-brand">
+                <span class="voice-brand-badge"></span>
                 <span>Aspect Voice</span>
             </div>
-            <div class="meta">
+            <div class="voice-meta">
                 <div>World: <span>{{ world_uuid }}</span></div>
                 <div>You: <span id="local-name">{{ mc_uuid }}</span></div>
             </div>
         </header>
 
-        <section class="grid">
-            <aside class="panel left">
-                <div class="controls">
+        <section class="voice-grid">
+            <aside class="voice-panel left">
+                <div class="voice-controls">
                     <h2>Voice Controls</h2>
-                    <div class="status">
-                        <span id="status-dot" class="status-dot"></span>
+                    <div class="voice-status">
+                        <span id="status-dot" class="voice-status-dot"></span>
                         <span id="status-text">Connecting...</span>
                     </div>
 
-                    <div class="btn-row">
-                        <button id="mute-btn" type="button">Mute</button>
-                        <button id="deafen-btn" type="button">Deafen</button>
+                    <div class="voice-btn-row">
+                        <button class="voice-btn" id="mute-btn" type="button">Mute</button>
+                        <button class="voice-btn" id="deafen-btn" type="button">Deafen</button>
                     </div>
 
-                    <label class="small" for="mic-select">Microphone</label>
-                    <select id="mic-select"></select>
-                    <div id="voice-quality" class="small">Quality: waiting</div>
-                    <div class="small">Server-relayed audio with spatial positioning and backend range/noise limits.</div>
+                    <label class="voice-small" for="mic-select">Microphone</label>
+                    <select class="voice-select" id="mic-select"></select>
+                    <div id="voice-quality" class="voice-small">Quality: waiting</div>
+                    <div class="voice-small">Server-relayed audio with spatial positioning and backend range/noise limits.</div>
                 </div>
             </aside>
 
-            <section class="panel right">
-                <div class="users-header">
+            <section class="voice-panel right">
+                <div class="voice-users-header">
                     <h3>Connected Users</h3>
-                    <span id="online-count" class="small">0 online</span>
+                    <span id="online-count" class="voice-small">0 online</span>
                 </div>
-                <div id="users-list" class="users-list">
-                    <div id="empty-state" class="empty">Waiting for players...</div>
+                <div id="users-list" class="voice-users-list">
+                    <div id="empty-state" class="voice-empty">Waiting for players...</div>
                 </div>
             </section>
         </section>
@@ -323,7 +410,7 @@
             function requestAudioUnlockHint() {
                 if (audioUnlockHintShown) return;
                 audioUnlockHintShown = true;
-                setStatus("Click anywhere to enable audio output", "bad");
+                setStatus("Audio output blocked. Refresh this page.", "bad");
             }
 
             async function unlockAllRemoteAudio(reason) {
@@ -747,34 +834,34 @@
                 if (peerUUID === localUUID) return;
                 let card = document.getElementById(`peer-${peerUUID}`);
                 if (card) {
-                    const nameEl = card.querySelector(".user-name");
+                    const nameEl = card.querySelector(".voice-user-name");
                     if (nameEl) nameEl.textContent = playerName || peerUUID;
                     return;
                 }
 
                 card = document.createElement("div");
-                card.className = "user-card";
+                card.className = "voice-user-card";
                 card.id = `peer-${peerUUID}`;
 
                 const main = document.createElement("div");
-                main.className = "user-main";
+                main.className = "voice-user-main";
 
                 const left = document.createElement("div");
-                left.className = "user-left";
+                left.className = "voice-user-left";
 
                 const avatar = document.createElement("img");
-                avatar.className = "avatar";
+                avatar.className = "voice-avatar";
                 avatar.src = `https://mc-heads.net/avatar/${peerUUID}/72`;
                 avatar.width = 36;
                 avatar.height = 36;
 
                 const textWrap = document.createElement("div");
                 const nameEl = document.createElement("div");
-                nameEl.className = "user-name";
+                nameEl.className = "voice-user-name";
                 nameEl.textContent = playerName || peerUUID;
 
                 const stateEl = document.createElement("div");
-                stateEl.className = "peer-state";
+                stateEl.className = "voice-peer-state";
                 stateEl.textContent = "Connected";
 
                 textWrap.appendChild(nameEl);
@@ -783,9 +870,10 @@
                 left.appendChild(textWrap);
 
                 const actions = document.createElement("div");
-                actions.className = "user-actions";
+                actions.className = "voice-user-actions";
 
                 const toggleBtn = document.createElement("button");
+                toggleBtn.className = "voice-btn";
                 toggleBtn.textContent = "Sound";
 
                 const slider = document.createElement("input");

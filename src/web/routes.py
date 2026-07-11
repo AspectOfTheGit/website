@@ -287,6 +287,7 @@ def voice_room(world):
 
     return render_template(
         "voice_room.html",
+        username=session.get("mc_username"),
         mc_uuid=uuid,
         world_uuid=world,
         auth=auth
