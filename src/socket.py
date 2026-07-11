@@ -11,6 +11,10 @@ from src.config import (
     PREFIXED_COMMANDS,
     VOICE_SPATIAL_MAX_DISTANCE,
     VOICE_SPATIAL_MIN_GAIN,
+    VOICE_NOISE_GATE_ENABLED,
+    VOICE_NOISE_GATE_OPEN_BYTES,
+    VOICE_NOISE_GATE_CLOSE_BYTES,
+    VOICE_NOISE_GATE_HOLD_MS,
 )
 from src.voice_bandwidth import get_voice_bandwidth_controller
 import time
@@ -23,6 +27,7 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 rooms = {}
 connected = {} # Who's connected in a voice room
 socket_rooms = {}
+voice_gate_state = {}
 voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
@@ -202,7 +207,7 @@ def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
 
     yaw_rad = math.radians(listener_yaw)
     right_x = math.cos(yaw_rad)
-    right_z = -math.sin(yaw_rad)
+    right_z = math.sin(yaw_rad)
 
     horizontal_distance = math.sqrt((dx * dx) + (dz * dz))
     if horizontal_distance <= 1e-6:
@@ -214,9 +219,44 @@ def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
     return {
         "distance": distance,
         "gain": gain,
-        # Flip sign to match browser stereo panner orientation with Minecraft yaw.
-        "pan": -pan,
+        "pan": pan,
     }
+
+
+def should_forward_audio_chunk(room, speaker_uuid, chunk_size):
+    if not VOICE_NOISE_GATE_ENABLED:
+        return True
+
+    key = (room, speaker_uuid)
+    now_ms = int(time.time() * 1000)
+    gate = voice_gate_state.setdefault(
+        key,
+        {
+            "is_open": False,
+            "hold_until": 0,
+        },
+    )
+
+    # Open gate immediately when chunk size indicates likely speech.
+    if chunk_size >= VOICE_NOISE_GATE_OPEN_BYTES:
+        gate["is_open"] = True
+        gate["hold_until"] = now_ms + VOICE_NOISE_GATE_HOLD_MS
+        return True
+
+    # Strongly quiet chunk: close when hold expires.
+    if chunk_size <= VOICE_NOISE_GATE_CLOSE_BYTES:
+        if gate["is_open"] and now_ms < gate["hold_until"]:
+            return True
+
+        gate["is_open"] = False
+        return False
+
+    # Mid band between close/open thresholds; keep prior state.
+    if gate["is_open"]:
+        gate["hold_until"] = now_ms + VOICE_NOISE_GATE_HOLD_MS
+        return True
+
+    return False
 
 
 # Events
@@ -238,6 +278,7 @@ def disconnect():
             continue
 
         members.remove(uuid)
+        voice_gate_state.pop((room, uuid), None)
 
         emit(
             "peer-left",
@@ -262,6 +303,11 @@ def disconnect():
 
         if len(members) == 0:
             del connected[room]
+
+    if uuid is not None:
+        stale_keys = [k for k in voice_gate_state.keys() if k[1] == uuid]
+        for key in stale_keys:
+            voice_gate_state.pop(key, None)
 
     socket_rooms.pop(request.sid, None)
             
@@ -476,6 +522,10 @@ def handle_audio(data=None, *args):
         return
 
     size = len(chunk)
+
+    if not should_forward_audio_chunk(room, uuid, size):
+        return
+
     voice_bandwidth_controller.record_bytes(size)
     state = voice_bandwidth_controller.get_state()
 
