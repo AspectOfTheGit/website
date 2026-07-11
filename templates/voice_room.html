@@ -3,752 +3,858 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aspect's Site</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
+    <title>Aspect Voice Room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a1018;
+            --bg-alt: #111d2a;
+            --panel: rgba(16, 26, 39, 0.78);
+            --panel-strong: rgba(13, 21, 31, 0.94);
+            --text: #e6f0ff;
+            --muted: #97abc4;
+            --line: rgba(151, 171, 196, 0.24);
+            --accent: #53d2ae;
+            --danger: #ff6f7a;
+            --warn: #ffce6a;
+            --shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Outfit", sans-serif;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(83, 210, 174, 0.14), transparent 28%),
+                radial-gradient(circle at 90% 0%, rgba(113, 160, 255, 0.22), transparent 32%),
+                linear-gradient(150deg, var(--bg) 8%, #0c1420 45%, #121b2b 100%);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .shell { max-width: 1080px; margin: 0 auto; }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-badge {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 0 8px rgba(83, 210, 174, 0.15);
+        }
+
+        .meta { color: var(--muted); font-size: 0.9rem; text-align: right; }
+
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        .panel.left { padding: 16px; }
+        .panel.right { overflow: hidden; }
+
+        .controls { display: grid; gap: 10px; }
+        .controls h2 { margin: 0; font-size: 1.2rem; }
+
+        .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--warn);
+        }
+
+        .status-dot.ok { background: var(--accent); }
+        .status-dot.bad { background: var(--danger); }
+
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+
+        button {
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: #1a2c40;
+            color: var(--text);
+            padding: 10px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+        }
+
+        button.active {
+            border-color: var(--accent);
+            background: rgba(83, 210, 174, 0.15);
+        }
+
+        select {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel-strong);
+            color: var(--text);
+            padding: 10px;
+            font-family: inherit;
+        }
+
+        .small { color: var(--muted); font-size: 0.85rem; }
+
+        .users-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(10, 15, 22, 0.55);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .users-header h3 { margin: 0; font-size: 1rem; }
+
+        .users-list {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+            max-height: 70vh;
+            overflow: auto;
+        }
+
+        .user-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(14, 23, 34, 0.9);
+            padding: 12px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .user-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            object-fit: cover;
+            background: #0d1622;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .peer-state { color: var(--muted); font-size: 0.8rem; }
+
+        .user-actions { display: flex; align-items: center; gap: 8px; }
+        .user-actions button { padding: 6px 8px; min-width: 44px; }
+        .user-actions input[type="range"] { width: 140px; }
+
+        .empty {
+            color: var(--muted);
+            border: 1px dashed var(--line);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 14px; }
+            .grid { grid-template-columns: 1fr; }
+            .users-list { max-height: none; }
+            .meta { text-align: left; }
+        }
+    </style>
 </head>
-<footer class="site-footer">
-  <div class="footer-left">
-    <a href="https://store.legitimoose.com" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/cart.svg') }}" alt="Store" width="64" height="64">
-    </a>
-  </div>
-
-  <div class="footer-center">
-    <p>
-      This is not an official Moose project and is made by the community.<br>
-      We have no affiliation with any real-world brands.<br>
-      Not affiliated with Mojang AB or Partners.
-    </p>
-  </div>
-
-  <div class="footer-right">
-    <a href="https://www.youtube.com/@Legitimoose" target="_blank" rel="noopener noreferrer">
-        <img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" width="64" height="64">
-    </a>
-  </div>
-</footer>
-
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
-                <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
-            </a>
-            Aspect's Site
-        </div>
-    </nav>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-badge"></span>
+                <span>Aspect Voice</span>
+            </div>
+            <div class="meta">
+                <div>World: <span>{{ world_uuid }}</span></div>
+                <div>You: <span id="local-name">{{ mc_uuid }}</span></div>
+            </div>
+        </header>
 
-    <h2>Voice Room</h2>
-    <h3 id="world-uuid-text">{{ world_uuid }}</h3>
-    <p id="local-player-text">{{ mc_uuid }}</p>
-    <p>Voice Chat for legitimoose.com</p>
-    <div id="voice-controls" style="margin: 10px 0;">
-        <button class="generic" id="mute-btn">Mute</button>
-        <button class="generic" id="deafen-btn">Deafen</button>
-        <label for="mic-select">Mic:</label>
-        <select class="dropdown" id="mic-select"></select>
-    </div>
-    
-    <div id="connected-users" style="margin-top: 10px;">
-        <h4>Connected Users</h4>
-    </div>
+        <section class="grid">
+            <aside class="panel left">
+                <div class="controls">
+                    <h2>Voice Controls</h2>
+                    <div class="status">
+                        <span id="status-dot" class="status-dot"></span>
+                        <span id="status-text">Connecting...</span>
+                    </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
+                    <div class="btn-row">
+                        <button id="mute-btn" type="button">Mute</button>
+                        <button id="deafen-btn" type="button">Deafen</button>
+                    </div>
 
-const world_uuid = "{{ world_uuid }}";
-const mc_uuid = "{{ mc_uuid }}";
-const authToken = "{{ auth }}";
+                    <label class="small" for="mic-select">Microphone</label>
+                    <select id="mic-select"></select>
+                    <div id="voice-quality" class="small">Quality: waiting</div>
+                    <div class="small">Server-relayed audio with spatial positioning and backend range/noise limits.</div>
+                </div>
+            </aside>
 
-const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
-const connectedUsers = document.getElementById("connected-users");
+            <section class="panel right">
+                <div class="users-header">
+                    <h3>Connected Users</h3>
+                    <span id="online-count" class="small">0 online</span>
+                </div>
+                <div id="users-list" class="users-list">
+                    <div id="empty-state" class="empty">Waiting for players...</div>
+                </div>
+            </section>
+        </section>
+    </main>
 
-const players = new Map();
-const remoteAudio = new Map();
-const remoteAudioStreams = new Map();
-const localPlayer = {
-    uuid: mc_uuid,
-    name: "You",
-    position: [0, 0, 0],
-    rotation: [0, 0]
-};
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const worldUUID = "{{ world_uuid }}";
+            const localUUID = "{{ mc_uuid }}";
+            const authToken = "{{ auth }}";
 
-let localStream = null;
-let mediaRecorder = null;
-let recorderBitrate = 0;
-let recorderMimeType = "audio/webm;codecs=opus";
-let latestVoiceState = { enabled: false, bitrateKbps: 0 };
-const peerRestartRequests = new Map();
-const peerAwaitingInit = new Map();
-let isMuted = false;
-let isDeafened = false;
+            const socket = io("https://aspectofthe.site", { transports: ["websocket"] });
 
-const REMOTE_MAX_QUEUE_CHUNKS = 12;
-const REMOTE_MAX_LAG_SECONDS = 1.6;
-const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
+            const statusDot = document.getElementById("status-dot");
+            const statusText = document.getElementById("status-text");
+            const voiceQuality = document.getElementById("voice-quality");
+            const usersList = document.getElementById("users-list");
+            const emptyState = document.getElementById("empty-state");
+            const onlineCount = document.getElementById("online-count");
+            const micSelect = document.getElementById("mic-select");
+            const muteBtn = document.getElementById("mute-btn");
+            const deafenBtn = document.getElementById("deafen-btn");
+            const localName = document.getElementById("local-name");
 
-function ensureAudioContext() {
-    if (!window.AudioContext && !window.webkitAudioContext) {
-        return null;
-    }
+            const players = new Map();
+            const remoteAudioState = new Map();
 
-    if (!window.__voiceAudioContext) {
-        window.__voiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
+            let localStream = null;
+            let mediaRecorder = null;
+            let recorderBitrate = 0;
+            let recorderMimeType = "audio/webm;codecs=opus";
+            let isMuted = false;
+            let isDeafened = false;
+            let latestVoiceState = { enabled: false, bitrateKbps: 0 };
 
-    if (window.__voiceAudioContext.state === "suspended") {
-        window.__voiceAudioContext.resume().catch(console.error);
-    }
+            const REMOTE_MAX_QUEUE_CHUNKS = 12;
+            const REMOTE_MAX_LAG_SECONDS = 1.6;
+            const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
 
-    return window.__voiceAudioContext;
-}
-
-function stopRecorder() {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-    }
-}
-
-function normalizeMimeType(mimeType) {
-    if (typeof mimeType === "string" && mimeType.trim()) {
-        return mimeType.trim();
-    }
-
-    return "audio/webm;codecs=opus";
-}
-
-function pickSupportedMimeType(preferred) {
-    const candidates = [
-        normalizeMimeType(preferred),
-        "audio/webm;codecs=opus",
-        "audio/ogg;codecs=opus"
-    ];
-
-    if (!window.MediaSource || typeof MediaSource.isTypeSupported !== "function") {
-        return null;
-    }
-
-    return candidates.find(type => MediaSource.isTypeSupported(type)) || null;
-}
-
-function appendStreamChunk(peerUUID) {
-    const state = remoteAudioStreams.get(peerUUID);
-    if (!state || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) {
-        return;
-    }
-
-    if (!state.mediaSource || state.mediaSource.readyState !== "open") {
-        return;
-    }
-
-    const buffers = state.mediaSource.sourceBuffers;
-    let attached = false;
-    for (let i = 0; i < buffers.length; i++) {
-        if (buffers[i] === state.sourceBuffer) {
-            attached = true;
-            break;
-        }
-    }
-
-    if (!attached) {
-        return;
-    }
-
-    const nextChunk = state.queue.shift();
-    if (!nextChunk) {
-        return;
-    }
-
-    try {
-        state.sourceBuffer.appendBuffer(nextChunk);
-    } catch (err) {
-        if (err && err.name === "InvalidStateError") {
-            rebuildRemoteStream(peerUUID, state, [nextChunk]);
-            return;
-        }
-
-        console.warn("Failed to append remote audio chunk", err);
-    }
-}
-
-function trimPlaybackLatency(state) {
-    if (!state || !state.audio) {
-        return;
-    }
-
-    const audio = state.audio;
-    if (!audio.buffered || audio.buffered.length === 0) {
-        return;
-    }
-
-    try {
-        const end = audio.buffered.end(audio.buffered.length - 1);
-        const lag = end - audio.currentTime;
-        if (lag > REMOTE_MAX_LAG_SECONDS) {
-            audio.currentTime = Math.max(0, end - REMOTE_TARGET_LIVE_LATENCY_SECONDS);
-        }
-    } catch (_) {}
-}
-
-function rebuildRemoteStream(peerUUID, previousState, prependChunks = []) {
-    if (!previousState) {
-        return;
-    }
-
-    let pendingChunks = [
-        ...prependChunks,
-        ...previousState.queue
-    ];
-
-    if (pendingChunks.length > REMOTE_MAX_QUEUE_CHUNKS) {
-        pendingChunks = pendingChunks.slice(pendingChunks.length - REMOTE_MAX_QUEUE_CHUNKS);
-    }
-
-    const snapshot = {
-        mimeType: previousState.mimeType,
-        muted: previousState.muted,
-        volume: previousState.volume,
-        spatialGain: previousState.spatialGain,
-        spatialPan: previousState.spatialPan,
-    };
-
-    destroyRemoteStream(peerUUID);
-
-    const replacement = getOrCreateRemoteState(peerUUID, snapshot.mimeType);
-    if (!replacement) {
-        return;
-    }
-
-    replacement.muted = snapshot.muted;
-    replacement.volume = snapshot.volume;
-    replacement.spatialGain = snapshot.spatialGain;
-    replacement.spatialPan = snapshot.spatialPan;
-    replacement.queue.push(...pendingChunks);
-
-    applyPlaybackState(replacement);
-    appendStreamChunk(peerUUID);
-}
-
-function applyPlaybackState(state) {
-    if (!state) {
-        return;
-    }
-
-    const spatialGain = typeof state.spatialGain === "number" ? state.spatialGain : 1;
-    const spatialPan = typeof state.spatialPan === "number" ? state.spatialPan : 0;
-    const effectiveGain = (isDeafened || state.muted) ? 0 : (state.volume * spatialGain);
-
-    if (state.gainNode) {
-        state.gainNode.gain.value = Math.max(0, effectiveGain);
-    }
-
-    if (state.pannerNode) {
-        state.pannerNode.pan.value = Math.max(-1, Math.min(1, spatialPan));
-    }
-
-    if (state.audio) {
-        // Keep element unmuted and apply controls through gain for smoother transitions.
-        state.audio.muted = false;
-        if (!state.gainNode) {
-            state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
-        }
-    }
-}
-
-function applySpatialFromPacket(state, spatial) {
-    if (!state || !spatial || typeof spatial !== "object") {
-        return;
-    }
-
-    if (typeof spatial.gain === "number") {
-        state.spatialGain = Math.max(0, spatial.gain);
-    }
-
-    if (typeof spatial.pan === "number") {
-        state.spatialPan = Math.max(-1, Math.min(1, spatial.pan));
-    }
-
-    applyPlaybackState(state);
-}
-
-function destroyRemoteStream(peerUUID) {
-    const state = remoteAudioStreams.get(peerUUID);
-    if (!state) {
-        return;
-    }
-
-    state.destroyed = true;
-
-    try {
-        if (state.audio) {
-            state.audio.pause();
-            state.audio.src = "";
-        }
-    } catch (_) {}
-
-    if (state.objectUrl) {
-        URL.revokeObjectURL(state.objectUrl);
-    }
-
-    remoteAudioStreams.delete(peerUUID);
-    remoteAudio.delete(peerUUID);
-}
-
-function getOrCreateRemoteState(peerUUID, requestedMimeType) {
-    const supportedMimeType = pickSupportedMimeType(requestedMimeType);
-    if (!supportedMimeType) {
-        return null;
-    }
-
-    const existing = remoteAudioStreams.get(peerUUID);
-    if (existing && existing.mimeType === supportedMimeType) {
-        return existing;
-    }
-
-    if (existing) {
-        destroyRemoteStream(peerUUID);
-    }
-
-    const mediaSource = new MediaSource();
-    const objectUrl = URL.createObjectURL(mediaSource);
-    const audio = new Audio(objectUrl);
-    audio.autoplay = true;
-    audio.muted = false;
-    audio.volume = 1;
-
-    let sourceNode = null;
-    let gainNode = null;
-    let pannerNode = null;
-    const audioContext = ensureAudioContext();
-
-    if (audioContext) {
-        try {
-            sourceNode = audioContext.createMediaElementSource(audio);
-            gainNode = audioContext.createGain();
-
-            if (typeof audioContext.createStereoPanner === "function") {
-                pannerNode = audioContext.createStereoPanner();
-                sourceNode.connect(gainNode);
-                gainNode.connect(pannerNode);
-                pannerNode.connect(audioContext.destination);
-            } else {
-                sourceNode.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+            function setStatus(text, kind) {
+                statusText.textContent = text;
+                statusDot.classList.remove("ok", "bad");
+                if (kind === "ok") statusDot.classList.add("ok");
+                if (kind === "bad") statusDot.classList.add("bad");
             }
-        } catch (err) {
-            console.warn("Failed to create WebAudio graph for remote stream", err);
-            sourceNode = null;
-            gainNode = null;
-            pannerNode = null;
-        }
-    }
 
-    const state = {
-        mimeType: supportedMimeType,
-        mediaSource,
-        sourceBuffer: null,
-        queue: [],
-        muted: false,
-        volume: 1,
-        spatialGain: 1,
-        spatialPan: 0,
-        destroyed: false,
-        objectUrl,
-        audio,
-        sourceNode,
-        gainNode,
-        pannerNode,
-    };
+            function updateOnlineCount() {
+                const count = Array.from(players.keys()).filter(uuid => uuid !== localUUID).length;
+                onlineCount.textContent = `${count} online`;
+                emptyState.style.display = count > 0 ? "none" : "block";
+            }
 
-    mediaSource.addEventListener("sourceopen", () => {
-        try {
-            state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
-            state.sourceBuffer.mode = "sequence";
-            state.sourceBuffer.addEventListener("updateend", () => {
-                trimPlaybackLatency(state);
+            function ensureAudioContext() {
+                if (!window.AudioContext && !window.webkitAudioContext) return null;
+                if (!window.__aspectVoiceAudioContext) {
+                    window.__aspectVoiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = window.__aspectVoiceAudioContext;
+                if (ctx.state === "suspended") ctx.resume().catch(() => {});
+                return ctx;
+            }
+
+            function normalizeMimeType(mimeType) {
+                if (typeof mimeType === "string" && mimeType.trim()) return mimeType.trim();
+                return "audio/webm;codecs=opus";
+            }
+
+            function pickSupportedMimeType(preferred) {
+                const candidates = [
+                    normalizeMimeType(preferred),
+                    "audio/webm;codecs=opus",
+                    "audio/ogg;codecs=opus"
+                ];
+
+                if (!window.MediaSource || typeof MediaSource.isTypeSupported !== "function") {
+                    return null;
+                }
+
+                return candidates.find(type => MediaSource.isTypeSupported(type)) || null;
+            }
+
+            function applyPlaybackState(state) {
+                if (!state) return;
+
+                const spatialGain = typeof state.spatialGain === "number" ? state.spatialGain : 1;
+                const spatialPan = typeof state.spatialPan === "number" ? state.spatialPan : 0;
+                const effectiveGain = (isDeafened || state.muted) ? 0 : (state.volume * spatialGain);
+
+                if (state.gainNode) state.gainNode.gain.value = Math.max(0, effectiveGain);
+                if (state.pannerNode) state.pannerNode.pan.value = Math.max(-1, Math.min(1, spatialPan));
+
+                if (state.audio && !state.gainNode) {
+                    state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
+                }
+            }
+
+            function applySpatialFromPacket(state, spatial) {
+                if (!state || !spatial || typeof spatial !== "object") return;
+
+                if (typeof spatial.gain === "number") {
+                    state.spatialGain = Math.max(0, spatial.gain);
+                }
+                if (typeof spatial.pan === "number") {
+                    state.spatialPan = Math.max(-1, Math.min(1, spatial.pan));
+                }
+
+                applyPlaybackState(state);
+            }
+
+            function trimPlaybackLatency(state) {
+                if (!state || !state.audio) return;
+                if (!state.audio.buffered || state.audio.buffered.length === 0) return;
+
+                try {
+                    const end = state.audio.buffered.end(state.audio.buffered.length - 1);
+                    const lag = end - state.audio.currentTime;
+                    if (lag > REMOTE_MAX_LAG_SECONDS) {
+                        state.audio.currentTime = Math.max(0, end - REMOTE_TARGET_LIVE_LATENCY_SECONDS);
+                    }
+                } catch (_) {}
+            }
+
+            function appendStreamChunk(peerUUID) {
+                const state = remoteAudioState.get(peerUUID);
+                if (!state || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) return;
+                if (!state.mediaSource || state.mediaSource.readyState !== "open") return;
+
+                const nextChunk = state.queue.shift();
+                if (!nextChunk) return;
+
+                try {
+                    state.sourceBuffer.appendBuffer(nextChunk);
+                } catch (err) {
+                    if (err && err.name === "InvalidStateError") {
+                        rebuildRemoteStream(peerUUID, state, [nextChunk]);
+                        return;
+                    }
+                }
+            }
+
+            function destroyRemoteStream(peerUUID) {
+                const state = remoteAudioState.get(peerUUID);
+                if (!state) return;
+
+                state.destroyed = true;
+
+                try {
+                    if (state.audio) {
+                        state.audio.pause();
+                        state.audio.src = "";
+                    }
+                } catch (_) {}
+
+                if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+                remoteAudioState.delete(peerUUID);
+            }
+
+            function rebuildRemoteStream(peerUUID, previousState, prependChunks = []) {
+                if (!previousState) return;
+
+                let pending = [...prependChunks, ...previousState.queue];
+                if (pending.length > REMOTE_MAX_QUEUE_CHUNKS) {
+                    pending = pending.slice(pending.length - REMOTE_MAX_QUEUE_CHUNKS);
+                }
+
+                const snapshot = {
+                    mimeType: previousState.mimeType,
+                    muted: previousState.muted,
+                    volume: previousState.volume,
+                    spatialGain: previousState.spatialGain,
+                    spatialPan: previousState.spatialPan
+                };
+
+                destroyRemoteStream(peerUUID);
+                const replacement = getOrCreateRemoteState(peerUUID, snapshot.mimeType);
+                if (!replacement) return;
+
+                replacement.muted = snapshot.muted;
+                replacement.volume = snapshot.volume;
+                replacement.spatialGain = snapshot.spatialGain;
+                replacement.spatialPan = snapshot.spatialPan;
+                replacement.queue.push(...pending);
+
+                applyPlaybackState(replacement);
                 appendStreamChunk(peerUUID);
-            });
-            appendStreamChunk(peerUUID);
-        } catch (err) {
-            console.warn("Failed to initialize remote audio SourceBuffer", err);
-            destroyRemoteStream(peerUUID);
-        }
-    }, { once: true });
-
-    audio.play().catch(() => {});
-    applyPlaybackState(state);
-
-    remoteAudioStreams.set(peerUUID, state);
-    remoteAudio.set(peerUUID, audio);
-    return state;
-}
-
-function startRecorderForBitrate(bitrateKbps) {
-    if (!localStream || bitrateKbps <= 0) {
-        return;
-    }
-
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-    }
-
-    const recorderCandidates = [
-        "audio/webm;codecs=opus",
-        "audio/ogg;codecs=opus"
-    ];
-
-    const supportedRecorderMime = recorderCandidates.find(type => {
-        return window.MediaRecorder && typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type);
-    });
-
-    const options = {
-        audioBitsPerSecond: bitrateKbps * 1000
-    };
-
-    if (supportedRecorderMime) {
-        options.mimeType = supportedRecorderMime;
-    }
-
-    try {
-        mediaRecorder = new MediaRecorder(localStream, options);
-    } catch (err) {
-        console.warn("Falling back to default MediaRecorder options", err);
-        mediaRecorder = new MediaRecorder(localStream);
-    }
-
-    recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
-
-    mediaRecorder.ondataavailable = async event => {
-        if (!event.data || event.data.size === 0 || isMuted || bitrateKbps <= 0) {
-            return;
-        }
-
-        const audioBuffer = await event.data.arrayBuffer();
-        socket.emit("audio", {
-            audio: audioBuffer,
-            mimeType: recorderMimeType
-        });
-    };
-
-    mediaRecorder.start(100);
-    recorderBitrate = bitrateKbps;
-}
-
-function normalizeIncomingAudioChunk(audioChunk) {
-    if (!audioChunk) {
-        return null;
-    }
-
-    if (audioChunk instanceof Blob || audioChunk instanceof ArrayBuffer || audioChunk instanceof Uint8Array) {
-        return audioChunk;
-    }
-
-    if (Array.isArray(audioChunk) && audioChunk.every(x => Number.isInteger(x) && x >= 0 && x <= 255)) {
-        return new Uint8Array(audioChunk);
-    }
-
-    if (audioChunk.type === "Buffer" && Array.isArray(audioChunk.data)) {
-        return new Uint8Array(audioChunk.data);
-    }
-
-    if (typeof audioChunk === "string") {
-        try {
-            const binary = atob(audioChunk);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
             }
-            return bytes;
-        } catch (_) {
-            return null;
-        }
-    }
 
-    return null;
-}
+            function getOrCreateRemoteState(peerUUID, requestedMimeType) {
+                const supportedMimeType = pickSupportedMimeType(requestedMimeType);
+                if (!supportedMimeType) return null;
 
-function detectMimeTypeFromChunk(chunk) {
-    const bytes = chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk);
-    if (bytes.length >= 4) {
-        // EBML header for WebM/Matroska.
-        if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
-            return "audio/webm;codecs=opus";
-        }
+                const existing = remoteAudioState.get(peerUUID);
+                if (existing && existing.mimeType === supportedMimeType) return existing;
+                if (existing) destroyRemoteStream(peerUUID);
 
-        // Ogg page header.
-        if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
-            return "audio/ogg;codecs=opus";
-        }
-    }
+                const mediaSource = new MediaSource();
+                const objectUrl = URL.createObjectURL(mediaSource);
+                const audio = new Audio(objectUrl);
+                audio.autoplay = true;
+                audio.muted = false;
+                audio.volume = 1;
 
-    return null;
-}
+                let sourceNode = null;
+                let gainNode = null;
+                let pannerNode = null;
+                const audioContext = ensureAudioContext();
 
-function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
-    if (peerUUID === mc_uuid) {
-        return;
-    }
-
-    const normalizedChunk = normalizeIncomingAudioChunk(audioChunk);
-    if (!normalizedChunk) {
-        return;
-    }
-
-    const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
-    const detectedMimeType = detectMimeTypeFromChunk(chunkBytes);
-    const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
-
-    // If we start receiving mid-stream for an existing peer, ask them for a recorder restart
-    // and wait for a fresh init segment before starting playback.
-    const hasActiveStream = remoteAudioStreams.has(peerUUID);
-    if (!hasActiveStream) {
-        const now = Date.now();
-        const lastRequestAt = peerRestartRequests.get(peerUUID) || 0;
-        if ((now - lastRequestAt) > 2000) {
-            peerRestartRequests.set(peerUUID, now);
-            socket.emit("voice-request-restart", { peer: peerUUID });
-        }
-
-        const awaiting = peerAwaitingInit.has(peerUUID) ? peerAwaitingInit.get(peerUUID) : true;
-        peerAwaitingInit.set(peerUUID, awaiting);
-
-        if (awaiting && !detectedMimeType) {
-            return;
-        }
-
-        if (detectedMimeType) {
-            peerAwaitingInit.set(peerUUID, false);
-        }
-    }
-
-    const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
-    if (!state) {
-        return;
-    }
-
-    applySpatialFromPacket(state, spatial);
-
-    state.queue.push(chunkBytes);
-
-    if (state.queue.length > REMOTE_MAX_QUEUE_CHUNKS) {
-        state.queue.splice(0, state.queue.length - REMOTE_MAX_QUEUE_CHUNKS);
-    }
-
-    appendStreamChunk(peerUUID);
-    trimPlaybackLatency(state);
-}
-
-function removePlayer(peerUUID) {
-    if (peerUUID === mc_uuid) {
-        return;
-    }
-
-    const audio = remoteAudio.get(peerUUID);
-    if (audio) {
-        audio.pause();
-    }
-
-    destroyRemoteStream(peerUUID);
-    peerAwaitingInit.delete(peerUUID);
-    peerRestartRequests.delete(peerUUID);
-
-    const userDiv = document.getElementById(peerUUID);
-    if (userDiv) {
-        userDiv.remove();
-    }
-
-    players.delete(peerUUID);
-}
-
-try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    console.log("Microphone ready", localStream);
-} catch (err) {
-    console.error("Failed to get microphone", err);
-}
-
-socket.emit("join", `voice-${world_uuid}`, mc_uuid, authToken);
-
-const micSelect = document.getElementById("mic-select");
-
-navigator.mediaDevices.enumerateDevices()
-    .then(devices => {
-        const mics = devices.filter(d => d.kind === "audioinput");
-        mics.forEach(mic => {
-            const option = document.createElement("option");
-            option.value = mic.deviceId;
-            option.textContent = mic.label || `Microphone ${micSelect.length + 1}`;
-            micSelect.appendChild(option);
-        });
-    })
-    .catch(console.error);
-
-const muteBtn = document.getElementById("mute-btn");
-const deafenBtn = document.getElementById("deafen-btn");
-
-muteBtn.onclick = () => {
-    isMuted = !isMuted;
-
-    if (localStream) {
-        localStream.getAudioTracks().forEach(track => {
-            track.enabled = !isMuted;
-        });
-    }
-
-    muteBtn.textContent = isMuted ? "Unmute" : "Mute";
-};
-
-deafenBtn.onclick = () => {
-    isDeafened = !isDeafened;
-    remoteAudioStreams.forEach(state => {
-        applyPlaybackState(state);
-    });
-    deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
-};
-
-socket.on("voice-status", state => {
-    if (!state || !state.enabled) {
-        latestVoiceState = { enabled: false, bitrateKbps: 0 };
-        stopRecorder();
-        return;
-    }
-
-    latestVoiceState = {
-        enabled: true,
-        bitrateKbps: state.bitrate_kbps || 0
-    };
-
-    if (state.bitrate_kbps && state.bitrate_kbps !== recorderBitrate) {
-        startRecorderForBitrate(state.bitrate_kbps);
-    }
-});
-
-socket.on("voice-restart-stream", () => {
-    if (!latestVoiceState.enabled) {
-        return;
-    }
-
-    if (!latestVoiceState.bitrateKbps || !localStream) {
-        return;
-    }
-
-    startRecorderForBitrate(latestVoiceState.bitrateKbps);
-});
-
-socket.on("audio", data => {
-    if (!data) {
-        return;
-    }
-
-    if (Array.isArray(data) && data.length >= 2) {
-        const [from, audioChunk] = data;
-        if (from === mc_uuid) {
-            return;
-        }
-
-        updateRemoteAudio(from, audioChunk, recorderMimeType, null);
-        return;
-    }
-
-    if (data.from && data.audio) {
-        if (data.from === mc_uuid) {
-            return;
-        }
-
-        updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
-        return;
-    }
-
-    if (data instanceof ArrayBuffer || data instanceof Blob || data instanceof Uint8Array) {
-        updateRemoteAudio("remote", data, recorderMimeType, null);
-    }
-});
-
-socket.on("update", data => {
-    const activePlayerUUIDs = new Set();
-
-    data.forEach(player => {
-        activePlayerUUIDs.add(player.uuid);
-
-        if (player.uuid === mc_uuid) {
-            localPlayer.position = player.Pos;
-            localPlayer.rotation = player.Rot;
-            localPlayer.name = player.Name;
-            return;
-        }
-
-        players.set(player.uuid, {
-            name: player.Name,
-            position: player.Pos,
-            rotation: player.Rot
-        });
-
-        if (!document.getElementById(player.uuid)) {
-            const userDiv = document.createElement("div");
-            userDiv.id = player.uuid;
-
-            const headImg = document.createElement("img");
-            headImg.src = `https://mc-heads.net/avatar/${player.uuid}/256`;
-            headImg.width = 32;
-            headImg.height = 32;
-            headImg.style.borderRadius = "15%";
-            headImg.style.verticalAlign = "middle";
-            userDiv.appendChild(headImg);
-
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = ` ${player.Name} `;
-            userDiv.appendChild(nameSpan);
-
-            const muteBtn = document.createElement("button");
-            muteBtn.textContent = "🔊";
-            muteBtn.dataset.muted = false;
-            muteBtn.onclick = () => {
-                muteBtn.dataset.muted = muteBtn.dataset.muted === "true" ? "false" : "true";
-                muteBtn.textContent = muteBtn.dataset.muted === "true" ? "🔇" : "🔊";
-                const state = remoteAudioStreams.get(player.uuid);
-                if (state) {
-                    state.muted = muteBtn.dataset.muted === "true";
-                    applyPlaybackState(state);
+                if (audioContext) {
+                    try {
+                        sourceNode = audioContext.createMediaElementSource(audio);
+                        gainNode = audioContext.createGain();
+                        if (typeof audioContext.createStereoPanner === "function") {
+                            pannerNode = audioContext.createStereoPanner();
+                            sourceNode.connect(gainNode);
+                            gainNode.connect(pannerNode);
+                            pannerNode.connect(audioContext.destination);
+                        } else {
+                            sourceNode.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                        }
+                    } catch (_) {
+                        sourceNode = null;
+                        gainNode = null;
+                        pannerNode = null;
+                    }
                 }
-            };
-            userDiv.appendChild(muteBtn);
 
-            const volumeSlider = document.createElement("input");
-            volumeSlider.type = "range";
-            volumeSlider.min = 0;
-            volumeSlider.max = 2;
-            volumeSlider.step = 0.01;
-            volumeSlider.value = 1;
-            volumeSlider.oninput = () => {
-                const state = remoteAudioStreams.get(player.uuid);
-                if (state) {
-                    state.volume = parseFloat(volumeSlider.value);
-                    applyPlaybackState(state);
+                const state = {
+                    mimeType: supportedMimeType,
+                    mediaSource,
+                    sourceBuffer: null,
+                    queue: [],
+                    muted: false,
+                    volume: 1,
+                    spatialGain: 1,
+                    spatialPan: 0,
+                    destroyed: false,
+                    objectUrl,
+                    audio,
+                    sourceNode,
+                    gainNode,
+                    pannerNode
+                };
+
+                mediaSource.addEventListener("sourceopen", () => {
+                    try {
+                        state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
+                        state.sourceBuffer.mode = "sequence";
+                        state.sourceBuffer.addEventListener("updateend", () => {
+                            trimPlaybackLatency(state);
+                            appendStreamChunk(peerUUID);
+                        });
+                        appendStreamChunk(peerUUID);
+                    } catch (_) {
+                        destroyRemoteStream(peerUUID);
+                    }
+                }, { once: true });
+
+                audio.play().catch(() => {});
+                applyPlaybackState(state);
+
+                remoteAudioState.set(peerUUID, state);
+                return state;
+            }
+
+            function normalizeIncomingAudioChunk(audioChunk) {
+                if (!audioChunk) return null;
+                if (audioChunk instanceof Blob || audioChunk instanceof ArrayBuffer || audioChunk instanceof Uint8Array) return audioChunk;
+
+                if (Array.isArray(audioChunk) && audioChunk.every(x => Number.isInteger(x) && x >= 0 && x <= 255)) {
+                    return new Uint8Array(audioChunk);
                 }
-            };
-            userDiv.appendChild(volumeSlider);
 
-            connectedUsers.appendChild(userDiv);
-        }
-    });
+                if (audioChunk.type === "Buffer" && Array.isArray(audioChunk.data)) {
+                    return new Uint8Array(audioChunk.data);
+                }
 
-    players.forEach((_, playerUUID) => {
-        if (playerUUID !== mc_uuid && !activePlayerUUIDs.has(playerUUID)) {
-            removePlayer(playerUUID);
-        }
-    });
+                if (typeof audioChunk === "string") {
+                    try {
+                        const binary = atob(audioChunk);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        return bytes;
+                    } catch (_) {
+                        return null;
+                    }
+                }
 
-    document.getElementById("local-player-text").innerText = localPlayer.name;
+                return null;
+            }
 
-    if (!activePlayerUUIDs.has(mc_uuid)) {
-        window.close();
-    }
-});
+            function detectMimeTypeFromChunk(chunk) {
+                const bytes = chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk);
+                if (bytes.length >= 4) {
+                    if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
+                        return "audio/webm;codecs=opus";
+                    }
+                    if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
+                        return "audio/ogg;codecs=opus";
+                    }
+                }
+                return null;
+            }
 
-});
-</script>
+            function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
+                if (peerUUID === localUUID) return;
+
+                const normalizedChunk = normalizeIncomingAudioChunk(audioChunk);
+                if (!normalizedChunk) return;
+
+                const bytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
+                const detectedMimeType = detectMimeTypeFromChunk(bytes);
+                const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
+
+                const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
+                if (!state) return;
+
+                applySpatialFromPacket(state, spatial);
+
+                state.queue.push(bytes);
+                if (state.queue.length > REMOTE_MAX_QUEUE_CHUNKS) {
+                    state.queue.splice(0, state.queue.length - REMOTE_MAX_QUEUE_CHUNKS);
+                }
+
+                appendStreamChunk(peerUUID);
+                trimPlaybackLatency(state);
+            }
+
+            function removePlayer(peerUUID) {
+                const card = document.getElementById(`peer-${peerUUID}`);
+                if (card) card.remove();
+                destroyRemoteStream(peerUUID);
+                players.delete(peerUUID);
+                updateOnlineCount();
+            }
+
+            function ensurePlayerCard(peerUUID, playerName) {
+                if (peerUUID === localUUID) return;
+                let card = document.getElementById(`peer-${peerUUID}`);
+                if (card) {
+                    const nameEl = card.querySelector(".user-name");
+                    if (nameEl) nameEl.textContent = playerName || peerUUID;
+                    return;
+                }
+
+                card = document.createElement("div");
+                card.className = "user-card";
+                card.id = `peer-${peerUUID}`;
+
+                const main = document.createElement("div");
+                main.className = "user-main";
+
+                const left = document.createElement("div");
+                left.className = "user-left";
+
+                const avatar = document.createElement("img");
+                avatar.className = "avatar";
+                avatar.src = `https://mc-heads.net/avatar/${peerUUID}/72`;
+                avatar.width = 36;
+                avatar.height = 36;
+
+                const textWrap = document.createElement("div");
+                const nameEl = document.createElement("div");
+                nameEl.className = "user-name";
+                nameEl.textContent = playerName || peerUUID;
+
+                const stateEl = document.createElement("div");
+                stateEl.className = "peer-state";
+                stateEl.textContent = "Connected";
+
+                textWrap.appendChild(nameEl);
+                textWrap.appendChild(stateEl);
+                left.appendChild(avatar);
+                left.appendChild(textWrap);
+
+                const actions = document.createElement("div");
+                actions.className = "user-actions";
+
+                const toggleBtn = document.createElement("button");
+                toggleBtn.textContent = "Sound";
+
+                const slider = document.createElement("input");
+                slider.type = "range";
+                slider.min = "0";
+                slider.max = "2";
+                slider.step = "0.01";
+                slider.value = "1";
+
+                actions.appendChild(toggleBtn);
+                actions.appendChild(slider);
+                main.appendChild(left);
+                main.appendChild(actions);
+                card.appendChild(main);
+                usersList.appendChild(card);
+
+                toggleBtn.addEventListener("click", () => {
+                    const state = remoteAudioState.get(peerUUID);
+                    if (!state) return;
+                    state.muted = !state.muted;
+                    toggleBtn.textContent = state.muted ? "Muted" : "Sound";
+                    applyPlaybackState(state);
+                });
+
+                slider.addEventListener("input", () => {
+                    const state = remoteAudioState.get(peerUUID);
+                    if (!state) return;
+                    state.volume = Number(slider.value);
+                    applyPlaybackState(state);
+                });
+            }
+
+            function stopRecorder() {
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                }
+            }
+
+            function startRecorderForBitrate(bitrateKbps) {
+                if (!localStream || bitrateKbps <= 0) return;
+
+                stopRecorder();
+
+                const candidates = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus"];
+                const supported = candidates.find(type => {
+                    return window.MediaRecorder && typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type);
+                });
+
+                const options = { audioBitsPerSecond: bitrateKbps * 1000 };
+                if (supported) options.mimeType = supported;
+
+                try {
+                    mediaRecorder = new MediaRecorder(localStream, options);
+                } catch (_) {
+                    mediaRecorder = new MediaRecorder(localStream);
+                }
+
+                recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
+
+                mediaRecorder.ondataavailable = async event => {
+                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled) return;
+                    const audioBuffer = await event.data.arrayBuffer();
+                    socket.emit("audio", { audio: audioBuffer, mimeType: recorderMimeType });
+                };
+
+                mediaRecorder.start(120);
+                recorderBitrate = bitrateKbps;
+            }
+
+            async function refreshMicList() {
+                const prev = micSelect.value;
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const mics = devices.filter(d => d.kind === "audioinput");
+
+                micSelect.innerHTML = "";
+                mics.forEach((mic, idx) => {
+                    const option = document.createElement("option");
+                    option.value = mic.deviceId;
+                    option.textContent = mic.label || `Microphone ${idx + 1}`;
+                    micSelect.appendChild(option);
+                });
+
+                if (prev && Array.from(micSelect.options).some(opt => opt.value === prev)) {
+                    micSelect.value = prev;
+                }
+            }
+
+            async function startLocalStream(deviceId) {
+                const constraints = {
+                    audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+                    video: false
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                localStream = stream;
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = !isMuted;
+                });
+
+                if (latestVoiceState.enabled && latestVoiceState.bitrateKbps > 0) {
+                    startRecorderForBitrate(latestVoiceState.bitrateKbps);
+                }
+            }
+
+            muteBtn.addEventListener("click", () => {
+                isMuted = !isMuted;
+                muteBtn.classList.toggle("active", isMuted);
+                muteBtn.textContent = isMuted ? "Unmute" : "Mute";
+
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(track => {
+                        track.enabled = !isMuted;
+                    });
+                }
+            });
+
+            deafenBtn.addEventListener("click", () => {
+                isDeafened = !isDeafened;
+                deafenBtn.classList.toggle("active", isDeafened);
+                deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
+                remoteAudioState.forEach(state => applyPlaybackState(state));
+            });
+
+            micSelect.addEventListener("change", async () => {
+                try {
+                    await startLocalStream(micSelect.value);
+                    setStatus("Microphone switched", "ok");
+                } catch (_) {
+                    setStatus("Mic switch failed", "bad");
+                }
+            });
+
+            socket.on("connect", () => {
+                setStatus("Connected", "ok");
+                socket.emit("join", `voice-${worldUUID}`, localUUID, authToken);
+            });
+
+            socket.on("disconnect", () => {
+                setStatus("Disconnected", "bad");
+            });
+
+            socket.on("voice-status", state => {
+                if (!state || !state.enabled) {
+                    latestVoiceState = { enabled: false, bitrateKbps: 0 };
+                    voiceQuality.textContent = "Quality: voice disabled";
+                    stopRecorder();
+                    recorderBitrate = 0;
+                    return;
+                }
+
+                latestVoiceState = { enabled: true, bitrateKbps: state.bitrate_kbps || 0 };
+                voiceQuality.textContent = `Quality: ${latestVoiceState.bitrateKbps} kbps`;
+
+                if (latestVoiceState.bitrateKbps > 0 && latestVoiceState.bitrateKbps !== recorderBitrate) {
+                    startRecorderForBitrate(latestVoiceState.bitrateKbps);
+                }
+            });
+
+            socket.on("audio", data => {
+                if (!data || !data.from || !data.audio) return;
+                if (data.from === localUUID) return;
+                updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
+            });
+
+            socket.on("peer-left", uuid => {
+                if (!uuid || uuid === localUUID) return;
+                removePlayer(uuid);
+            });
+
+            socket.on("update", packet => {
+                if (!Array.isArray(packet)) return;
+
+                const active = new Set();
+
+                packet.forEach(player => {
+                    active.add(player.uuid);
+
+                    const entry = {
+                        name: player.Name || player.uuid,
+                        pos: Array.isArray(player.Pos) ? player.Pos : [0, 0, 0],
+                        rot: Array.isArray(player.Rot) ? player.Rot : [0, 0]
+                    };
+
+                    players.set(player.uuid, entry);
+
+                    if (player.uuid === localUUID) {
+                        localName.textContent = entry.name;
+                        return;
+                    }
+
+                    ensurePlayerCard(player.uuid, entry.name);
+                });
+
+                Array.from(players.keys()).forEach(uuid => {
+                    if (uuid !== localUUID && !active.has(uuid)) {
+                        removePlayer(uuid);
+                    }
+                });
+
+                if (!active.has(localUUID)) {
+                    setStatus("Room closed", "bad");
+                    window.close();
+                }
+
+                updateOnlineCount();
+            });
+
+            try {
+                await startLocalStream();
+                await refreshMicList();
+                setStatus("Microphone ready", "ok");
+            } catch (_) {
+                setStatus("Microphone access failed", "bad");
+            }
+
+            navigator.mediaDevices.addEventListener("devicechange", () => {
+                refreshMicList().catch(() => {});
+            });
+
+            window.addEventListener("beforeunload", () => {
+                stopRecorder();
+                remoteAudioState.forEach((_, uuid) => destroyRemoteStream(uuid));
+                if (localStream) localStream.getTracks().forEach(track => track.stop());
+                socket.disconnect();
+            });
+        });
+    </script>
 </body>
 </html>

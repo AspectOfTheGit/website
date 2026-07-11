@@ -6,13 +6,15 @@ from flask import (
 
 from src.data import data
 from src.socket import emit_log, connected
-from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION
+from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION, OTHER_TOKEN
 from src.utils.player_api import format_uuid
 from src.voice_bandwidth import get_voice_bandwidth_controller
 import re
 import time
 import string
 import secrets
+import calendar
+from datetime import datetime, timezone
 
 voice = Blueprint(
     "voice",
@@ -27,6 +29,66 @@ voice_bandwidth_controller = get_voice_bandwidth_controller()
 @voice.get("/version")
 def apivoiceversion():
     return f"\"{DATAPACK_VERSION}\"", 200, {'Content-Type': 'text/plain'}
+
+
+@voice.get("/usage")
+def apivoiceusage():
+    token = request.headers.get("token", "") or request.args.get("token", "")
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    now_ms = time.time_ns() // 1000000
+    now_utc = datetime.now(timezone.utc)
+    _, days_in_month = calendar.monthrange(now_utc.year, now_utc.month)
+    day_of_month = max(1, now_utc.day)
+
+    bandwidth = voice_bandwidth_controller.get_state()
+    used_bytes = bandwidth.get("used_bytes", 0)
+    projected_used_bytes = int((used_bytes / day_of_month) * days_in_month)
+
+    rooms = []
+    active_worlds = 0
+
+    for world, room_data in voice_rooms.items():
+        room_name = f"voice-{world}"
+        world_last_voice_ms = data.get("world", {}).get(world, {}).get("voice", 0)
+        idle_ms = now_ms - world_last_voice_ms if world_last_voice_ms else None
+        is_active = bool(idle_ms is not None and idle_ms <= MAX_TIME_TILL_VOICE_ROOM_CLOSE)
+
+        if is_active:
+            active_worlds += 1
+
+        tracked_players = room_data.get("players", [])
+        web_connected = connected.get(room_name, {})
+
+        rooms.append(
+            {
+                "world": world,
+                "active": is_active,
+                "idle_ms": idle_ms,
+                "tracked_players": len(tracked_players),
+                "web_connected_clients": len(web_connected),
+            }
+        )
+
+    return jsonify(
+        {
+            "timestamp_utc": now_utc.isoformat(),
+            "rooms": {
+                "total": len(voice_rooms),
+                "active": active_worlds,
+                "details": rooms,
+            },
+            "bandwidth": {
+                **bandwidth,
+                "used_gb": round(used_bytes / (1024 ** 3), 3),
+                "limit_gb": round(bandwidth.get("limit_bytes", 0) / (1024 ** 3), 3),
+                "projected_used_bytes_month_end": projected_used_bytes,
+                "projected_used_gb_month_end": round(projected_used_bytes / (1024 ** 3), 3),
+                "month": f"{now_utc.year:04d}-{now_utc.month:02d}",
+            },
+        }
+    ), 200
 
 @voice.post("/update")
 def apivoiceupdate():

@@ -270,6 +270,9 @@ def voice_room(world):
     if world not in data["world"]:
         return jsonify({"error": "Voice room not found"}), 400
 
+    if world not in voice_rooms or "players" not in voice_rooms[world]:
+        return jsonify({"error": "Voice room not active"}), 400
+
     uuid=next((p["uuid"] for p in voice_rooms[world]["players"] if p["auth"] == auth), None)
 
     if uuid == None:
