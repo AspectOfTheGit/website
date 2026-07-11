@@ -137,12 +137,50 @@ function startRecorderForBitrate(bitrateKbps) {
     recorderBitrate = bitrateKbps;
 }
 
+function normalizeIncomingAudioChunk(audioChunk) {
+    if (!audioChunk) {
+        return null;
+    }
+
+    if (audioChunk instanceof Blob || audioChunk instanceof ArrayBuffer || audioChunk instanceof Uint8Array) {
+        return audioChunk;
+    }
+
+    if (Array.isArray(audioChunk) && audioChunk.every(x => Number.isInteger(x) && x >= 0 && x <= 255)) {
+        return new Uint8Array(audioChunk);
+    }
+
+    if (audioChunk.type === "Buffer" && Array.isArray(audioChunk.data)) {
+        return new Uint8Array(audioChunk.data);
+    }
+
+    if (typeof audioChunk === "string") {
+        try {
+            const binary = atob(audioChunk);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    return null;
+}
+
 function updateRemoteAudio(peerUUID, audioChunk) {
     if (peerUUID === mc_uuid) {
         return;
     }
 
-    const blob = new Blob([audioChunk], { type: "audio/webm;codecs=opus" });
+    const normalizedChunk = normalizeIncomingAudioChunk(audioChunk);
+    if (!normalizedChunk) {
+        return;
+    }
+
+    const blob = new Blob([normalizedChunk], { type: "audio/webm;codecs=opus" });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audio.autoplay = true;

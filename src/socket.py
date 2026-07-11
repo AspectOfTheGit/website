@@ -63,6 +63,15 @@ def normalize_audio_chunk(chunk):
         except Exception:
             return None
 
+    if isinstance(chunk, (list, tuple)):
+        # Some clients/proxies may serialize binary payloads to integer arrays.
+        if chunk and all(isinstance(x, int) and 0 <= x <= 255 for x in chunk):
+            try:
+                return bytes(chunk)
+            except Exception:
+                return None
+        return None
+
     if hasattr(chunk, "tobytes"):
         try:
             return chunk.tobytes()
@@ -70,6 +79,10 @@ def normalize_audio_chunk(chunk):
             return None
 
     if isinstance(chunk, dict):
+        # Node-style Buffer JSON payload: {"type": "Buffer", "data": [...]}.
+        if chunk.get("type") == "Buffer" and isinstance(chunk.get("data"), (list, tuple)):
+            return normalize_audio_chunk(chunk.get("data"))
+
         for key in ("audio", "data", "chunk"):
             if key in chunk:
                 return normalize_audio_chunk(chunk[key])
@@ -87,13 +100,16 @@ def parse_audio_event_payload(data=None, binary_payload=None):
         sender_uuid = data.get("from")
         chunk = data.get("audio") or data.get("data") or data.get("chunk")
     elif isinstance(data, (list, tuple)):
-        for item in data:
-            if isinstance(item, dict):
-                room = item.get("room") or room
-                sender_uuid = item.get("from") or sender_uuid
-                chunk = item.get("audio") or item.get("data") or item.get("chunk") or chunk
-            elif chunk is None and (isinstance(item, (bytes, bytearray, memoryview)) or hasattr(item, "tobytes")):
-                chunk = item
+        if data and all(isinstance(item, int) and 0 <= item <= 255 for item in data):
+            chunk = data
+        else:
+            for item in data:
+                if isinstance(item, dict):
+                    room = item.get("room") or room
+                    sender_uuid = item.get("from") or sender_uuid
+                    chunk = item.get("audio") or item.get("data") or item.get("chunk") or chunk
+                elif chunk is None and (isinstance(item, (bytes, bytearray, memoryview)) or hasattr(item, "tobytes")):
+                    chunk = item
 
     if chunk is None and binary_payload is not None:
         chunk = binary_payload
@@ -368,7 +384,7 @@ def handle_audio(data=None, *args):
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", [uuid, chunk], room=peer_sid)
+        socketio.emit("audio", {"from": uuid, "audio": chunk}, room=peer_sid)
 
     emit("voice-status", state)
 
