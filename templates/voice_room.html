@@ -278,10 +278,23 @@
             let isMuted = false;
             let isDeafened = false;
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
+            let micGateContext = null;
+            let micGateAnalyser = null;
+            let micGateSource = null;
+            let micGateData = null;
+            let micGateAnimationFrame = null;
+            let micGateOpenUntil = 0;
+            let micVoiceActive = true;
+
+            const peerRestartRequests = new Map();
+            const peerAwaitingInit = new Map();
 
             const REMOTE_MAX_QUEUE_CHUNKS = 12;
             const REMOTE_MAX_LAG_SECONDS = 1.6;
             const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
+            const MIC_GATE_OPEN_RMS = 0.04;
+            const MIC_GATE_CLOSE_RMS = 0.02;
+            const MIC_GATE_HOLD_MS = 400;
 
             function setStatus(text, kind) {
                 statusText.textContent = text;
@@ -309,6 +322,102 @@
             function normalizeMimeType(mimeType) {
                 if (typeof mimeType === "string" && mimeType.trim()) return mimeType.trim();
                 return "audio/webm;codecs=opus";
+            }
+
+            function tearDownMicGate() {
+                if (micGateAnimationFrame) {
+                    cancelAnimationFrame(micGateAnimationFrame);
+                    micGateAnimationFrame = null;
+                }
+
+                try {
+                    if (micGateSource) {
+                        micGateSource.disconnect();
+                    }
+                } catch (_) {}
+
+                try {
+                    if (micGateAnalyser) {
+                        micGateAnalyser.disconnect();
+                    }
+                } catch (_) {}
+
+                micGateSource = null;
+                micGateAnalyser = null;
+                micGateData = null;
+
+                if (micGateContext) {
+                    micGateContext.close().catch(() => {});
+                    micGateContext = null;
+                }
+
+                micVoiceActive = true;
+                micGateOpenUntil = 0;
+            }
+
+            function setupMicGate(stream) {
+                tearDownMicGate();
+
+                const Ctor = window.AudioContext || window.webkitAudioContext;
+                if (!Ctor) {
+                    micVoiceActive = true;
+                    return;
+                }
+
+                try {
+                    micGateContext = new Ctor();
+                    micGateSource = micGateContext.createMediaStreamSource(stream);
+                    micGateAnalyser = micGateContext.createAnalyser();
+                    micGateAnalyser.fftSize = 1024;
+                    micGateAnalyser.smoothingTimeConstant = 0.2;
+                    micGateSource.connect(micGateAnalyser);
+                    micGateData = new Uint8Array(micGateAnalyser.fftSize);
+                } catch (_) {
+                    micVoiceActive = true;
+                    return;
+                }
+
+                const tick = () => {
+                    if (!micGateAnalyser || !micGateData) {
+                        return;
+                    }
+
+                    micGateAnalyser.getByteTimeDomainData(micGateData);
+
+                    let sumSquares = 0;
+                    for (let i = 0; i < micGateData.length; i++) {
+                        const sample = (micGateData[i] - 128) / 128;
+                        sumSquares += sample * sample;
+                    }
+
+                    const rms = Math.sqrt(sumSquares / micGateData.length);
+                    const now = Date.now();
+
+                    if (rms >= MIC_GATE_OPEN_RMS) {
+                        micVoiceActive = true;
+                        micGateOpenUntil = now + MIC_GATE_HOLD_MS;
+                    } else if (rms <= MIC_GATE_CLOSE_RMS && now >= micGateOpenUntil) {
+                        micVoiceActive = false;
+                    } else if (now < micGateOpenUntil) {
+                        micVoiceActive = true;
+                    }
+
+                    micGateAnimationFrame = requestAnimationFrame(tick);
+                };
+
+                micVoiceActive = false;
+                tick();
+            }
+
+            function requestPeerRestart(peerUUID) {
+                if (!peerUUID || peerUUID === localUUID) return;
+
+                const now = Date.now();
+                const lastAt = peerRestartRequests.get(peerUUID) || 0;
+                if ((now - lastAt) < 2000) return;
+
+                peerRestartRequests.set(peerUUID, now);
+                socket.emit("voice-request-restart", { peer: peerUUID });
             }
 
             function pickSupportedMimeType(preferred) {
@@ -560,6 +669,21 @@
                 const detectedMimeType = detectMimeTypeFromChunk(bytes);
                 const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
 
+                const hasStream = remoteAudioState.has(peerUUID);
+                if (!hasStream) {
+                    const awaitingInit = peerAwaitingInit.has(peerUUID) ? peerAwaitingInit.get(peerUUID) : true;
+                    peerAwaitingInit.set(peerUUID, awaitingInit);
+
+                    if (awaitingInit && !detectedMimeType) {
+                        requestPeerRestart(peerUUID);
+                        return;
+                    }
+
+                    if (detectedMimeType) {
+                        peerAwaitingInit.set(peerUUID, false);
+                    }
+                }
+
                 const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
                 if (!state) return;
 
@@ -578,6 +702,8 @@
                 const card = document.getElementById(`peer-${peerUUID}`);
                 if (card) card.remove();
                 destroyRemoteStream(peerUUID);
+                peerAwaitingInit.delete(peerUUID);
+                peerRestartRequests.delete(peerUUID);
                 players.delete(peerUUID);
                 updateOnlineCount();
             }
@@ -685,7 +811,7 @@
                 recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
 
                 mediaRecorder.ondataavailable = async event => {
-                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled) return;
+                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled || !micVoiceActive) return;
                     const audioBuffer = await event.data.arrayBuffer();
                     socket.emit("audio", { audio: audioBuffer, mimeType: recorderMimeType });
                 };
@@ -714,7 +840,12 @@
 
             async function startLocalStream(deviceId) {
                 const constraints = {
-                    audio: deviceId ? { deviceId: { exact: deviceId } } : true,
+                    audio: {
+                        ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                    },
                     video: false
                 };
 
@@ -727,6 +858,7 @@
                 localStream.getAudioTracks().forEach(track => {
                     track.enabled = !isMuted;
                 });
+                setupMicGate(localStream);
 
                 if (latestVoiceState.enabled && latestVoiceState.bitrateKbps > 0) {
                     startRecorderForBitrate(latestVoiceState.bitrateKbps);
@@ -785,6 +917,24 @@
                 if (latestVoiceState.bitrateKbps > 0 && latestVoiceState.bitrateKbps !== recorderBitrate) {
                     startRecorderForBitrate(latestVoiceState.bitrateKbps);
                 }
+            });
+
+            socket.on("existing-peers", peers => {
+                if (!Array.isArray(peers)) return;
+
+                peers.forEach(peerUUID => {
+                    if (!peerUUID || peerUUID === localUUID) return;
+                    requestPeerRestart(peerUUID);
+                    peerAwaitingInit.set(peerUUID, true);
+                });
+            });
+
+            socket.on("voice-restart-stream", () => {
+                if (!latestVoiceState.enabled || !latestVoiceState.bitrateKbps || !localStream) {
+                    return;
+                }
+
+                startRecorderForBitrate(latestVoiceState.bitrateKbps);
             });
 
             socket.on("audio", data => {
@@ -851,6 +1001,7 @@
             window.addEventListener("beforeunload", () => {
                 stopRecorder();
                 remoteAudioState.forEach((_, uuid) => destroyRemoteStream(uuid));
+                tearDownMicGate();
                 if (localStream) localStream.getTracks().forEach(track => track.stop());
                 socket.disconnect();
             });
