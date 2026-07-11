@@ -86,6 +86,10 @@ const peerAwaitingInit = new Map();
 let isMuted = false;
 let isDeafened = false;
 
+const REMOTE_MAX_QUEUE_CHUNKS = 12;
+const REMOTE_MAX_LAG_SECONDS = 1.6;
+const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
+
 function ensureAudioContext() {
     if (!window.AudioContext && !window.webkitAudioContext) {
         return null;
@@ -170,15 +174,38 @@ function appendStreamChunk(peerUUID) {
     }
 }
 
+function trimPlaybackLatency(state) {
+    if (!state || !state.audio) {
+        return;
+    }
+
+    const audio = state.audio;
+    if (!audio.buffered || audio.buffered.length === 0) {
+        return;
+    }
+
+    try {
+        const end = audio.buffered.end(audio.buffered.length - 1);
+        const lag = end - audio.currentTime;
+        if (lag > REMOTE_MAX_LAG_SECONDS) {
+            audio.currentTime = Math.max(0, end - REMOTE_TARGET_LIVE_LATENCY_SECONDS);
+        }
+    } catch (_) {}
+}
+
 function rebuildRemoteStream(peerUUID, previousState, prependChunks = []) {
     if (!previousState) {
         return;
     }
 
-    const pendingChunks = [
+    let pendingChunks = [
         ...prependChunks,
         ...previousState.queue
     ];
+
+    if (pendingChunks.length > REMOTE_MAX_QUEUE_CHUNKS) {
+        pendingChunks = pendingChunks.slice(pendingChunks.length - REMOTE_MAX_QUEUE_CHUNKS);
+    }
 
     const snapshot = {
         mimeType: previousState.mimeType,
@@ -340,7 +367,10 @@ function getOrCreateRemoteState(peerUUID, requestedMimeType) {
         try {
             state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
             state.sourceBuffer.mode = "sequence";
-            state.sourceBuffer.addEventListener("updateend", () => appendStreamChunk(peerUUID));
+            state.sourceBuffer.addEventListener("updateend", () => {
+                trimPlaybackLatency(state);
+                appendStreamChunk(peerUUID);
+            });
             appendStreamChunk(peerUUID);
         } catch (err) {
             console.warn("Failed to initialize remote audio SourceBuffer", err);
@@ -503,11 +533,12 @@ function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
 
     state.queue.push(chunkBytes);
 
-    if (state.queue.length > 128) {
-        state.queue.splice(0, state.queue.length - 128);
+    if (state.queue.length > REMOTE_MAX_QUEUE_CHUNKS) {
+        state.queue.splice(0, state.queue.length - REMOTE_MAX_QUEUE_CHUNKS);
     }
 
     appendStreamChunk(peerUUID);
+    trimPlaybackLatency(state);
 }
 
 function removePlayer(peerUUID) {

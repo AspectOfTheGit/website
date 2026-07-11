@@ -219,7 +219,7 @@ def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
     return {
         "distance": distance,
         "gain": gain,
-        "pan": pan,
+        "pan": -pan,
     }
 
 
