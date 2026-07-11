@@ -94,11 +94,13 @@ def parse_audio_event_payload(data=None, binary_payload=None):
     room = None
     sender_uuid = None
     chunk = None
+    mime_type = None
 
     if isinstance(data, dict):
         room = data.get("room")
         sender_uuid = data.get("from")
         chunk = data.get("audio") or data.get("data") or data.get("chunk")
+        mime_type = data.get("mimeType") or data.get("mime")
     elif isinstance(data, (list, tuple)):
         if data and all(isinstance(item, int) and 0 <= item <= 255 for item in data):
             chunk = data
@@ -108,6 +110,7 @@ def parse_audio_event_payload(data=None, binary_payload=None):
                     room = item.get("room") or room
                     sender_uuid = item.get("from") or sender_uuid
                     chunk = item.get("audio") or item.get("data") or item.get("chunk") or chunk
+                    mime_type = item.get("mimeType") or item.get("mime") or mime_type
                 elif chunk is None and (isinstance(item, (bytes, bytearray, memoryview)) or hasattr(item, "tobytes")):
                     chunk = item
 
@@ -117,7 +120,7 @@ def parse_audio_event_payload(data=None, binary_payload=None):
     if chunk is None and data is not None and not isinstance(data, (dict, list, tuple)):
         chunk = data
 
-    return room, sender_uuid, normalize_audio_chunk(chunk)
+    return room, sender_uuid, normalize_audio_chunk(chunk), mime_type
 
 
 # Events
@@ -351,7 +354,7 @@ def handle_audio(data=None, *args):
     room = socket_rooms.get(request.sid)
     uuid = session.get("mc_uuid")
 
-    payload_room, payload_uuid, chunk = parse_audio_event_payload(data, next((arg for arg in args if arg is not None), None))
+    payload_room, payload_uuid, chunk, mime_type = parse_audio_event_payload(data, next((arg for arg in args if arg is not None), None))
     room = payload_room or room
     uuid = payload_uuid or uuid
 
@@ -384,7 +387,7 @@ def handle_audio(data=None, *args):
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", {"from": uuid, "audio": chunk}, room=peer_sid)
+        socketio.emit("audio", {"from": uuid, "audio": chunk, "mimeType": mime_type}, room=peer_sid)
 
     emit("voice-status", state)
 

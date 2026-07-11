@@ -68,7 +68,7 @@ const connectedUsers = document.getElementById("connected-users");
 
 const players = new Map();
 const remoteAudio = new Map();
-const remoteAudioQueues = new Map();
+const remoteAudioStreams = new Map();
 const localPlayer = {
     uuid: mc_uuid,
     name: "You",
@@ -79,6 +79,7 @@ const localPlayer = {
 let localStream = null;
 let mediaRecorder = null;
 let recorderBitrate = 0;
+let recorderMimeType = "audio/webm;codecs=opus";
 let isMuted = false;
 let isDeafened = false;
 
@@ -104,63 +105,117 @@ function stopRecorder() {
     }
 }
 
-function getOrCreateRemoteState(peerUUID) {
-    if (!remoteAudioQueues.has(peerUUID)) {
-        remoteAudioQueues.set(peerUUID, {
-            queue: [],
-            playing: false,
-            muted: false,
-            volume: 1
-        });
+function normalizeMimeType(mimeType) {
+    if (typeof mimeType === "string" && mimeType.trim()) {
+        return mimeType.trim();
     }
 
-    return remoteAudioQueues.get(peerUUID);
+    return "audio/webm;codecs=opus";
 }
 
-function playNextChunk(peerUUID) {
-    const state = remoteAudioQueues.get(peerUUID);
+function pickSupportedMimeType(preferred) {
+    const candidates = [
+        normalizeMimeType(preferred),
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus"
+    ];
+
+    if (!window.MediaSource || typeof MediaSource.isTypeSupported !== "function") {
+        return null;
+    }
+
+    return candidates.find(type => MediaSource.isTypeSupported(type)) || null;
+}
+
+function appendStreamChunk(peerUUID) {
+    const state = remoteAudioStreams.get(peerUUID);
+    if (!state || !state.sourceBuffer || state.sourceBuffer.updating) {
+        return;
+    }
+
+    const nextChunk = state.queue.shift();
+    if (!nextChunk) {
+        return;
+    }
+
+    try {
+        state.sourceBuffer.appendBuffer(nextChunk);
+    } catch (err) {
+        console.warn("Failed to append remote audio chunk", err);
+    }
+}
+
+function destroyRemoteStream(peerUUID) {
+    const state = remoteAudioStreams.get(peerUUID);
     if (!state) {
         return;
     }
 
-    if (state.playing) {
-        return;
+    try {
+        if (state.audio) {
+            state.audio.pause();
+            state.audio.src = "";
+        }
+    } catch (_) {}
+
+    if (state.objectUrl) {
+        URL.revokeObjectURL(state.objectUrl);
     }
 
-    const next = state.queue.shift();
-    if (!next) {
-        return;
+    remoteAudioStreams.delete(peerUUID);
+    remoteAudio.delete(peerUUID);
+}
+
+function getOrCreateRemoteState(peerUUID, requestedMimeType) {
+    const supportedMimeType = pickSupportedMimeType(requestedMimeType);
+    if (!supportedMimeType) {
+        return null;
     }
 
-    state.playing = true;
+    const existing = remoteAudioStreams.get(peerUUID);
+    if (existing && existing.mimeType === supportedMimeType) {
+        return existing;
+    }
 
-    const audio = new Audio(next.url);
+    if (existing) {
+        destroyRemoteStream(peerUUID);
+    }
+
+    const mediaSource = new MediaSource();
+    const objectUrl = URL.createObjectURL(mediaSource);
+    const audio = new Audio(objectUrl);
     audio.autoplay = true;
-    audio.muted = isDeafened || state.muted;
-    audio.volume = state.volume;
-    remoteAudio.set(peerUUID, audio);
+    audio.muted = isDeafened;
+    audio.volume = 1;
 
-    const finishChunk = () => {
-        URL.revokeObjectURL(next.url);
-        if (remoteAudio.get(peerUUID) === audio) {
-            remoteAudio.delete(peerUUID);
-        }
-
-        const latest = remoteAudioQueues.get(peerUUID);
-        if (!latest) {
-            return;
-        }
-
-        latest.playing = false;
-        playNextChunk(peerUUID);
+    const state = {
+        mimeType: supportedMimeType,
+        mediaSource,
+        sourceBuffer: null,
+        queue: [],
+        muted: false,
+        volume: 1,
+        objectUrl,
+        audio
     };
 
-    audio.onended = finishChunk;
-    audio.onerror = finishChunk;
+    mediaSource.addEventListener("sourceopen", () => {
+        try {
+            state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
+            state.sourceBuffer.mode = "sequence";
+            state.sourceBuffer.addEventListener("updateend", () => appendStreamChunk(peerUUID));
+            appendStreamChunk(peerUUID);
+        } catch (err) {
+            console.warn("Failed to initialize remote audio SourceBuffer", err);
+            destroyRemoteStream(peerUUID);
+        }
+    }, { once: true });
 
-    audio.play().catch(() => {
-        finishChunk();
-    });
+    audio.play().catch(() => {});
+
+    remoteAudioStreams.set(peerUUID, state);
+    remoteAudio.set(peerUUID, audio);
+    return state;
 }
 
 function startRecorderForBitrate(bitrateKbps) {
@@ -172,10 +227,22 @@ function startRecorderForBitrate(bitrateKbps) {
         mediaRecorder.stop();
     }
 
+    const recorderCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus"
+    ];
+
+    const supportedRecorderMime = recorderCandidates.find(type => {
+        return window.MediaRecorder && typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type);
+    });
+
     const options = {
-        mimeType: "audio/webm;codecs=opus",
         audioBitsPerSecond: bitrateKbps * 1000
     };
+
+    if (supportedRecorderMime) {
+        options.mimeType = supportedRecorderMime;
+    }
 
     try {
         mediaRecorder = new MediaRecorder(localStream, options);
@@ -184,13 +251,18 @@ function startRecorderForBitrate(bitrateKbps) {
         mediaRecorder = new MediaRecorder(localStream);
     }
 
+    recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
+
     mediaRecorder.ondataavailable = async event => {
         if (!event.data || event.data.size === 0 || isMuted || bitrateKbps <= 0) {
             return;
         }
 
         const audioBuffer = await event.data.arrayBuffer();
-        socket.emit("audio", audioBuffer);
+        socket.emit("audio", {
+            audio: audioBuffer,
+            mimeType: recorderMimeType
+        });
     };
 
     mediaRecorder.start(250);
@@ -230,7 +302,7 @@ function normalizeIncomingAudioChunk(audioChunk) {
     return null;
 }
 
-function updateRemoteAudio(peerUUID, audioChunk) {
+function updateRemoteAudio(peerUUID, audioChunk, mimeType) {
     if (peerUUID === mc_uuid) {
         return;
     }
@@ -240,18 +312,19 @@ function updateRemoteAudio(peerUUID, audioChunk) {
         return;
     }
 
-    const blob = new Blob([normalizedChunk], { type: "audio/webm;codecs=opus" });
-    const url = URL.createObjectURL(blob);
-    const state = getOrCreateRemoteState(peerUUID);
-    state.queue.push({ url });
-
-    // Prevent unbounded memory growth when packets arrive faster than playback.
-    if (state.queue.length > 32) {
-        const dropped = state.queue.splice(0, state.queue.length - 32);
-        dropped.forEach(item => URL.revokeObjectURL(item.url));
+    const state = getOrCreateRemoteState(peerUUID, mimeType);
+    if (!state) {
+        return;
     }
 
-    playNextChunk(peerUUID);
+    const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
+    state.queue.push(chunkBytes);
+
+    if (state.queue.length > 128) {
+        state.queue.splice(0, state.queue.length - 128);
+    }
+
+    appendStreamChunk(peerUUID);
 }
 
 function removePlayer(peerUUID) {
@@ -262,14 +335,9 @@ function removePlayer(peerUUID) {
     const audio = remoteAudio.get(peerUUID);
     if (audio) {
         audio.pause();
-        remoteAudio.delete(peerUUID);
     }
 
-    const state = remoteAudioQueues.get(peerUUID);
-    if (state) {
-        state.queue.forEach(item => URL.revokeObjectURL(item.url));
-        remoteAudioQueues.delete(peerUUID);
-    }
+    destroyRemoteStream(peerUUID);
 
     const userDiv = document.getElementById(peerUUID);
     if (userDiv) {
@@ -319,8 +387,10 @@ muteBtn.onclick = () => {
 
 deafenBtn.onclick = () => {
     isDeafened = !isDeafened;
-    remoteAudio.forEach(audio => {
-        audio.muted = isDeafened;
+    remoteAudioStreams.forEach(state => {
+        if (state.audio) {
+            state.audio.muted = isDeafened || state.muted;
+        }
     });
     deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
 };
@@ -347,7 +417,7 @@ socket.on("audio", data => {
             return;
         }
 
-        updateRemoteAudio(from, audioChunk);
+        updateRemoteAudio(from, audioChunk, recorderMimeType);
         return;
     }
 
@@ -356,12 +426,12 @@ socket.on("audio", data => {
             return;
         }
 
-        updateRemoteAudio(data.from, data.audio);
+        updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType);
         return;
     }
 
     if (data instanceof ArrayBuffer || data instanceof Blob || data instanceof Uint8Array) {
-        updateRemoteAudio("remote", data);
+        updateRemoteAudio("remote", data, recorderMimeType);
     }
 });
 
@@ -406,11 +476,12 @@ socket.on("update", data => {
             muteBtn.onclick = () => {
                 muteBtn.dataset.muted = muteBtn.dataset.muted === "true" ? "false" : "true";
                 muteBtn.textContent = muteBtn.dataset.muted === "true" ? "🔇" : "🔊";
-                const state = getOrCreateRemoteState(player.uuid);
-                state.muted = muteBtn.dataset.muted === "true";
-                const audio = remoteAudio.get(player.uuid);
-                if (audio) {
-                    audio.muted = isDeafened || state.muted;
+                const state = remoteAudioStreams.get(player.uuid);
+                if (state) {
+                    state.muted = muteBtn.dataset.muted === "true";
+                    if (state.audio) {
+                        state.audio.muted = isDeafened || state.muted;
+                    }
                 }
             };
             userDiv.appendChild(muteBtn);
@@ -422,11 +493,12 @@ socket.on("update", data => {
             volumeSlider.step = 0.01;
             volumeSlider.value = 1;
             volumeSlider.oninput = () => {
-                const state = getOrCreateRemoteState(player.uuid);
-                state.volume = parseFloat(volumeSlider.value);
-                const audio = remoteAudio.get(player.uuid);
-                if (audio) {
-                    audio.volume = state.volume;
+                const state = remoteAudioStreams.get(player.uuid);
+                if (state) {
+                    state.volume = parseFloat(volumeSlider.value);
+                    if (state.audio) {
+                        state.audio.volume = state.volume;
+                    }
                 }
             };
             userDiv.appendChild(volumeSlider);
