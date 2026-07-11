@@ -81,6 +81,7 @@ let mediaRecorder = null;
 let recorderBitrate = 0;
 let recorderMimeType = "audio/webm;codecs=opus";
 let latestVoiceState = { enabled: false, bitrateKbps: 0 };
+const peerRestartRequests = new Map();
 let isMuted = false;
 let isDeafened = false;
 
@@ -468,6 +469,17 @@ function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
     const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
     const detectedMimeType = detectMimeTypeFromChunk(chunkBytes);
     const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
+
+    // If we start receiving mid-stream for an existing peer, ask them for a recorder restart
+    // so we get a fresh init segment and can decode continuously.
+    if (!remoteAudioStreams.has(peerUUID)) {
+        const now = Date.now();
+        const lastRequestAt = peerRestartRequests.get(peerUUID) || 0;
+        if ((now - lastRequestAt) > 2000) {
+            peerRestartRequests.set(peerUUID, now);
+            socket.emit("voice-request-restart", { peer: peerUUID });
+        }
+    }
 
     const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
     if (!state) {

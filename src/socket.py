@@ -488,8 +488,6 @@ def handle_audio(data=None, *args):
             continue
 
         spatial = get_spatial_audio_state(room, uuid, peer_uuid)
-        if spatial and spatial.get("gain", 1.0) < VOICE_SPATIAL_MIN_GAIN:
-            continue
 
         socketio.emit(
             "audio",
@@ -503,6 +501,38 @@ def handle_audio(data=None, *args):
         )
 
     emit("voice-status", state)
+
+
+@socketio.on("voice-request-restart")
+def handle_voice_request_restart(data=None):
+    if not isinstance(data, dict):
+        return
+
+    room = socket_rooms.get(request.sid)
+    requester_uuid = None
+
+    if room and room in connected:
+        requester_uuid = next((member_uuid for member_uuid, member_sid in connected[room].items() if member_sid == request.sid), None)
+
+    if not room or not re.match("^voice-", room) or not requester_uuid:
+        return
+
+    target_uuid = data.get("peer")
+    if not target_uuid or target_uuid == requester_uuid:
+        return
+
+    target_sid = connected.get(room, {}).get(target_uuid)
+    if not target_sid:
+        return
+
+    socketio.emit(
+        "voice-restart-stream",
+        {
+            "reason": "peer-request",
+            "requestedBy": requester_uuid,
+        },
+        room=target_sid,
+    )
 
 
 @socketio.on("signal")
