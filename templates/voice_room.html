@@ -278,6 +278,7 @@
             let isMuted = false;
             let isDeafened = false;
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
+            let audioUnlockHintShown = false;
             let micGateContext = null;
             let micGateAnalyser = null;
             let micGateSource = null;
@@ -317,6 +318,37 @@
                 const ctx = window.__aspectVoiceAudioContext;
                 if (ctx.state === "suspended") ctx.resume().catch(() => {});
                 return ctx;
+            }
+
+            function requestAudioUnlockHint() {
+                if (audioUnlockHintShown) return;
+                audioUnlockHintShown = true;
+                setStatus("Click anywhere to enable audio output", "bad");
+            }
+
+            async function unlockAllRemoteAudio(reason) {
+                const ctx = ensureAudioContext();
+                if (ctx && ctx.state === "suspended") {
+                    try {
+                        await ctx.resume();
+                    } catch (_) {}
+                }
+
+                let unlockedAny = false;
+                for (const state of remoteAudioState.values()) {
+                    if (!state || !state.audio) continue;
+                    try {
+                        await state.audio.play();
+                        unlockedAny = true;
+                    } catch (_) {
+                        requestAudioUnlockHint();
+                    }
+                }
+
+                if (unlockedAny && reason !== "initial") {
+                    audioUnlockHintShown = false;
+                    setStatus("Audio output active", "ok");
+                }
             }
 
             function normalizeMimeType(mimeType) {
@@ -552,6 +584,7 @@
                 const objectUrl = URL.createObjectURL(mediaSource);
                 const audio = new Audio(objectUrl);
                 audio.autoplay = true;
+                audio.playsInline = true;
                 audio.muted = false;
                 audio.volume = 1;
 
@@ -611,7 +644,9 @@
                     }
                 }, { once: true });
 
-                audio.play().catch(() => {});
+                audio.play().catch(() => {
+                    requestAudioUnlockHint();
+                });
                 applyPlaybackState(state);
 
                 remoteAudioState.set(peerUUID, state);
@@ -896,6 +931,7 @@
             socket.on("connect", () => {
                 setStatus("Connected", "ok");
                 socket.emit("join", `voice-${worldUUID}`, localUUID, authToken);
+                unlockAllRemoteAudio("connect").catch(() => {});
             });
 
             socket.on("disconnect", () => {
@@ -941,6 +977,7 @@
                 if (!data || !data.from || !data.audio) return;
                 if (data.from === localUUID) return;
                 updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
+                unlockAllRemoteAudio("packet").catch(() => {});
             });
 
             socket.on("peer-left", uuid => {
@@ -993,6 +1030,19 @@
             } catch (_) {
                 setStatus("Microphone access failed", "bad");
             }
+
+            const unlockHandler = () => {
+                unlockAllRemoteAudio("interaction").catch(() => {});
+            };
+
+            window.addEventListener("pointerdown", unlockHandler);
+            window.addEventListener("keydown", unlockHandler);
+            window.addEventListener("focus", unlockHandler);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) {
+                    unlockAllRemoteAudio("visible").catch(() => {});
+                }
+            });
 
             navigator.mediaDevices.addEventListener("devicechange", () => {
                 refreshMicList().catch(() => {});
