@@ -80,6 +80,7 @@ let localStream = null;
 let mediaRecorder = null;
 let recorderBitrate = 0;
 let recorderMimeType = "audio/webm;codecs=opus";
+let latestVoiceState = { enabled: false, bitrateKbps: 0 };
 let isMuted = false;
 let isDeafened = false;
 
@@ -437,6 +438,23 @@ function normalizeIncomingAudioChunk(audioChunk) {
     return null;
 }
 
+function detectMimeTypeFromChunk(chunk) {
+    const bytes = chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk);
+    if (bytes.length >= 4) {
+        // EBML header for WebM/Matroska.
+        if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
+            return "audio/webm;codecs=opus";
+        }
+
+        // Ogg page header.
+        if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
+            return "audio/ogg;codecs=opus";
+        }
+    }
+
+    return null;
+}
+
 function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
     if (peerUUID === mc_uuid) {
         return;
@@ -447,14 +465,17 @@ function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
         return;
     }
 
-    const state = getOrCreateRemoteState(peerUUID, mimeType);
+    const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
+    const detectedMimeType = detectMimeTypeFromChunk(chunkBytes);
+    const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
+
+    const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
     if (!state) {
         return;
     }
 
     applySpatialFromPacket(state, spatial);
 
-    const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
     state.queue.push(chunkBytes);
 
     if (state.queue.length > 128) {
@@ -532,13 +553,31 @@ deafenBtn.onclick = () => {
 
 socket.on("voice-status", state => {
     if (!state || !state.enabled) {
+        latestVoiceState = { enabled: false, bitrateKbps: 0 };
         stopRecorder();
         return;
     }
 
+    latestVoiceState = {
+        enabled: true,
+        bitrateKbps: state.bitrate_kbps || 0
+    };
+
     if (state.bitrate_kbps && state.bitrate_kbps !== recorderBitrate) {
         startRecorderForBitrate(state.bitrate_kbps);
     }
+});
+
+socket.on("voice-restart-stream", () => {
+    if (!latestVoiceState.enabled) {
+        return;
+    }
+
+    if (!latestVoiceState.bitrateKbps || !localStream) {
+        return;
+    }
+
+    startRecorderForBitrate(latestVoiceState.bitrateKbps);
 });
 
 socket.on("audio", data => {

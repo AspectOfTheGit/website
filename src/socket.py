@@ -214,7 +214,8 @@ def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
     return {
         "distance": distance,
         "gain": gain,
-        "pan": pan,
+        # Flip sign to match browser stereo panner orientation with Minecraft yaw.
+        "pan": -pan,
     }
 
 
@@ -299,6 +300,9 @@ def handle_join(room, uuid=None, auth=None):
 
         existing_peers = [s for s in rooms[room] if s != uuid and s in connected.get(room, {})]
         emit("existing-peers", existing_peers)
+
+        # Force all peers to restart MediaRecorder so late joiners receive a fresh init segment.
+        socketio.emit("voice-restart-stream", {"reason": "peer-join", "peer": uuid}, room=room)
 
         print(f"[socket.py] {uuid} joined room: {room}")
     else:
