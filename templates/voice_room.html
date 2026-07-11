@@ -68,6 +68,7 @@ const connectedUsers = document.getElementById("connected-users");
 
 const players = new Map();
 const remoteAudio = new Map();
+const remoteAudioQueues = new Map();
 const localPlayer = {
     uuid: mc_uuid,
     name: "You",
@@ -101,6 +102,65 @@ function stopRecorder() {
     if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
     }
+}
+
+function getOrCreateRemoteState(peerUUID) {
+    if (!remoteAudioQueues.has(peerUUID)) {
+        remoteAudioQueues.set(peerUUID, {
+            queue: [],
+            playing: false,
+            muted: false,
+            volume: 1
+        });
+    }
+
+    return remoteAudioQueues.get(peerUUID);
+}
+
+function playNextChunk(peerUUID) {
+    const state = remoteAudioQueues.get(peerUUID);
+    if (!state) {
+        return;
+    }
+
+    if (state.playing) {
+        return;
+    }
+
+    const next = state.queue.shift();
+    if (!next) {
+        return;
+    }
+
+    state.playing = true;
+
+    const audio = new Audio(next.url);
+    audio.autoplay = true;
+    audio.muted = isDeafened || state.muted;
+    audio.volume = state.volume;
+    remoteAudio.set(peerUUID, audio);
+
+    const finishChunk = () => {
+        URL.revokeObjectURL(next.url);
+        if (remoteAudio.get(peerUUID) === audio) {
+            remoteAudio.delete(peerUUID);
+        }
+
+        const latest = remoteAudioQueues.get(peerUUID);
+        if (!latest) {
+            return;
+        }
+
+        latest.playing = false;
+        playNextChunk(peerUUID);
+    };
+
+    audio.onended = finishChunk;
+    audio.onerror = finishChunk;
+
+    audio.play().catch(() => {
+        finishChunk();
+    });
 }
 
 function startRecorderForBitrate(bitrateKbps) {
@@ -182,20 +242,16 @@ function updateRemoteAudio(peerUUID, audioChunk) {
 
     const blob = new Blob([normalizedChunk], { type: "audio/webm;codecs=opus" });
     const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.autoplay = true;
-    audio.muted = isDeafened;
-    audio.play().catch(() => {});
+    const state = getOrCreateRemoteState(peerUUID);
+    state.queue.push({ url });
 
-    const previous = remoteAudio.get(peerUUID);
-    if (previous) {
-        previous.pause();
-        URL.revokeObjectURL(previous.src);
+    // Prevent unbounded memory growth when packets arrive faster than playback.
+    if (state.queue.length > 32) {
+        const dropped = state.queue.splice(0, state.queue.length - 32);
+        dropped.forEach(item => URL.revokeObjectURL(item.url));
     }
 
-    remoteAudio.set(peerUUID, audio);
-
-    audio.onended = () => URL.revokeObjectURL(url);
+    playNextChunk(peerUUID);
 }
 
 function removePlayer(peerUUID) {
@@ -206,10 +262,13 @@ function removePlayer(peerUUID) {
     const audio = remoteAudio.get(peerUUID);
     if (audio) {
         audio.pause();
-        if (audio.src) {
-            URL.revokeObjectURL(audio.src);
-        }
         remoteAudio.delete(peerUUID);
+    }
+
+    const state = remoteAudioQueues.get(peerUUID);
+    if (state) {
+        state.queue.forEach(item => URL.revokeObjectURL(item.url));
+        remoteAudioQueues.delete(peerUUID);
     }
 
     const userDiv = document.getElementById(peerUUID);
@@ -345,11 +404,13 @@ socket.on("update", data => {
             muteBtn.textContent = "🔊";
             muteBtn.dataset.muted = false;
             muteBtn.onclick = () => {
-                muteBtn.dataset.muted = !muteBtn.dataset.muted;
-                muteBtn.textContent = muteBtn.dataset.muted ? "🔇" : "🔊";
+                muteBtn.dataset.muted = muteBtn.dataset.muted === "true" ? "false" : "true";
+                muteBtn.textContent = muteBtn.dataset.muted === "true" ? "🔇" : "🔊";
+                const state = getOrCreateRemoteState(player.uuid);
+                state.muted = muteBtn.dataset.muted === "true";
                 const audio = remoteAudio.get(player.uuid);
                 if (audio) {
-                    audio.muted = muteBtn.dataset.muted === "true";
+                    audio.muted = isDeafened || state.muted;
                 }
             };
             userDiv.appendChild(muteBtn);
@@ -361,9 +422,11 @@ socket.on("update", data => {
             volumeSlider.step = 0.01;
             volumeSlider.value = 1;
             volumeSlider.oninput = () => {
+                const state = getOrCreateRemoteState(player.uuid);
+                state.volume = parseFloat(volumeSlider.value);
                 const audio = remoteAudio.get(player.uuid);
                 if (audio) {
-                    audio.volume = parseFloat(volumeSlider.value);
+                    audio.volume = state.volume;
                 }
             };
             userDiv.appendChild(volumeSlider);
