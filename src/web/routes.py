@@ -5,15 +5,18 @@ from flask import (
     redirect,
     session,
     jsonify,
-    abort
+    abort,
+    current_app,
+    send_file
 )
 import requests
 import time
+import os
 
 from src.data import data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE
 from src.api.voice import voice_rooms
 
 from src.utils.data_api import (
@@ -119,6 +122,23 @@ def utilities():
 @web.route("/discord")
 def discord():
     return redirect("https://discord.gg/MwNxGuGK6T")
+
+
+@web.route("/voice/datapack")
+def voice_datapack_template_download():
+    static_dir = current_app.static_folder
+    template_path = os.path.join(static_dir, DATAPACK_TEMPLATE_FILE)
+
+    if not os.path.isfile(template_path):
+        return jsonify({"error": "Template datapack not configured"}), 404
+
+    return send_file(
+        template_path,
+        as_attachment=True,
+        download_name="Voice-Chat-Datapack.zip",
+        mimetype="application/zip",
+        max_age=0
+    )
 
 
 # Bot Pages
