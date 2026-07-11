@@ -145,6 +145,48 @@ function appendStreamChunk(peerUUID) {
     }
 }
 
+function applyPlaybackState(state) {
+    if (!state) {
+        return;
+    }
+
+    const spatialGain = typeof state.spatialGain === "number" ? state.spatialGain : 1;
+    const spatialPan = typeof state.spatialPan === "number" ? state.spatialPan : 0;
+    const effectiveGain = (isDeafened || state.muted) ? 0 : (state.volume * spatialGain);
+
+    if (state.gainNode) {
+        state.gainNode.gain.value = Math.max(0, effectiveGain);
+    }
+
+    if (state.pannerNode) {
+        state.pannerNode.pan.value = Math.max(-1, Math.min(1, spatialPan));
+    }
+
+    if (state.audio) {
+        // Keep element unmuted and apply controls through gain for smoother transitions.
+        state.audio.muted = false;
+        if (!state.gainNode) {
+            state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
+        }
+    }
+}
+
+function applySpatialFromPacket(state, spatial) {
+    if (!state || !spatial || typeof spatial !== "object") {
+        return;
+    }
+
+    if (typeof spatial.gain === "number") {
+        state.spatialGain = Math.max(0, spatial.gain);
+    }
+
+    if (typeof spatial.pan === "number") {
+        state.spatialPan = Math.max(-1, Math.min(1, spatial.pan));
+    }
+
+    applyPlaybackState(state);
+}
+
 function destroyRemoteStream(peerUUID) {
     const state = remoteAudioStreams.get(peerUUID);
     if (!state) {
@@ -185,8 +227,35 @@ function getOrCreateRemoteState(peerUUID, requestedMimeType) {
     const objectUrl = URL.createObjectURL(mediaSource);
     const audio = new Audio(objectUrl);
     audio.autoplay = true;
-    audio.muted = isDeafened;
+    audio.muted = false;
     audio.volume = 1;
+
+    let sourceNode = null;
+    let gainNode = null;
+    let pannerNode = null;
+    const audioContext = ensureAudioContext();
+
+    if (audioContext) {
+        try {
+            sourceNode = audioContext.createMediaElementSource(audio);
+            gainNode = audioContext.createGain();
+
+            if (typeof audioContext.createStereoPanner === "function") {
+                pannerNode = audioContext.createStereoPanner();
+                sourceNode.connect(gainNode);
+                gainNode.connect(pannerNode);
+                pannerNode.connect(audioContext.destination);
+            } else {
+                sourceNode.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+            }
+        } catch (err) {
+            console.warn("Failed to create WebAudio graph for remote stream", err);
+            sourceNode = null;
+            gainNode = null;
+            pannerNode = null;
+        }
+    }
 
     const state = {
         mimeType: supportedMimeType,
@@ -195,8 +264,13 @@ function getOrCreateRemoteState(peerUUID, requestedMimeType) {
         queue: [],
         muted: false,
         volume: 1,
+        spatialGain: 1,
+        spatialPan: 0,
         objectUrl,
-        audio
+        audio,
+        sourceNode,
+        gainNode,
+        pannerNode,
     };
 
     mediaSource.addEventListener("sourceopen", () => {
@@ -212,6 +286,7 @@ function getOrCreateRemoteState(peerUUID, requestedMimeType) {
     }, { once: true });
 
     audio.play().catch(() => {});
+    applyPlaybackState(state);
 
     remoteAudioStreams.set(peerUUID, state);
     remoteAudio.set(peerUUID, audio);
@@ -265,7 +340,7 @@ function startRecorderForBitrate(bitrateKbps) {
         });
     };
 
-    mediaRecorder.start(250);
+    mediaRecorder.start(100);
     recorderBitrate = bitrateKbps;
 }
 
@@ -302,7 +377,7 @@ function normalizeIncomingAudioChunk(audioChunk) {
     return null;
 }
 
-function updateRemoteAudio(peerUUID, audioChunk, mimeType) {
+function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
     if (peerUUID === mc_uuid) {
         return;
     }
@@ -316,6 +391,8 @@ function updateRemoteAudio(peerUUID, audioChunk, mimeType) {
     if (!state) {
         return;
     }
+
+    applySpatialFromPacket(state, spatial);
 
     const chunkBytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
     state.queue.push(chunkBytes);
@@ -388,9 +465,7 @@ muteBtn.onclick = () => {
 deafenBtn.onclick = () => {
     isDeafened = !isDeafened;
     remoteAudioStreams.forEach(state => {
-        if (state.audio) {
-            state.audio.muted = isDeafened || state.muted;
-        }
+        applyPlaybackState(state);
     });
     deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
 };
@@ -417,7 +492,7 @@ socket.on("audio", data => {
             return;
         }
 
-        updateRemoteAudio(from, audioChunk, recorderMimeType);
+        updateRemoteAudio(from, audioChunk, recorderMimeType, null);
         return;
     }
 
@@ -426,12 +501,12 @@ socket.on("audio", data => {
             return;
         }
 
-        updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType);
+        updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
         return;
     }
 
     if (data instanceof ArrayBuffer || data instanceof Blob || data instanceof Uint8Array) {
-        updateRemoteAudio("remote", data, recorderMimeType);
+        updateRemoteAudio("remote", data, recorderMimeType, null);
     }
 });
 
@@ -479,9 +554,7 @@ socket.on("update", data => {
                 const state = remoteAudioStreams.get(player.uuid);
                 if (state) {
                     state.muted = muteBtn.dataset.muted === "true";
-                    if (state.audio) {
-                        state.audio.muted = isDeafened || state.muted;
-                    }
+                    applyPlaybackState(state);
                 }
             };
             userDiv.appendChild(muteBtn);
@@ -496,9 +569,7 @@ socket.on("update", data => {
                 const state = remoteAudioStreams.get(player.uuid);
                 if (state) {
                     state.volume = parseFloat(volumeSlider.value);
-                    if (state.audio) {
-                        state.audio.volume = state.volume;
-                    }
+                    applyPlaybackState(state);
                 }
             };
             userDiv.appendChild(volumeSlider);

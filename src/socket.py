@@ -2,11 +2,21 @@ from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
 from src.data import data, save_data
-from src.config import BOTS, DEFAULT_ABILITIES, WHITELISTED_COMMANDS, DEPLOYER_COMMANDS, TRUSTED_COMMANDS, PREFIXED_COMMANDS
+from src.config import (
+    BOTS,
+    DEFAULT_ABILITIES,
+    WHITELISTED_COMMANDS,
+    DEPLOYER_COMMANDS,
+    TRUSTED_COMMANDS,
+    PREFIXED_COMMANDS,
+    VOICE_SPATIAL_MAX_DISTANCE,
+    VOICE_SPATIAL_MIN_GAIN,
+)
 from src.voice_bandwidth import get_voice_bandwidth_controller
 import time
 import base64
 import re
+import math
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
 
@@ -121,6 +131,91 @@ def parse_audio_event_payload(data=None, binary_payload=None):
         chunk = data
 
     return room, sender_uuid, normalize_audio_chunk(chunk), mime_type
+
+
+def _safe_vec3(value):
+    if not isinstance(value, (list, tuple)) or len(value) < 3:
+        return None
+
+    try:
+        return float(value[0]), float(value[1]), float(value[2])
+    except Exception:
+        return None
+
+
+def _safe_rot(value):
+    if not isinstance(value, (list, tuple)) or len(value) < 1:
+        return None
+
+    try:
+        return float(value[0])
+    except Exception:
+        return None
+
+
+def _get_room_player_socket(world_uuid, player_uuid):
+    try:
+        from src.api.voice import voice_rooms
+        players = voice_rooms.get(world_uuid, {}).get("players", [])
+    except Exception:
+        return None
+
+    player = next((p for p in players if p.get("uuid") == player_uuid), None)
+    if not player:
+        return None
+
+    return player.get("socket")
+
+
+def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
+    if not room.startswith("voice-"):
+        return None
+
+    world_uuid = room[len("voice-"):]
+
+    speaker_socket = _get_room_player_socket(world_uuid, speaker_uuid)
+    listener_socket = _get_room_player_socket(world_uuid, listener_uuid)
+    if not speaker_socket or not listener_socket:
+        return None
+
+    speaker_pos = _safe_vec3(speaker_socket.get("Pos"))
+    listener_pos = _safe_vec3(listener_socket.get("Pos"))
+    listener_yaw = _safe_rot(listener_socket.get("Rot"))
+    if not speaker_pos or not listener_pos or listener_yaw is None:
+        return None
+
+    dx = speaker_pos[0] - listener_pos[0]
+    dy = speaker_pos[1] - listener_pos[1]
+    dz = speaker_pos[2] - listener_pos[2]
+
+    distance = math.sqrt((dx * dx) + (dy * dy) + (dz * dz))
+    if distance >= VOICE_SPATIAL_MAX_DISTANCE:
+        return {
+            "distance": distance,
+            "gain": 0.0,
+            "pan": 0.0,
+        }
+
+    # Smooth quadratic falloff for better near-field clarity.
+    normalized = max(0.0, 1.0 - (distance / VOICE_SPATIAL_MAX_DISTANCE))
+    gain = max(0.0, normalized * normalized)
+
+    yaw_rad = math.radians(listener_yaw)
+    right_x = math.cos(yaw_rad)
+    right_z = -math.sin(yaw_rad)
+
+    horizontal_distance = math.sqrt((dx * dx) + (dz * dz))
+    if horizontal_distance <= 1e-6:
+        pan = 0.0
+    else:
+        pan = (dx * right_x + dz * right_z) / horizontal_distance
+        pan = max(-1.0, min(1.0, pan))
+
+    return {
+        "distance": distance,
+        "gain": gain,
+        "pan": pan,
+    }
 
 
 # Events
@@ -387,7 +482,21 @@ def handle_audio(data=None, *args):
     for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
         if peer_uuid == uuid:
             continue
-        socketio.emit("audio", {"from": uuid, "audio": chunk, "mimeType": mime_type}, room=peer_sid)
+
+        spatial = get_spatial_audio_state(room, uuid, peer_uuid)
+        if spatial and spatial.get("gain", 1.0) < VOICE_SPATIAL_MIN_GAIN:
+            continue
+
+        socketio.emit(
+            "audio",
+            {
+                "from": uuid,
+                "audio": chunk,
+                "mimeType": mime_type,
+                "spatial": spatial,
+            },
+            room=peer_sid,
+        )
 
     emit("voice-status", state)
 
