@@ -129,7 +129,24 @@ function pickSupportedMimeType(preferred) {
 
 function appendStreamChunk(peerUUID) {
     const state = remoteAudioStreams.get(peerUUID);
-    if (!state || !state.sourceBuffer || state.sourceBuffer.updating) {
+    if (!state || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) {
+        return;
+    }
+
+    if (!state.mediaSource || state.mediaSource.readyState !== "open") {
+        return;
+    }
+
+    const buffers = state.mediaSource.sourceBuffers;
+    let attached = false;
+    for (let i = 0; i < buffers.length; i++) {
+        if (buffers[i] === state.sourceBuffer) {
+            attached = true;
+            break;
+        }
+    }
+
+    if (!attached) {
         return;
     }
 
@@ -141,8 +158,48 @@ function appendStreamChunk(peerUUID) {
     try {
         state.sourceBuffer.appendBuffer(nextChunk);
     } catch (err) {
+        if (err && err.name === "InvalidStateError") {
+            rebuildRemoteStream(peerUUID, state, [nextChunk]);
+            return;
+        }
+
         console.warn("Failed to append remote audio chunk", err);
     }
+}
+
+function rebuildRemoteStream(peerUUID, previousState, prependChunks = []) {
+    if (!previousState) {
+        return;
+    }
+
+    const pendingChunks = [
+        ...prependChunks,
+        ...previousState.queue
+    ];
+
+    const snapshot = {
+        mimeType: previousState.mimeType,
+        muted: previousState.muted,
+        volume: previousState.volume,
+        spatialGain: previousState.spatialGain,
+        spatialPan: previousState.spatialPan,
+    };
+
+    destroyRemoteStream(peerUUID);
+
+    const replacement = getOrCreateRemoteState(peerUUID, snapshot.mimeType);
+    if (!replacement) {
+        return;
+    }
+
+    replacement.muted = snapshot.muted;
+    replacement.volume = snapshot.volume;
+    replacement.spatialGain = snapshot.spatialGain;
+    replacement.spatialPan = snapshot.spatialPan;
+    replacement.queue.push(...pendingChunks);
+
+    applyPlaybackState(replacement);
+    appendStreamChunk(peerUUID);
 }
 
 function applyPlaybackState(state) {
@@ -192,6 +249,8 @@ function destroyRemoteStream(peerUUID) {
     if (!state) {
         return;
     }
+
+    state.destroyed = true;
 
     try {
         if (state.audio) {
@@ -266,6 +325,7 @@ function getOrCreateRemoteState(peerUUID, requestedMimeType) {
         volume: 1,
         spatialGain: 1,
         spatialPan: 0,
+        destroyed: false,
         objectUrl,
         audio,
         sourceNode,
