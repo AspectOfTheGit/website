@@ -396,6 +396,8 @@
             const REMOTE_STALL_DETECT_MS = 2400;
             const REMOTE_STALL_BUFFERED_SECONDS = 0.18;
             const REMOTE_DEFER_MAX_AGE_MS = 250;
+            const RECOVERING_AUDIO_STATUS_TEXT = "Recovering audio...";
+            const RECOVERING_AUDIO_AUTO_REFRESH_MS = 4000;
             const AUDIO_RECOVERY_RELOAD_KEY = "aspect-voice-audio-reload-at";
             const AUDIO_RECOVERY_RELOAD_COOLDOWN_MS = 180000;
             const MIC_GATE_OPEN_RMS = 0.04;
@@ -403,14 +405,45 @@
             const MIC_GATE_HOLD_MS = 400;
             const RECORDER_TIMESLICE_MS = 80;
 
+            let recoveringAudioRefreshTimer = null;
+            let recoveringAudioAttemptId = 0;
+
             muteBtn.classList.add("active");
             muteBtn.textContent = "Unmute";
+
+            function clearRecoveringAudioAutoRefresh() {
+                if (recoveringAudioRefreshTimer) {
+                    clearTimeout(recoveringAudioRefreshTimer);
+                    recoveringAudioRefreshTimer = null;
+                }
+            }
+
+            function scheduleRecoveringAudioAutoRefresh() {
+                clearRecoveringAudioAutoRefresh();
+                const attemptId = ++recoveringAudioAttemptId;
+
+                recoveringAudioRefreshTimer = setTimeout(() => {
+                    recoveringAudioRefreshTimer = null;
+
+                    if (attemptId !== recoveringAudioAttemptId) return;
+                    if (statusText.textContent !== RECOVERING_AUDIO_STATUS_TEXT) return;
+
+                    triggerAudioRecoveryReload();
+                }, RECOVERING_AUDIO_AUTO_REFRESH_MS);
+            }
 
             function setStatus(text, kind) {
                 statusText.textContent = text;
                 statusDot.classList.remove("ok", "bad");
                 if (kind === "ok") statusDot.classList.add("ok");
                 if (kind === "bad") statusDot.classList.add("bad");
+
+                if (text === RECOVERING_AUDIO_STATUS_TEXT) {
+                    scheduleRecoveringAudioAutoRefresh();
+                } else {
+                    clearRecoveringAudioAutoRefresh();
+                    recoveringAudioAttemptId += 1;
+                }
             }
 
             function updateOnlineCount() {
@@ -537,7 +570,7 @@
             }
 
             async function runAudioRecoveryFlow({ allowReload = false } = {}) {
-                setStatus("Recovering audio...", "ok");
+                setStatus(RECOVERING_AUDIO_STATUS_TEXT, "ok");
 
                 const interaction = await primeAudioOutputFromGesture();
                 forceRemotePlaybackRecovery();
@@ -566,7 +599,7 @@
                 );
 
                 if (allowReload && hadPeersToRecover && !blockedByPolicy) {
-                    triggerAudioRecoveryReload();
+                    // Auto-refresh is watchdog-driven if recovery stays stuck.
                 }
 
                 return false;
