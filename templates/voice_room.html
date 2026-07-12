@@ -119,8 +119,8 @@
         }
 
         .voice-btn.active {
-            border-color: #53d2ae;
-            background: rgba(83, 210, 174, 0.15);
+            border-color: #ff6f7a;
+            background: rgba(255, 111, 122, 0.18);
         }
 
         .voice-select {
@@ -372,7 +372,7 @@
             let mediaRecorder = null;
             let recorderBitrate = 0;
             let recorderMimeType = "audio/webm;codecs=opus";
-            let isMuted = false;
+            let isMuted = true;
             let isDeafened = false;
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
             let audioUnlockHintShown = false;
@@ -402,6 +402,9 @@
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
             const RECORDER_TIMESLICE_MS = 80;
+
+            muteBtn.classList.add("active");
+            muteBtn.textContent = "Unmute";
 
             function setStatus(text, kind) {
                 statusText.textContent = text;
