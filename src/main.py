@@ -1,11 +1,13 @@
 import eventlet
 eventlet.monkey_patch()
 
+import signal
+import atexit
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template
 from flask_cors import CORS
 from src.socket import socketio
-from src.data import load_data
+from src.data import load_data, flush_data
 from src.config import CLIENT_SECRET
 
 def create_app():
@@ -68,6 +70,14 @@ def create_app():
     return app
 
 app = create_app()
+
+atexit.register(flush_data)
+
+def _shutdown_handler(*_args):
+    flush_data()
+    raise SystemExit(0)
+
+signal.signal(signal.SIGTERM, _shutdown_handler)
 
 #if __name__ == "__main__":
 #    socketio.run(app, host="0.0.0.0", port=10000)

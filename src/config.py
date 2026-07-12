@@ -15,6 +15,7 @@ VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"}
 BOT_PERMISSION_DEFAULTS = ["baritone","attack"] # Permissions given to the bot by default while in any world
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack"] # Permissions given to the bot while in lobby
 TIMEOUT = 10 # in seconds, how long the backend will wait until the bot is marked as offline
+AUTO_SAVE_INTERVAL_MINUTES = 15 # In minutes, how often dirty data should be flushed automatically. Set to 0 to disable periodic auto-save
 
 DEFAULT_ABILITIES = {"send":True, # Whether the user can send messages through the bot
                      "capacity":1, # In MB, how much storage capacity the user has

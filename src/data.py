@@ -3,6 +3,8 @@ import os
 import threading
 import boto3
 
+from src.config import AUTO_SAVE_INTERVAL_MINUTES
+
 ACCOUNT_ID = os.environ["R2_ACCOUNT_ID"]
 ACCESS_KEY = os.environ["R2_ACCESS_KEY_ID"]
 SECRET_KEY = os.environ["R2_SECRET_ACCESS_KEY"]
@@ -18,6 +20,8 @@ s3 = boto3.client(
 )
 
 _lock = threading.Lock()
+_save_timer = None
+_save_interval_seconds = max(0, int(AUTO_SAVE_INTERVAL_MINUTES * 60))
 
 
 class DirtyTrackingDict(dict):
@@ -147,6 +151,7 @@ class DataStore:
         self._collections = {}
         self._manifest = {}
         self._dirty_items = set()
+        self._last_saved_signatures = {}
         self._load_manifest()
 
     def _load_manifest(self):
@@ -277,12 +282,53 @@ def load_data():
 
 
 def save_data():
+    global _save_timer
+
     with _lock:
+        if not isinstance(data, DataStore) or not data._dirty_items or _save_interval_seconds <= 0:
+            return
+
+        if _save_timer is not None:
+            return
+
+        _save_timer = threading.Timer(_save_interval_seconds, flush_data)
+        _save_timer.daemon = True
+        _save_timer.start()
+
+
+def flush_data():
+    global _save_timer
+
+    with _lock:
+        if _save_timer is not None:
+            _save_timer.cancel()
+            _save_timer = None
+
         _write_data_locked()
 
 
 def _write_data_locked():
     if not isinstance(data, DataStore):
+        return
+
+    if not data._dirty_items:
+        return
+
+    current_signatures = {}
+    for kind, key in sorted(data._dirty_items):
+        item = data._get_collection(kind)._items.get(key)
+        if item is None:
+            continue
+        current_signatures[(kind, key)] = _snapshot_item(item)
+
+    changed_items = {
+        item_key: signature
+        for item_key, signature in current_signatures.items()
+        if data._last_saved_signatures.get(item_key) != signature
+    }
+
+    if not changed_items:
+        data._dirty_items.clear()
         return
 
     manifest = {
@@ -293,15 +339,16 @@ def _write_data_locked():
     }
 
     for kind in ("account", "world", "bot"):
-        for key in sorted(data._dirty_items):
-            if key[0] != kind:
+        for item_key in sorted(changed_items):
+            if item_key[0] != kind:
                 continue
-            item = data._get_collection(kind)._items.get(key[1])
+            item = data._get_collection(kind)._items.get(item_key[1])
             if item is None:
                 continue
-            path = _default_path(kind, key[1])
+            path = _default_path(kind, item_key[1])
             _write_json_object(path, dict(item))
-            manifest[kind][key[1]] = {"path": path}
+            manifest[kind][item_key[1]] = {"path": path}
+            data._manifest.setdefault(kind, {})[item_key[1]] = {"path": path}
 
     for kind in ("account", "world", "bot"):
         for key in data._get_collection(kind).keys():
@@ -312,6 +359,12 @@ def _write_data_locked():
                 manifest[kind][key] = entry
 
     _write_json_object(MANIFEST_KEY, manifest)
+    data._last_saved_signatures.update(changed_items)
+    data._dirty_items.clear()
+
+
+def _snapshot_item(item):
+    return json.dumps(dict(item), sort_keys=True, separators=(",", ":"))
 
 
 data = DataStore()
