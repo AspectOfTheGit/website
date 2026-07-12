@@ -229,6 +229,16 @@
             text-align: center;
         }
 
+        .voice-unlock-btn {
+            margin-top: 8px;
+            width: 100%;
+            display: none;
+        }
+
+        .voice-unlock-btn.show {
+            display: inline-block;
+        }
+
         @media (max-width: 900px) {
             .voice-shell {
                 padding: 1rem;
@@ -313,6 +323,7 @@
                     <select class="voice-select" id="mic-select"></select>
                     <div id="voice-quality" class="voice-small">Quality: waiting</div>
                     <div class="voice-small">Server-relayed audio</div>
+                    <button class="voice-btn voice-unlock-btn" id="enable-audio-btn" type="button">Enable Audio</button>
                 </div>
             </aside>
 
@@ -347,6 +358,7 @@
             const muteBtn = document.getElementById("mute-btn");
             const deafenBtn = document.getElementById("deafen-btn");
             const localName = document.getElementById("local-name");
+            const enableAudioBtn = document.getElementById("enable-audio-btn");
 
             const players = new Map();
             const remoteAudioState = new Map();
@@ -359,6 +371,7 @@
             let isDeafened = false;
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
             let audioUnlockHintShown = false;
+            let audioGestureUnlocked = false;
             let micGateContext = null;
             let micGateAnalyser = null;
             let micGateSource = null;
@@ -374,6 +387,10 @@
             const REMOTE_MAX_LAG_SECONDS = 1.6;
             const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
             const REMOTE_BUFFER_KEEP_SECONDS = 6;
+            const REMOTE_HEALTHCHECK_MS = 1500;
+            const REMOTE_STALL_PACKET_WINDOW_MS = 5000;
+            const REMOTE_STALL_DETECT_MS = 2400;
+            const REMOTE_STALL_BUFFERED_SECONDS = 0.18;
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
@@ -404,7 +421,13 @@
             function requestAudioUnlockHint() {
                 if (audioUnlockHintShown) return;
                 audioUnlockHintShown = true;
-                setStatus("Audio output blocked. Refresh this page.", "bad");
+                setStatus("Audio output blocked. Click Enable Audio.", "bad");
+                if (enableAudioBtn) enableAudioBtn.classList.add("show");
+            }
+
+            function clearAudioUnlockHint() {
+                audioUnlockHintShown = false;
+                if (enableAudioBtn) enableAudioBtn.classList.remove("show");
             }
 
             async function unlockAllRemoteAudio(reason) {
@@ -416,20 +439,49 @@
                 }
 
                 let unlockedAny = false;
+                let blockedByPolicy = false;
                 for (const state of remoteAudioState.values()) {
                     if (!state || !state.audio) continue;
                     try {
                         await state.audio.play();
                         unlockedAny = true;
-                    } catch (_) {
-                        requestAudioUnlockHint();
+                    } catch (err) {
+                        if (err && err.name === "NotAllowedError") {
+                            blockedByPolicy = true;
+                        }
                     }
                 }
 
+                if (blockedByPolicy) {
+                    requestAudioUnlockHint();
+                    return;
+                }
+
                 if (unlockedAny && reason !== "initial") {
-                    audioUnlockHintShown = false;
+                    clearAudioUnlockHint();
                     setStatus("Audio output active", "ok");
                 }
+            }
+
+            async function primeAudioOutputFromGesture() {
+                const ctx = ensureAudioContext();
+                if (ctx) {
+                    try {
+                        await ctx.resume();
+
+                        // Some browsers require a user-gesture-tied render to permanently unlock output.
+                        const gain = ctx.createGain();
+                        gain.gain.value = 0.00001;
+                        const osc = ctx.createOscillator();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.02);
+                    } catch (_) {}
+                }
+
+                audioGestureUnlocked = true;
+                await unlockAllRemoteAudio("interaction");
             }
 
             function normalizeMimeType(mimeType) {
@@ -634,6 +686,63 @@
                 }
             }
 
+            function monitorPlaybackProgress(state, nowMs) {
+                if (!state || !state.audio) return;
+
+                const current = state.audio.currentTime || 0;
+                if (Math.abs(current - state.lastCurrentTime) > 0.01) {
+                    state.lastCurrentTime = current;
+                    state.lastProgressAt = nowMs;
+                }
+            }
+
+            function recoverStalledRemoteAudio(peerUUID, state, nowMs) {
+                if (!state || !state.audio || state.destroyed || isDeafened) return;
+
+                const receivingNow = (nowMs - state.lastPacketAt) <= REMOTE_STALL_PACKET_WINDOW_MS;
+                if (!receivingNow) return;
+
+                let bufferedAhead = 0;
+                try {
+                    if (state.audio.buffered && state.audio.buffered.length > 0) {
+                        const end = state.audio.buffered.end(state.audio.buffered.length - 1);
+                        bufferedAhead = Math.max(0, end - state.audio.currentTime);
+                    }
+                } catch (_) {}
+
+                if (bufferedAhead < REMOTE_STALL_BUFFERED_SECONDS) return;
+
+                const notProgressing = (nowMs - state.lastProgressAt) >= REMOTE_STALL_DETECT_MS;
+                if (!notProgressing) return;
+
+                if (state.audio.paused) {
+                    state.audio.play().catch(() => {});
+                }
+
+                // If packets continue and buffered audio exists but playback doesn't progress,
+                // rebuild this peer stream in-place to recover from decoder/MSE deadlocks.
+                rebuildRemoteStream(peerUUID, state);
+            }
+
+            function runRemoteAudioHealthcheck() {
+                if (remoteAudioState.size === 0) return;
+
+                if (audioGestureUnlocked) {
+                    const ctx = ensureAudioContext();
+                    if (ctx && ctx.state === "suspended") {
+                        ctx.resume().catch(() => {});
+                    }
+                }
+
+                const nowMs = Date.now();
+                for (const [peerUUID, state] of remoteAudioState.entries()) {
+                    monitorPlaybackProgress(state, nowMs);
+                    if (audioGestureUnlocked) {
+                        recoverStalledRemoteAudio(peerUUID, state, nowMs);
+                    }
+                }
+            }
+
             function destroyRemoteStream(peerUUID) {
                 const state = remoteAudioState.get(peerUUID);
                 if (!state) return;
@@ -732,6 +841,9 @@
                     volume: 1,
                     spatialGain: 1,
                     spatialPan: 0,
+                    lastPacketAt: Date.now(),
+                    lastProgressAt: Date.now(),
+                    lastCurrentTime: 0,
                     destroyed: false,
                     objectUrl,
                     audio,
@@ -757,13 +869,17 @@
                 }, { once: true });
 
                 audio.play().catch(() => {
-                    requestAudioUnlockHint();
+                    if (audioGestureUnlocked) {
+                        requestAudioUnlockHint();
+                    }
                 });
 
                 const tryResume = () => {
                     ensureAudioContext();
-                    audio.play().catch(() => {
-                        requestAudioUnlockHint();
+                    audio.play().catch((err) => {
+                        if (err && err.name === "NotAllowedError") {
+                            requestAudioUnlockHint();
+                        }
                     });
                 };
 
@@ -847,6 +963,8 @@
 
                 const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
                 if (!state) return;
+
+                state.lastPacketAt = Date.now();
 
                 applySpatialFromPacket(state, spatial);
 
@@ -1058,7 +1176,6 @@
             socket.on("connect", () => {
                 setStatus("Connected", "ok");
                 socket.emit("join", `voice-${worldUUID}`, localUUID, authToken);
-                unlockAllRemoteAudio("connect").catch(() => {});
             });
 
             socket.on("disconnect", () => {
@@ -1104,7 +1221,9 @@
                 if (!data || !data.from || !data.audio) return;
                 if (data.from === localUUID) return;
                 updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
-                unlockAllRemoteAudio("packet").catch(() => {});
+                if (audioGestureUnlocked) {
+                    unlockAllRemoteAudio("packet").catch(() => {});
+                }
             });
 
             socket.on("peer-left", uuid => {
@@ -1159,8 +1278,14 @@
             }
 
             const unlockHandler = () => {
-                unlockAllRemoteAudio("interaction").catch(() => {});
+                primeAudioOutputFromGesture().catch(() => {});
             };
+
+            if (enableAudioBtn) {
+                enableAudioBtn.addEventListener("click", () => {
+                    primeAudioOutputFromGesture().catch(() => {});
+                });
+            }
 
             window.addEventListener("pointerdown", unlockHandler);
             window.addEventListener("keydown", unlockHandler);
@@ -1170,6 +1295,8 @@
                     unlockAllRemoteAudio("visible").catch(() => {});
                 }
             });
+
+            setInterval(runRemoteAudioHealthcheck, REMOTE_HEALTHCHECK_MS);
 
             navigator.mediaDevices.addEventListener("devicechange", () => {
                 refreshMicList().catch(() => {});
