@@ -173,6 +173,17 @@ def _get_room_player_socket(world_uuid, player_uuid):
     return player.get("socket")
 
 
+def _get_player_volume_options(world_uuid, player_uuid):
+    try:
+        from src.api.voice import get_player_voice_options
+        return get_player_voice_options(world_uuid, player_uuid)
+    except Exception:
+        return {
+            "input_volume": 100,
+            "output_volume": 100,
+        }
+
+
 def get_spatial_audio_state(room, speaker_uuid, listener_uuid):
     if not room.startswith("voice-"):
         return None
@@ -559,6 +570,20 @@ def handle_audio(data=None, *args):
 
         if spatial.get("gain", 0.0) < VOICE_SPATIAL_MIN_GAIN:
             continue
+
+        world_uuid = room[len("voice-"):]
+        speaker_options = _get_player_volume_options(world_uuid, uuid)
+        listener_options = _get_player_volume_options(world_uuid, peer_uuid)
+        input_gain = max(0.0, min(1.0, speaker_options.get("input_volume", 100) / 100.0))
+        output_gain = max(0.0, min(1.0, listener_options.get("output_volume", 100) / 100.0))
+        effective_gain = spatial.get("gain", 0.0) * input_gain * output_gain
+        if effective_gain < VOICE_SPATIAL_MIN_GAIN:
+            continue
+
+        spatial = {
+            **spatial,
+            "gain": effective_gain,
+        }
 
         eligible_peers.append((peer_uuid, peer_sid, spatial))
 

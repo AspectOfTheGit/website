@@ -26,6 +26,50 @@ voice = Blueprint(
 voice_rooms = {}
 voice_bandwidth_controller = get_voice_bandwidth_controller()
 
+DEFAULT_INPUT_VOLUME = 100
+DEFAULT_OUTPUT_VOLUME = 100
+
+
+def _normalize_volume(raw_value, fallback):
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        return fallback
+
+    return max(0, min(100, value))
+
+
+def _extract_volume_updates(player_payload):
+    if not isinstance(player_payload, dict):
+        return {}
+
+    options = player_payload.get("options")
+    if not isinstance(options, dict):
+        return {}
+
+    updates = {}
+
+    input_options = options.get("input")
+    if isinstance(input_options, dict) and "volume" in input_options:
+        updates["input_volume"] = _normalize_volume(input_options.get("volume"), DEFAULT_INPUT_VOLUME)
+
+    output_options = options.get("output")
+    if isinstance(output_options, dict) and "volume" in output_options:
+        updates["output_volume"] = _normalize_volume(output_options.get("volume"), DEFAULT_OUTPUT_VOLUME)
+
+    return updates
+
+
+def get_player_voice_options(world_uuid, player_uuid):
+    room = voice_rooms.get(world_uuid, {})
+    options_map = room.get("player_options", {})
+    existing = options_map.get(player_uuid, {})
+
+    return {
+        "input_volume": _normalize_volume(existing.get("input_volume"), DEFAULT_INPUT_VOLUME),
+        "output_volume": _normalize_volume(existing.get("output_volume"), DEFAULT_OUTPUT_VOLUME),
+    }
+
 @voice.get("/version")
 def apivoiceversion():
     return f"\"{DATAPACK_VERSION}\"", 200, {'Content-Type': 'text/plain'}
@@ -114,33 +158,59 @@ def apivoiceupdate():
 
     if world not in voice_rooms:
         print(f"[api/voice.py] NEW world connected voice room (for the first time): {world}")
-        voice_rooms[world] = {"players":[],"new":[],"audio":{},"bandwidth":voice_bandwidth_controller.get_state()}
+        voice_rooms[world] = {
+            "players": [],
+            "new": [],
+            "audio": {},
+            "player_options": {},
+            "bandwidth": voice_bandwidth_controller.get_state(),
+        }
         data["world"][world]["voice"] = time.time_ns() // 1000000
 
     timediff = (time.time_ns() // 1000000) - data["world"][world].get("voice",0)
     if timediff > MAX_TIME_TILL_VOICE_ROOM_CLOSE: # If voice room hasn't recieved an update recently
         print(f"[api/voice.py] NEW world connected voice room: {world} (last connection {timediff}ms ago)")
-        voice_rooms[world] = {"players":[],"new":[],"socket":[],"audio":{},"bandwidth":voice_bandwidth_controller.get_state()}
+        voice_rooms[world] = {
+            "players": [],
+            "new": [],
+            "socket": [],
+            "audio": {},
+            "player_options": {},
+            "bandwidth": voice_bandwidth_controller.get_state(),
+        }
 
     data["world"][world]["voice"] = time.time_ns() // 1000000
 
     voice_rooms[world]["new"] = []
+    voice_rooms[world].setdefault("player_options", {})
     request_uuids = []
 
     for player in value["players"]:
         uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])) # Convert UUID from array to hex
         request_uuids.append(uuid)
 
+        # Persist only supported options and keep existing values when omitted.
+        volume_updates = _extract_volume_updates(player)
+        if uuid not in voice_rooms[world]["player_options"]:
+            voice_rooms[world]["player_options"][uuid] = {
+                "input_volume": DEFAULT_INPUT_VOLUME,
+                "output_volume": DEFAULT_OUTPUT_VOLUME,
+            }
+        voice_rooms[world]["player_options"][uuid].update(volume_updates)
+
+        current_options = get_player_voice_options(world, uuid)
+
         existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None) # Find UUID in current voice room session.
         
         if not existing: # If user is new to the voice room
             chars = string.ascii_letters + string.digits
             auth = ''.join(secrets.choice(chars) for _ in range(36)) # Generate a new auth string for that user
-            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth}) # Init data for them
+            voice_rooms[world]["players"].append({"uuid":uuid,"auth":auth,"options":current_options}) # Init data for them
             voice_rooms[world]["new"].append({"uuid":uuid,"world":world,"auth":auth}) # To tell the game the auth URL
             print(f"[api/voice.py] Player connecting to voice room {world}: {uuid} (Auth: {auth})")
         # Update data for all users (this data is sent to all other users connected to voice room)
         existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None)
+        existing["options"] = current_options
         existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Name": player.get("Name",uuid), "Rot": player["Rotation"]}
 
     voice_rooms[world]["players"] = [
