@@ -239,6 +239,82 @@
             display: inline-block;
         }
 
+        .voice-help-btn {
+            width: 100%;
+        }
+
+        .voice-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1200;
+        }
+
+        .voice-modal.show {
+            display: flex;
+        }
+
+        .voice-modal-card {
+            width: min(760px, 100%);
+            max-height: 85vh;
+            overflow: auto;
+            border: 1px solid rgba(151, 171, 196, 0.24);
+            border-radius: 16px;
+            background: rgba(14, 23, 34, 0.96);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+            padding: 16px;
+            display: grid;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .voice-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-modal-head h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .voice-browser-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .voice-browser-tabs .voice-btn {
+            padding: 6px 10px;
+        }
+
+        .voice-help-section {
+            display: none;
+            border: 1px solid rgba(151, 171, 196, 0.24);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(10, 15, 22, 0.5);
+        }
+
+        .voice-help-section.show {
+            display: block;
+        }
+
+        .voice-help-section h4 {
+            margin: 0 0 8px;
+        }
+
+        .voice-help-note {
+            color: #97abc4;
+            font-size: 0.85rem;
+        }
+
         @media (max-width: 900px) {
             .voice-shell {
                 padding: 1rem;
@@ -324,6 +400,7 @@
                     <div id="voice-quality" class="voice-small">Quality: waiting</div>
                     <div class="voice-small">Server-relayed audio</div>
                     <button class="voice-btn voice-unlock-btn" id="enable-audio-btn" type="button">Enable Audio</button>
+                    <button class="voice-btn voice-help-btn" id="autoplay-help-btn" type="button">Autoplay Help</button>
                 </div>
             </aside>
 
@@ -338,6 +415,65 @@
             </section>
         </section>
     </main>
+
+    <div class="voice-modal" id="autoplay-help-modal" aria-hidden="true">
+        <div class="voice-modal-card" role="dialog" aria-modal="true" aria-labelledby="autoplay-help-title">
+            <div class="voice-modal-head">
+                <h3 id="autoplay-help-title">Allow Autoplay / Sound</h3>
+                <button class="voice-btn" id="autoplay-help-close" type="button">Close</button>
+            </div>
+
+            <div class="voice-help-note">Use these browser settings if audio gets blocked or stops until interaction.</div>
+
+            <div class="voice-browser-tabs" id="autoplay-help-tabs">
+                <button class="voice-btn" type="button" data-browser="chrome">Chrome</button>
+                <button class="voice-btn" type="button" data-browser="edge">Edge</button>
+                <button class="voice-btn" type="button" data-browser="firefox">Firefox</button>
+                <button class="voice-btn" type="button" data-browser="safari">Safari</button>
+            </div>
+
+            <section class="voice-help-section" data-help-browser="chrome">
+                <h4>Google Chrome</h4>
+                <ol>
+                    <li>Open this site and click the lock icon next to the address bar.</li>
+                    <li>Open Site settings.</li>
+                    <li>Set Sound to Allow for this site.</li>
+                    <li>Open chrome://settings/content/sound and make sure sites are allowed to play sound.</li>
+                    <li>Reload this page, then click Enable Audio once.</li>
+                </ol>
+            </section>
+
+            <section class="voice-help-section" data-help-browser="edge">
+                <h4>Microsoft Edge</h4>
+                <ol>
+                    <li>Click the lock icon and open Permissions for this site.</li>
+                    <li>Set Sound to Allow.</li>
+                    <li>Open edge://settings/content/mediaAutoplay and allow autoplay for this site.</li>
+                    <li>Reload this page, then click Enable Audio once.</li>
+                </ol>
+            </section>
+
+            <section class="voice-help-section" data-help-browser="firefox">
+                <h4>Mozilla Firefox</h4>
+                <ol>
+                    <li>Open about:preferences#privacy.</li>
+                    <li>Find Permissions and open Autoplay settings.</li>
+                    <li>Set default to Allow Audio and Video, or add this site as Allow.</li>
+                    <li>Reload this page, then click Enable Audio once.</li>
+                </ol>
+            </section>
+
+            <section class="voice-help-section" data-help-browser="safari">
+                <h4>Safari</h4>
+                <ol>
+                    <li>Open this site in Safari.</li>
+                    <li>Use Safari menu, then Settings for This Website.</li>
+                    <li>Set Auto-Play to Allow All Auto-Play for this site.</li>
+                    <li>Reload this page, then click Enable Audio once.</li>
+                </ol>
+            </section>
+        </div>
+    </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
@@ -359,6 +495,15 @@
             const deafenBtn = document.getElementById("deafen-btn");
             const localName = document.getElementById("local-name");
             const enableAudioBtn = document.getElementById("enable-audio-btn");
+            const autoplayHelpBtn = document.getElementById("autoplay-help-btn");
+            const autoplayHelpModal = document.getElementById("autoplay-help-modal");
+            const autoplayHelpCloseBtn = document.getElementById("autoplay-help-close");
+            const autoplayHelpTabs = document.getElementById("autoplay-help-tabs");
+
+            const remoteAudioHost = document.createElement("div");
+            remoteAudioHost.id = "remote-audio-host";
+            remoteAudioHost.style.display = "none";
+            document.body.appendChild(remoteAudioHost);
 
             const players = new Map();
             const remoteAudioState = new Map();
@@ -372,6 +517,7 @@
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
             let audioUnlockHintShown = false;
             let audioGestureUnlocked = false;
+            let autoplayHelpAutoShown = false;
             let micGateContext = null;
             let micGateAnalyser = null;
             let micGateSource = null;
@@ -423,11 +569,47 @@
                 audioUnlockHintShown = true;
                 setStatus("Audio output blocked. Click Enable Audio.", "bad");
                 if (enableAudioBtn) enableAudioBtn.classList.add("show");
+                if (!autoplayHelpAutoShown) {
+                    autoplayHelpAutoShown = true;
+                    showAutoplayHelp();
+                }
             }
 
             function clearAudioUnlockHint() {
                 audioUnlockHintShown = false;
                 if (enableAudioBtn) enableAudioBtn.classList.remove("show");
+            }
+
+            function detectBrowserFamily() {
+                const ua = navigator.userAgent.toLowerCase();
+                if (ua.includes("edg/")) return "edge";
+                if (ua.includes("firefox/")) return "firefox";
+                if (ua.includes("safari/") && !ua.includes("chrome/") && !ua.includes("chromium")) return "safari";
+                return "chrome";
+            }
+
+            function showAutoplayHelp(browser = detectBrowserFamily()) {
+                if (!autoplayHelpModal) return;
+
+                const sections = autoplayHelpModal.querySelectorAll("[data-help-browser]");
+                sections.forEach(section => {
+                    section.classList.toggle("show", section.getAttribute("data-help-browser") === browser);
+                });
+
+                if (autoplayHelpTabs) {
+                    autoplayHelpTabs.querySelectorAll("[data-browser]").forEach(tab => {
+                        tab.classList.toggle("active", tab.getAttribute("data-browser") === browser);
+                    });
+                }
+
+                autoplayHelpModal.classList.add("show");
+                autoplayHelpModal.setAttribute("aria-hidden", "false");
+            }
+
+            function hideAutoplayHelp() {
+                if (!autoplayHelpModal) return;
+                autoplayHelpModal.classList.remove("show");
+                autoplayHelpModal.setAttribute("aria-hidden", "true");
             }
 
             async function unlockAllRemoteAudio(reason) {
@@ -482,6 +664,23 @@
 
                 audioGestureUnlocked = true;
                 await unlockAllRemoteAudio("interaction");
+            }
+
+            function forceRemotePlaybackRecovery() {
+                for (const [peerUUID, state] of remoteAudioState.entries()) {
+                    if (!state || !state.audio || state.destroyed) continue;
+
+                    try {
+                        state.audio.muted = false;
+                        state.audio.play().catch(() => {});
+                    } catch (_) {}
+
+                    if (state.queue.length > 0) {
+                        appendStreamChunk(peerUUID);
+                    }
+
+                    recoverStalledRemoteAudio(peerUUID, state, Date.now());
+                }
             }
 
             function normalizeMimeType(mimeType) {
@@ -753,6 +952,7 @@
                     if (state.audio) {
                         state.audio.pause();
                         state.audio.src = "";
+                        state.audio.remove();
                     }
                 } catch (_) {}
 
@@ -800,11 +1000,14 @@
 
                 const mediaSource = new MediaSource();
                 const objectUrl = URL.createObjectURL(mediaSource);
-                const audio = new Audio(objectUrl);
+                const audio = document.createElement("audio");
+                audio.src = objectUrl;
                 audio.autoplay = true;
                 audio.playsInline = true;
                 audio.muted = false;
                 audio.volume = 1;
+                audio.preload = "auto";
+                remoteAudioHost.appendChild(audio);
 
                 let sourceNode = null;
                 let gainNode = null;
@@ -1283,9 +1486,50 @@
 
             if (enableAudioBtn) {
                 enableAudioBtn.addEventListener("click", () => {
-                    primeAudioOutputFromGesture().catch(() => {});
+                    setStatus("Recovering audio...", "ok");
+                    primeAudioOutputFromGesture()
+                        .then(() => {
+                            forceRemotePlaybackRecovery();
+                            clearAudioUnlockHint();
+                            setStatus("Audio output active", "ok");
+                        })
+                        .catch(() => {
+                            requestAudioUnlockHint();
+                        });
                 });
             }
+
+            if (autoplayHelpBtn) {
+                autoplayHelpBtn.addEventListener("click", () => {
+                    showAutoplayHelp();
+                });
+            }
+
+            if (autoplayHelpCloseBtn) {
+                autoplayHelpCloseBtn.addEventListener("click", hideAutoplayHelp);
+            }
+
+            if (autoplayHelpTabs) {
+                autoplayHelpTabs.addEventListener("click", event => {
+                    const button = event.target.closest("button[data-browser]");
+                    if (!button) return;
+                    showAutoplayHelp(button.getAttribute("data-browser"));
+                });
+            }
+
+            if (autoplayHelpModal) {
+                autoplayHelpModal.addEventListener("click", event => {
+                    if (event.target === autoplayHelpModal) {
+                        hideAutoplayHelp();
+                    }
+                });
+            }
+
+            window.addEventListener("keydown", event => {
+                if (event.key === "Escape") {
+                    hideAutoplayHelp();
+                }
+            });
 
             window.addEventListener("pointerdown", unlockHandler);
             window.addEventListener("keydown", unlockHandler);
