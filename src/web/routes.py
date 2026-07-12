@@ -23,6 +23,7 @@ from src.utils.data_api import (
     refresh_account_info,
     create_world
 )
+from src.utils.world_api import get_world_info
 from src.utils.text_api import raw_to_html
 
 web = Blueprint(
@@ -306,12 +307,12 @@ def voice_room(world):
     # Store uuid and auth for socket connection (storing in session is a security risk as world might use session maliciously and can access their entire account)
     uuid_auth[uuid] = auth
 
-    world_data = data["world"][world]
     world_display_name = world
+    world_data = get_world_info(world)
     try:
-        if world_data.get("raw_name"):
+        if world_data and world_data.get("raw_name"):
             world_display_name = raw_to_html(world_data["raw_name"])
-        elif world_data.get("name"):
+        elif world_data and world_data.get("name"):
             world_display_name = world_data["name"]
     except Exception:
         world_display_name = world
