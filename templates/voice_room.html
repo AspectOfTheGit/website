@@ -373,6 +373,7 @@
             const REMOTE_MAX_QUEUE_CHUNKS = 12;
             const REMOTE_MAX_LAG_SECONDS = 1.6;
             const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
+            const REMOTE_BUFFER_KEEP_SECONDS = 6;
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
@@ -587,6 +588,23 @@
                 } catch (_) {}
             }
 
+            function pruneBufferedAudio(peerUUID, state) {
+                if (!state || !state.audio || !state.sourceBuffer) return;
+                if (!state.audio.buffered || state.audio.buffered.length === 0) return;
+                if (state.sourceBuffer.updating || state.pruning) return;
+
+                try {
+                    const end = state.audio.buffered.end(state.audio.buffered.length - 1);
+                    const removeBefore = Math.max(0, end - REMOTE_BUFFER_KEEP_SECONDS);
+                    if (removeBefore <= 0) return;
+
+                    state.pruning = true;
+                    state.sourceBuffer.remove(0, removeBefore);
+                } catch (_) {
+                    state.pruning = false;
+                }
+            }
+
             function appendStreamChunk(peerUUID) {
                 const state = remoteAudioState.get(peerUUID);
                 if (!state || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) return;
@@ -598,7 +616,18 @@
                 try {
                     state.sourceBuffer.appendBuffer(nextChunk);
                 } catch (err) {
-                    if (err && err.name === "InvalidStateError") {
+                    if (err && (err.name === "InvalidStateError" || err.name === "QuotaExceededError")) {
+                        state.queue.unshift(nextChunk);
+                        pruneBufferedAudio(peerUUID, state);
+                        setTimeout(() => {
+                            const current = remoteAudioState.get(peerUUID);
+                            if (!current) return;
+                            if (!current.pruning) appendStreamChunk(peerUUID);
+                        }, 25);
+                        return;
+                    }
+
+                    if (err && err.name === "TypeError") {
                         rebuildRemoteStream(peerUUID, state, [nextChunk]);
                         return;
                     }
@@ -698,6 +727,7 @@
                     mediaSource,
                     sourceBuffer: null,
                     queue: [],
+                    pruning: false,
                     muted: false,
                     volume: 1,
                     spatialGain: 1,
@@ -715,7 +745,9 @@
                         state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
                         state.sourceBuffer.mode = "sequence";
                         state.sourceBuffer.addEventListener("updateend", () => {
+                            state.pruning = false;
                             trimPlaybackLatency(state);
+                            pruneBufferedAudio(peerUUID, state);
                             appendStreamChunk(peerUUID);
                         });
                         appendStreamChunk(peerUUID);
@@ -727,6 +759,20 @@
                 audio.play().catch(() => {
                     requestAudioUnlockHint();
                 });
+
+                const tryResume = () => {
+                    ensureAudioContext();
+                    audio.play().catch(() => {
+                        requestAudioUnlockHint();
+                    });
+                };
+
+                audio.addEventListener("stalled", tryResume);
+                audio.addEventListener("waiting", tryResume);
+                audio.addEventListener("pause", () => {
+                    if (!isDeafened) tryResume();
+                });
+
                 applyPlaybackState(state);
 
                 remoteAudioState.set(peerUUID, state);
