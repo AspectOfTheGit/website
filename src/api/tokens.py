@@ -6,6 +6,7 @@ from flask import (
 )
 
 from src.data import data, save_data
+from src.utils.data_api import create_world
 import string
 import secrets
 
@@ -47,11 +48,16 @@ def apirefreshworldtoken(token):
 
     account = session["mc_uuid"]
 
-    if world not in data["world"]:
-        return jsonify({"error": "World doesn't exist"}), 400
-
     if account not in data["account"]:
         return jsonify({"error": "Account doesn't exist"}), 400
+
+    if world not in data["world"]:
+        try:
+            create_world(world, account)
+        except ValueError:
+            return jsonify({"error": "World doesn't exist"}), 400
+        except PermissionError:
+            return jsonify({"error": "Unauthorized"}), 401
 
     if account != data["world"][world]["owner"]:
         return jsonify({"error": "Unauthorized"}), 401

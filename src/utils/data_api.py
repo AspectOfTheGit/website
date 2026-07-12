@@ -37,12 +37,12 @@ def create_world(world: str, uuid: str):
 
     data.setdefault("world", {})
 
-    data["world"][world] = {
+    data["world"].setdefault(world, {
         "owner": uuid,
         "token": {},
         "elements": {},
         "public": False,
         "title": worlddata["name"],
-    }
+    })
 
     save_data()
