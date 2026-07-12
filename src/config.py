@@ -48,7 +48,7 @@ VOICE_NOISE_GATE_OPEN_BYTES = 220
 VOICE_NOISE_GATE_CLOSE_BYTES = 150
 VOICE_NOISE_GATE_HOLD_MS = 500
 
-DATAPACK_VERSION = "1.0" # The version of the voice chat datapack. Used in the api /voice/version endpoint
+DATAPACK_VERSION = "1.1" # The version of the voice chat datapack. Used in the api /voice/version endpoint
 DATAPACK_TEMPLATE_FILE = os.environ.get("DATAPACK_TEMPLATE_FILE", "misc/voice-chat-datapack/latest.zip") # Relative to static folder when serving locally
 
 COLOURS = {
