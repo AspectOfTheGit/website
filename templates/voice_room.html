@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aspect Voice</title>
+    <title>Voice Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
@@ -373,7 +373,7 @@
         <header class="voice-topbar">
             <div class="voice-brand">
                 <span class="voice-brand-badge"></span>
-                <span>Aspect Voice</span>
+                <span>{{ world_uuid }} (note to self replace with world name)</span>
             </div>
             <div class="voice-meta">
                 <div>World: <span>{{ world_uuid }}</span></div>
@@ -529,7 +529,6 @@
             const peerRestartRequests = new Map();
             const peerAwaitingInit = new Map();
 
-            const REMOTE_MAX_QUEUE_CHUNKS = 12;
             const REMOTE_MAX_LAG_SECONDS = 1.6;
             const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
             const REMOTE_BUFFER_KEEP_SECONDS = 6;
@@ -537,6 +536,8 @@
             const REMOTE_STALL_PACKET_WINDOW_MS = 5000;
             const REMOTE_STALL_DETECT_MS = 2400;
             const REMOTE_STALL_BUFFERED_SECONDS = 0.18;
+            const AUDIO_RECOVERY_RELOAD_KEY = "aspect-voice-audio-reload-at";
+            const AUDIO_RECOVERY_RELOAD_COOLDOWN_MS = 180000;
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
@@ -612,6 +613,30 @@
                 autoplayHelpModal.setAttribute("aria-hidden", "true");
             }
 
+            function shouldAutoReloadForAudioFailure() {
+                try {
+                    const previous = Number(sessionStorage.getItem(AUDIO_RECOVERY_RELOAD_KEY) || 0);
+                    return !Number.isFinite(previous) || (Date.now() - previous) > AUDIO_RECOVERY_RELOAD_COOLDOWN_MS;
+                } catch (_) {
+                    return true;
+                }
+            }
+
+            function triggerAudioRecoveryReload() {
+                if (!shouldAutoReloadForAudioFailure()) return false;
+
+                try {
+                    sessionStorage.setItem(AUDIO_RECOVERY_RELOAD_KEY, String(Date.now()));
+                } catch (_) {}
+
+                setStatus("Audio stuck. Refreshing page...", "bad");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 650);
+
+                return true;
+            }
+
             async function unlockAllRemoteAudio(reason) {
                 const ctx = ensureAudioContext();
                 if (ctx && ctx.state === "suspended") {
@@ -622,8 +647,10 @@
 
                 let unlockedAny = false;
                 let blockedByPolicy = false;
+                let attempted = 0;
                 for (const state of remoteAudioState.values()) {
                     if (!state || !state.audio) continue;
+                    attempted += 1;
                     try {
                         await state.audio.play();
                         unlockedAny = true;
@@ -636,13 +663,15 @@
 
                 if (blockedByPolicy) {
                     requestAudioUnlockHint();
-                    return;
+                    return { unlockedAny, blockedByPolicy, attempted };
                 }
 
                 if (unlockedAny && reason !== "initial") {
                     clearAudioUnlockHint();
                     setStatus("Audio output active", "ok");
                 }
+
+                return { unlockedAny, blockedByPolicy, attempted };
             }
 
             async function primeAudioOutputFromGesture() {
@@ -663,7 +692,7 @@
                 }
 
                 audioGestureUnlocked = true;
-                await unlockAllRemoteAudio("interaction");
+                return unlockAllRemoteAudio("interaction");
             }
 
             function forceRemotePlaybackRecovery() {
@@ -675,12 +704,44 @@
                         state.audio.play().catch(() => {});
                     } catch (_) {}
 
-                    if (state.queue.length > 0) {
-                        appendStreamChunk(peerUUID);
-                    }
-
                     recoverStalledRemoteAudio(peerUUID, state, Date.now());
                 }
+            }
+
+            async function runAudioRecoveryFlow({ allowReload = false } = {}) {
+                setStatus("Recovering audio...", "ok");
+
+                const interaction = await primeAudioOutputFromGesture();
+                forceRemotePlaybackRecovery();
+
+                const retryOne = await unlockAllRemoteAudio("manual-retry");
+                const recovered = Boolean(
+                    (interaction && interaction.unlockedAny) ||
+                    (retryOne && retryOne.unlockedAny)
+                );
+
+                if (recovered) {
+                    clearAudioUnlockHint();
+                    setStatus("Audio output active", "ok");
+                    return true;
+                }
+
+                requestAudioUnlockHint();
+
+                const blockedByPolicy = Boolean(
+                    (interaction && interaction.blockedByPolicy) ||
+                    (retryOne && retryOne.blockedByPolicy)
+                );
+                const hadPeersToRecover = Boolean(
+                    (interaction && interaction.attempted > 0) ||
+                    (retryOne && retryOne.attempted > 0)
+                );
+
+                if (allowReload && hadPeersToRecover && !blockedByPolicy) {
+                    triggerAudioRecoveryReload();
+                }
+
+                return false;
             }
 
             function normalizeMimeType(mimeType) {
@@ -856,32 +917,26 @@
                 }
             }
 
-            function appendStreamChunk(peerUUID) {
+            function appendStreamChunk(peerUUID, nextChunk) {
                 const state = remoteAudioState.get(peerUUID);
-                if (!state || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) return;
-                if (!state.mediaSource || state.mediaSource.readyState !== "open") return;
-
-                const nextChunk = state.queue.shift();
-                if (!nextChunk) return;
+                if (!state || !nextChunk || state.destroyed || !state.sourceBuffer || state.sourceBuffer.updating) return false;
+                if (!state.mediaSource || state.mediaSource.readyState !== "open") return false;
 
                 try {
                     state.sourceBuffer.appendBuffer(nextChunk);
+                    return true;
                 } catch (err) {
                     if (err && (err.name === "InvalidStateError" || err.name === "QuotaExceededError")) {
-                        state.queue.unshift(nextChunk);
                         pruneBufferedAudio(peerUUID, state);
-                        setTimeout(() => {
-                            const current = remoteAudioState.get(peerUUID);
-                            if (!current) return;
-                            if (!current.pruning) appendStreamChunk(peerUUID);
-                        }, 25);
-                        return;
+                        return false;
                     }
 
                     if (err && err.name === "TypeError") {
-                        rebuildRemoteStream(peerUUID, state, [nextChunk]);
-                        return;
+                        rebuildRemoteStream(peerUUID, state, nextChunk);
+                        return false;
                     }
+
+                    return false;
                 }
             }
 
@@ -960,13 +1015,8 @@
                 remoteAudioState.delete(peerUUID);
             }
 
-            function rebuildRemoteStream(peerUUID, previousState, prependChunks = []) {
+            function rebuildRemoteStream(peerUUID, previousState, initialChunk = null) {
                 if (!previousState) return;
-
-                let pending = [...prependChunks, ...previousState.queue];
-                if (pending.length > REMOTE_MAX_QUEUE_CHUNKS) {
-                    pending = pending.slice(pending.length - REMOTE_MAX_QUEUE_CHUNKS);
-                }
 
                 const snapshot = {
                     mimeType: previousState.mimeType,
@@ -984,10 +1034,11 @@
                 replacement.volume = snapshot.volume;
                 replacement.spatialGain = snapshot.spatialGain;
                 replacement.spatialPan = snapshot.spatialPan;
-                replacement.queue.push(...pending);
 
                 applyPlaybackState(replacement);
-                appendStreamChunk(peerUUID);
+                if (initialChunk) {
+                    appendStreamChunk(peerUUID, initialChunk);
+                }
             }
 
             function getOrCreateRemoteState(peerUUID, requestedMimeType) {
@@ -1038,7 +1089,6 @@
                     mimeType: supportedMimeType,
                     mediaSource,
                     sourceBuffer: null,
-                    queue: [],
                     pruning: false,
                     muted: false,
                     volume: 1,
@@ -1063,9 +1113,7 @@
                             state.pruning = false;
                             trimPlaybackLatency(state);
                             pruneBufferedAudio(peerUUID, state);
-                            appendStreamChunk(peerUUID);
                         });
-                        appendStreamChunk(peerUUID);
                     } catch (_) {
                         destroyRemoteStream(peerUUID);
                     }
@@ -1170,13 +1218,7 @@
                 state.lastPacketAt = Date.now();
 
                 applySpatialFromPacket(state, spatial);
-
-                state.queue.push(bytes);
-                if (state.queue.length > REMOTE_MAX_QUEUE_CHUNKS) {
-                    state.queue.splice(0, state.queue.length - REMOTE_MAX_QUEUE_CHUNKS);
-                }
-
-                appendStreamChunk(peerUUID);
+                appendStreamChunk(peerUUID, bytes);
                 trimPlaybackLatency(state);
             }
 
@@ -1294,7 +1336,8 @@
                 recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
 
                 mediaRecorder.ondataavailable = async event => {
-                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled || !micVoiceActive) return;
+                    // Always forward live chunks; server-side gating handles background noise.
+                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled) return;
                     const audioBuffer = await event.data.arrayBuffer();
                     socket.emit("audio", { audio: audioBuffer, mimeType: recorderMimeType });
                 };
@@ -1486,16 +1529,9 @@
 
             if (enableAudioBtn) {
                 enableAudioBtn.addEventListener("click", () => {
-                    setStatus("Recovering audio...", "ok");
-                    primeAudioOutputFromGesture()
-                        .then(() => {
-                            forceRemotePlaybackRecovery();
-                            clearAudioUnlockHint();
-                            setStatus("Audio output active", "ok");
-                        })
-                        .catch(() => {
+                    runAudioRecoveryFlow({ allowReload: true }).catch(() => {
                             requestAudioUnlockHint();
-                        });
+                    });
                 });
             }
 
