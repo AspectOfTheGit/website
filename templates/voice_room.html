@@ -404,8 +404,6 @@
             let isMuted = true;
             let isDeafened = false;
             let latestVoiceState = { enabled: false, bitrateKbps: 0 };
-            let audioPolicyBlockedNoticeShown = false;
-            let audioGestureUnlocked = false;
             let micGateContext = null;
             let micGateAnalyser = null;
             let micGateSource = null;
@@ -416,9 +414,6 @@
             let micVolumeLevel = 0;
             let joinInProgress = false;
             let voiceSessionStarted = false;
-
-            const peerRestartRequests = new Map();
-            const peerAwaitingInit = new Map();
 
             const REMOTE_MAX_LAG_SECONDS = 1.6;
             const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
@@ -431,7 +426,7 @@
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
-            const RECORDER_TIMESLICE_MS = 80;
+            const RECORDER_TIMESLICE_MS = 120;
 
             muteBtn.classList.add("active");
             muteBtn.textContent = "Unmute";
@@ -447,134 +442,6 @@
                 const count = Array.from(players.keys()).filter(uuid => uuid !== localUUID).length;
                 onlineCount.textContent = `${count} online`;
                 emptyState.style.display = count > 0 ? "none" : "block";
-            }
-
-            function ensureAudioContext() {
-                if (!window.AudioContext && !window.webkitAudioContext) return null;
-                if (!window.__aspectVoiceAudioContext) {
-                    window.__aspectVoiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const ctx = window.__aspectVoiceAudioContext;
-                if (ctx.state === "suspended") ctx.resume().catch(() => {});
-                return ctx;
-            }
-
-            function getRunningAudioContext() {
-                const ctx = window.__aspectVoiceAudioContext;
-                if (!ctx) return null;
-                return ctx.state === "running" ? ctx : null;
-            }
-
-            function attachRemoteWebAudioGraph(state) {
-                if (!state || !state.audio || state.sourceNode || state.destroyed) return;
-
-                let audioContext = getRunningAudioContext();
-                if (!audioContext && audioGestureUnlocked) {
-                    audioContext = ensureAudioContext();
-                }
-
-                if (!audioContext || audioContext.state !== "running") return;
-
-                try {
-                    const sourceNode = audioContext.createMediaElementSource(state.audio);
-                    const gainNode = audioContext.createGain();
-                    let pannerNode = null;
-
-                    if (typeof audioContext.createStereoPanner === "function") {
-                        pannerNode = audioContext.createStereoPanner();
-                        sourceNode.connect(gainNode);
-                        gainNode.connect(pannerNode);
-                        pannerNode.connect(audioContext.destination);
-                    } else {
-                        sourceNode.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                    }
-
-                    state.sourceNode = sourceNode;
-                    state.gainNode = gainNode;
-                    state.pannerNode = pannerNode;
-                } catch (_) {
-                    state.sourceNode = null;
-                    state.gainNode = null;
-                    state.pannerNode = null;
-                }
-            }
-
-            function setAudioPolicyBlockedStatus() {
-                if (audioPolicyBlockedNoticeShown) return;
-                audioPolicyBlockedNoticeShown = true;
-                setStatus("Audio blocked by browser until interaction", "bad");
-            }
-
-            async function unlockAllRemoteAudio(reason) {
-                const ctx = ensureAudioContext();
-                if (ctx && ctx.state === "suspended") {
-                    try {
-                        await ctx.resume();
-                    } catch (_) {}
-                }
-
-                let unlockedAny = false;
-                let blockedByPolicy = false;
-                let attempted = 0;
-                for (const state of remoteAudioState.values()) {
-                    if (!state || !state.audio) continue;
-                    attempted += 1;
-                    try {
-                        await state.audio.play();
-                        unlockedAny = true;
-                    } catch (err) {
-                        if (err && err.name === "NotAllowedError") {
-                            blockedByPolicy = true;
-                        }
-                    }
-                }
-
-                if (blockedByPolicy) {
-                    setAudioPolicyBlockedStatus();
-                    return { unlockedAny, blockedByPolicy, attempted };
-                }
-
-                if (unlockedAny && reason !== "initial") {
-                    audioPolicyBlockedNoticeShown = false;
-                    setStatus("Audio output active", "ok");
-                }
-
-                return { unlockedAny, blockedByPolicy, attempted };
-            }
-
-            async function primeAudioOutputFromGesture() {
-                const ctx = ensureAudioContext();
-                if (ctx) {
-                    try {
-                        await ctx.resume();
-
-                        // Some browsers require a user-gesture-tied render to permanently unlock output.
-                        const gain = ctx.createGain();
-                        gain.gain.value = 0.00001;
-                        const osc = ctx.createOscillator();
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.02);
-                    } catch (_) {}
-                }
-
-                audioGestureUnlocked = true;
-                return unlockAllRemoteAudio("interaction");
-            }
-
-            function forceRemotePlaybackRecovery() {
-                for (const [peerUUID, state] of remoteAudioState.entries()) {
-                    if (!state || !state.audio || state.destroyed) continue;
-
-                    try {
-                        state.audio.muted = false;
-                        state.audio.play().catch(() => {});
-                    } catch (_) {}
-
-                    recoverStalledRemoteAudio(peerUUID, state, Date.now());
-                }
             }
 
             function normalizeMimeType(mimeType) {
@@ -691,17 +558,6 @@
                 tick();
             }
 
-            function requestPeerRestart(peerUUID) {
-                if (!peerUUID || peerUUID === localUUID) return;
-
-                const now = Date.now();
-                const lastAt = peerRestartRequests.get(peerUUID) || 0;
-                if ((now - lastAt) < 2000) return;
-
-                peerRestartRequests.set(peerUUID, now);
-                socket.emit("voice-request-restart", { peer: peerUUID });
-            }
-
             function pickSupportedMimeType(preferred) {
                 const candidates = [
                     normalizeMimeType(preferred),
@@ -720,13 +576,9 @@
                 if (!state) return;
 
                 const spatialGain = typeof state.spatialGain === "number" ? state.spatialGain : 1;
-                const spatialPan = typeof state.spatialPan === "number" ? state.spatialPan : 0;
                 const effectiveGain = (isDeafened || state.muted) ? 0 : (state.volume * spatialGain);
 
-                if (state.gainNode) state.gainNode.gain.value = Math.max(0, effectiveGain);
-                if (state.pannerNode) state.pannerNode.pan.value = Math.max(-1, Math.min(1, spatialPan));
-
-                if (state.audio && !state.gainNode) {
+                if (state.audio) {
                     state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
                 }
             }
@@ -843,20 +695,10 @@
             function runRemoteAudioHealthcheck() {
                 if (remoteAudioState.size === 0) return;
 
-                if (audioGestureUnlocked) {
-                    const ctx = ensureAudioContext();
-                    if (ctx && ctx.state === "suspended") {
-                        ctx.resume().catch(() => {});
-                    }
-                }
-
                 const nowMs = Date.now();
                 for (const [peerUUID, state] of remoteAudioState.entries()) {
-                    attachRemoteWebAudioGraph(state);
                     monitorPlaybackProgress(state, nowMs);
-                    if (audioGestureUnlocked) {
-                        recoverStalledRemoteAudio(peerUUID, state, nowMs);
-                    }
+                    recoverStalledRemoteAudio(peerUUID, state, nowMs);
                 }
             }
 
@@ -923,10 +765,6 @@
                 audio.preload = "auto";
                 remoteAudioHost.appendChild(audio);
 
-                const sourceNode = null;
-                const gainNode = null;
-                const pannerNode = null;
-
                 const state = {
                     mimeType: supportedMimeType,
                     mediaSource,
@@ -943,10 +781,7 @@
                     lastCurrentTime: 0,
                     destroyed: false,
                     objectUrl,
-                    audio,
-                    sourceNode,
-                    gainNode,
-                    pannerNode
+                    audio
                 };
 
                 mediaSource.addEventListener("sourceopen", () => {
@@ -980,21 +815,10 @@
                     }
                 }, { once: true });
 
-                audio.play().catch(() => {
-                    if (audioGestureUnlocked) {
-                        setAudioPolicyBlockedStatus();
-                    }
-                });
-
-                attachRemoteWebAudioGraph(state);
+                audio.play().catch(() => {});
 
                 const tryResume = () => {
-                    ensureAudioContext();
-                    audio.play().catch((err) => {
-                        if (err && err.name === "NotAllowedError") {
-                            setAudioPolicyBlockedStatus();
-                        }
-                    });
+                    audio.play().catch(() => {});
                 };
 
                 audio.addEventListener("stalled", tryResume);
@@ -1060,21 +884,6 @@
                 const detectedMimeType = detectMimeTypeFromChunk(bytes);
                 const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
 
-                const hasStream = remoteAudioState.has(peerUUID);
-                if (!hasStream) {
-                    const awaitingInit = peerAwaitingInit.has(peerUUID) ? peerAwaitingInit.get(peerUUID) : true;
-                    peerAwaitingInit.set(peerUUID, awaitingInit);
-
-                    if (awaitingInit && !detectedMimeType) {
-                        requestPeerRestart(peerUUID);
-                        return;
-                    }
-
-                    if (detectedMimeType) {
-                        peerAwaitingInit.set(peerUUID, false);
-                    }
-                }
-
                 const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
                 if (!state) return;
 
@@ -1089,8 +898,6 @@
                 const card = document.getElementById(`peer-${peerUUID}`);
                 if (card) card.remove();
                 destroyRemoteStream(peerUUID);
-                peerAwaitingInit.delete(peerUUID);
-                peerRestartRequests.delete(peerUUID);
                 players.delete(peerUUID);
                 updateOnlineCount();
             }
@@ -1311,29 +1118,12 @@
 
             socket.on("existing-peers", peers => {
                 if (!Array.isArray(peers)) return;
-
-                peers.forEach(peerUUID => {
-                    if (!peerUUID || peerUUID === localUUID) return;
-                    requestPeerRestart(peerUUID);
-                    peerAwaitingInit.set(peerUUID, true);
-                });
-            });
-
-            socket.on("voice-restart-stream", () => {
-                if (!latestVoiceState.enabled || !latestVoiceState.bitrateKbps || !localStream) {
-                    return;
-                }
-
-                startRecorderForBitrate(latestVoiceState.bitrateKbps);
             });
 
             socket.on("audio", data => {
                 if (!data || !data.from || !data.audio) return;
                 if (data.from === localUUID) return;
                 updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
-                if (audioGestureUnlocked) {
-                    unlockAllRemoteAudio("packet").catch(() => {});
-                }
             });
 
             socket.on("peer-left", uuid => {
@@ -1405,22 +1195,8 @@
                 }
             }
 
-            const unlockHandler = () => {
-                primeAudioOutputFromGesture().catch(() => {});
-            };
-
-            window.addEventListener("pointerdown", unlockHandler);
-            window.addEventListener("keydown", unlockHandler);
-            window.addEventListener("focus", unlockHandler);
-            document.addEventListener("visibilitychange", () => {
-                if (!document.hidden) {
-                    unlockAllRemoteAudio("visible").catch(() => {});
-                }
-            });
-
             beginVoiceSession().catch(() => {
                 setStatus("Voice startup failed", "bad");
-                setAudioPolicyBlockedStatus();
             });
 
             setInterval(runRemoteAudioHealthcheck, REMOTE_HEALTHCHECK_MS);
