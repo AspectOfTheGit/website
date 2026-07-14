@@ -562,6 +562,81 @@
                 }
             }
 
+            function ensureRemoteAudioGraph(state, peerUUID) {
+                if (!state || state.sourceNode) {
+                    return Boolean(state && state.sourceNode);
+                }
+
+                const context = getPlaybackContext();
+                if (!context) {
+                    console.debug("[voice-room] WebAudio unavailable for peer", peerUUID);
+                    return false;
+                }
+
+                try {
+                    const sourceNode = context.createMediaStreamSource(state.stream);
+                    const gainNode = context.createGain();
+                    sourceNode.connect(gainNode);
+
+                    // Explicit equal-power pan matrix so stereo positioning works even when StereoPanner is unreliable.
+                    const panLeftGainNode = context.createGain();
+                    const panRightGainNode = context.createGain();
+                    const panMergerNode = context.createChannelMerger(2);
+
+                    gainNode.connect(panLeftGainNode);
+                    gainNode.connect(panRightGainNode);
+                    panLeftGainNode.connect(panMergerNode, 0, 0);
+                    panRightGainNode.connect(panMergerNode, 0, 1);
+                    panMergerNode.connect(context.destination);
+
+                    if (typeof context.createStereoPanner === "function") {
+                        // Keep native panner reference for diagnostics/fallback, but manual pan matrix is authoritative.
+                        state.pannerNode = context.createStereoPanner();
+                    }
+
+                    state.sourceNode = sourceNode;
+                    state.gainNode = gainNode;
+                    state.audioContext = context;
+                    state.panLeftGainNode = panLeftGainNode;
+                    state.panRightGainNode = panRightGainNode;
+                    state.panMergerNode = panMergerNode;
+                    state.audio.muted = true;
+
+                    console.debug("[voice-room] audio graph created", {
+                        peer: peerUUID,
+                        usingManualPanMatrix: true,
+                        hasStereoPanner: Boolean(state.pannerNode),
+                        audioContextState: context.state,
+                        destinationChannelCount: context.destination?.channelCount || null,
+                        destinationMaxChannelCount: context.destination?.maxChannelCount || null,
+                    });
+
+                    if (socket.connected) {
+                        socket.emit("voice-relay-client-debug", {
+                            stage: "audio-graph-created",
+                            peer: peerUUID,
+                            usingManualPanMatrix: true,
+                            hasStereoPanner: Boolean(state.pannerNode),
+                            audioContextState: context.state,
+                            destinationChannelCount: context.destination?.channelCount || null,
+                            destinationMaxChannelCount: context.destination?.maxChannelCount || null,
+                        });
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error("[voice-room] audio graph create failed", peerUUID, error);
+                    if (socket.connected) {
+                        socket.emit("voice-relay-client-debug", {
+                            stage: "audio-graph-create-failed",
+                            peer: peerUUID,
+                            message: String(error && error.message ? error.message : error),
+                        });
+                    }
+                    return false;
+                }
+            }
+
             function computeSpatialState(peerUUID) {
                 const speaker = players.get(peerUUID);
                 const listener = players.get(localUUID);
@@ -652,6 +727,23 @@
 
                 socket.emit("voice-relay-client-debug", {
                     stage: "spatial-apply",
+                    peer: peerUUID,
+                    pan: Number((state.spatialPan || 0).toFixed(4)),
+                    gain: Number((state.spatialGain || 0).toFixed(4)),
+                    dx: Number((spatial.dx || 0).toFixed(3)),
+                    dy: Number((spatial.dy || 0).toFixed(3)),
+                    dz: Number((spatial.dz || 0).toFixed(3)),
+                    listenerRot0: spatial.listenerRot0,
+                    listenerRot1: spatial.listenerRot1,
+                    leftGain: leftGainValue,
+                    rightGain: rightGainValue,
+                    usingManualPanMatrix: Boolean(state.panLeftGainNode && state.panRightGainNode),
+                    hasStereoPanner: Boolean(state.pannerNode),
+                    audioContextState: state.audioContext?.state || null,
+                    trackChannels: trackSettings?.channelCount ?? null,
+                });
+
+                console.debug("[voice-room] spatial-apply", {
                     peer: peerUUID,
                     pan: Number((state.spatialPan || 0).toFixed(4)),
                     gain: Number((state.spatialGain || 0).toFixed(4)),
@@ -767,51 +859,6 @@
                     panMergerNode: null,
                 };
 
-                const context = getPlaybackContext();
-                if (context) {
-                    try {
-                        const sourceNode = context.createMediaStreamSource(stream);
-                        const gainNode = context.createGain();
-                        sourceNode.connect(gainNode);
-
-                        // Explicit equal-power pan matrix so stereo positioning works even when StereoPanner is unreliable.
-                        const panLeftGainNode = context.createGain();
-                        const panRightGainNode = context.createGain();
-                        const panMergerNode = context.createChannelMerger(2);
-
-                        gainNode.connect(panLeftGainNode);
-                        gainNode.connect(panRightGainNode);
-                        panLeftGainNode.connect(panMergerNode, 0, 0);
-                        panRightGainNode.connect(panMergerNode, 0, 1);
-                        panMergerNode.connect(context.destination);
-
-                        if (typeof context.createStereoPanner === "function") {
-                            // Keep native panner reference for diagnostics/fallback, but manual pan matrix is authoritative.
-                            state.pannerNode = context.createStereoPanner();
-                        }
-
-                        state.sourceNode = sourceNode;
-                        state.gainNode = gainNode;
-                        state.audioContext = context;
-                        state.panLeftGainNode = panLeftGainNode;
-                        state.panRightGainNode = panRightGainNode;
-                        state.panMergerNode = panMergerNode;
-                        state.audio.muted = true;
-
-                        if (socket.connected) {
-                            socket.emit("voice-relay-client-debug", {
-                                stage: "audio-graph-created",
-                                peer: peerUUID,
-                                usingManualPanMatrix: true,
-                                hasStereoPanner: Boolean(state.pannerNode),
-                                audioContextState: context.state,
-                                destinationChannelCount: context.destination?.channelCount || null,
-                                destinationMaxChannelCount: context.destination?.maxChannelCount || null,
-                            });
-                        }
-                    } catch (_) {}
-                }
-
                 remoteAudioState.set(peerUUID, state);
                 refreshPeerSpatialAudio(peerUUID);
                 return state;
@@ -831,6 +878,7 @@
                 });
 
                 state.stream.addTrack(track);
+                ensureRemoteAudioGraph(state, peerUUID);
                 refreshPeerSpatialAudio(peerUUID);
                 ensurePlayerCard(peerUUID, players.get(peerUUID)?.name || peerUUID);
                 await ensurePlaybackUnlocked();
