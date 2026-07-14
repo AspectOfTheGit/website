@@ -4,14 +4,40 @@ import threading
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Set
 
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc import RTCConfiguration, RTCIceServer, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
+from src.config import get_voice_webrtc_ice_servers
 
 LOGGER = logging.getLogger("voice_relay")
 
 SignalCallback = Callable[[str, str, dict], None]
 
 media_relay = MediaRelay()
+
+
+def _build_rtc_configuration() -> RTCConfiguration:
+    ice_servers = []
+
+    for entry in get_voice_webrtc_ice_servers():
+        urls = entry.get("urls")
+        if isinstance(urls, str):
+            urls = [urls]
+        elif not isinstance(urls, list):
+            continue
+
+        sanitized_urls = [url for url in urls if isinstance(url, str) and url.strip()]
+        if not sanitized_urls:
+            continue
+
+        ice_servers.append(
+            RTCIceServer(
+                urls=sanitized_urls,
+                username=str(entry.get("username", "") or ""),
+                credential=str(entry.get("credential", "") or ""),
+            )
+        )
+
+    return RTCConfiguration(iceServers=ice_servers)
 
 
 @dataclass
@@ -210,7 +236,7 @@ class VoiceRelayService:
         if existing_room_peer is not None:
             await self._remove_peer(existing_room_peer)
 
-        peer_connection = RTCPeerConnection()
+        peer_connection = RTCPeerConnection(configuration=_build_rtc_configuration())
         peer_connection.addTransceiver("audio", direction="recvonly")
 
         peer = PeerState(

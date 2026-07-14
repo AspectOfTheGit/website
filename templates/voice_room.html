@@ -377,6 +377,7 @@
             const spatialMinGain = Number({{ voice_spatial_min_gain }});
 
             const socket = io(window.location.origin, { transports: ["websocket"], autoConnect: false });
+            const webrtcIceServers = {{ voice_webrtc_ice_servers|tojson }};
 
             const statusDot = document.getElementById("status-dot");
             const statusText = document.getElementById("status-text");
@@ -953,7 +954,9 @@
                     return peerConnection;
                 }
 
-                peerConnection = new RTCPeerConnection();
+                peerConnection = new RTCPeerConnection({
+                    iceServers: Array.isArray(webrtcIceServers) ? webrtcIceServers : []
+                });
 
                 peerConnection.addEventListener("connectionstatechange", () => {
                     const state = peerConnection?.connectionState || "new";
@@ -963,6 +966,13 @@
                         setStatus("Voice live", "ok");
                     } else if (["failed", "closed", "disconnected"].includes(state)) {
                         setStatus("Voice transport offline", "bad");
+                    }
+                });
+
+                peerConnection.addEventListener("iceconnectionstatechange", () => {
+                    const state = peerConnection?.iceConnectionState || "new";
+                    if (state === "failed") {
+                        setStatus("ICE connection failed", "bad");
                     }
                 });
 
