@@ -65,7 +65,12 @@ def create_app():
         return render_template("404.html",error=error), 404
 
     socketio.init_app(app)
-    init_voice_relay(lambda sid, event, payload: socketio.emit(event, payload, room=sid))
+
+    def _emit_voice_relay_signal(sid, event, payload):
+        print(f"[main.py] Voice relay signal -> sid={sid} event={event}")
+        socketio.emit(event, payload, room=sid)
+
+    init_voice_relay(_emit_voice_relay_signal)
     return app
 
 app = create_app()

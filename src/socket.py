@@ -370,6 +370,7 @@ def handle_join(room, uuid=None, auth=None):
 
         try:
             get_voice_relay().join(request.sid, room, uuid)
+            print(f"[socket.py] Voice relay join queued for {uuid} in {room} sid={request.sid}")
         except Exception:
             print(f"[socket.py] Voice relay join failed for {uuid} in {room}")
 
@@ -546,6 +547,7 @@ def handle_voice_relay_answer(payload):
 
     try:
         get_voice_relay().answer(request.sid, sdp, sdp_type)
+        print(f"[socket.py] Voice relay answer queued for {uuid} in {room} sid={request.sid}")
     except Exception:
         print(f"[socket.py] Voice relay answer failed for {uuid} in {room}")
 
@@ -560,6 +562,7 @@ def handle_voice_relay_renegotiate():
 
     try:
         get_voice_relay().renegotiate(request.sid)
+        print(f"[socket.py] Voice relay renegotiate queued for {uuid} in {room} sid={request.sid}")
     except Exception:
         print(f"[socket.py] Voice relay renegotiation failed for {uuid} in {room}")
     

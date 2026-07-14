@@ -117,6 +117,7 @@ def _get_fallback_voice_webrtc_ice_servers():
 
 def _fetch_cloudflare_turn_ice_servers():
     if not TURN_TOKEN_ID or not TURN_API_TOKEN:
+        print("[config.py] Cloudflare TURN credentials unavailable; TURN_TOKEN_ID or TURN_API_TOKEN missing")
         return None
 
     endpoint = (
@@ -125,6 +126,7 @@ def _fetch_cloudflare_turn_ice_servers():
     )
 
     try:
+        print("[config.py] Requesting Cloudflare TURN ICE servers")
         response = requests.post(
             endpoint,
             headers={
@@ -136,8 +138,11 @@ def _fetch_cloudflare_turn_ice_servers():
         )
         response.raise_for_status()
         payload = response.json()
-        return _normalize_ice_servers(payload.get("iceServers", []))
+        ice_servers = _normalize_ice_servers(payload.get("iceServers", []))
+        print(f"[config.py] Cloudflare TURN ICE servers generated: {len(ice_servers)} entries")
+        return ice_servers
     except Exception:
+        print("[config.py] Failed generating Cloudflare TURN ICE credentials")
         LOGGER.exception("Failed generating Cloudflare TURN ICE credentials")
         return None
 
@@ -163,11 +168,13 @@ def get_voice_webrtc_ice_servers(force_refresh=False):
         if generated_ice_servers:
             _voice_webrtc_ice_servers_cache = generated_ice_servers
             _voice_webrtc_ice_servers_expires_at = now + max(60, VOICE_WEBRTC_TURN_TTL_SECONDS - 60)
+            print("[config.py] Using generated Cloudflare TURN ICE servers")
             return list(_voice_webrtc_ice_servers_cache)
 
         fallback_ice_servers = _get_fallback_voice_webrtc_ice_servers()
         _voice_webrtc_ice_servers_cache = fallback_ice_servers
         _voice_webrtc_ice_servers_expires_at = now + 300
+        print("[config.py] Falling back to STUN-only ICE servers")
         return list(_voice_webrtc_ice_servers_cache)
 
 VOICE_SPATIAL_MAX_DISTANCE = 20

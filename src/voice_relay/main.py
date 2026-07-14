@@ -89,6 +89,7 @@ class VoiceRelayService:
             try:
                 done_future.result()
             except Exception:
+                print(f"[voice_relay.main.py] Background action failed sid={sid} action={action}")
                 LOGGER.exception("voice relay %s failed for sid=%s", action, sid)
                 self._signal(sid, "voice-relay-error", {"message": f"{action}-failed"})
 
@@ -125,8 +126,10 @@ class VoiceRelayService:
 
     def _signal(self, sid: str, event: str, payload: dict) -> None:
         try:
+            print(f"[voice_relay.main.py] Signaling sid={sid} event={event}")
             self._signal_callback(sid, event, payload)
         except Exception:
+            print(f"[voice_relay.main.py] Signaling failed sid={sid} event={event}")
             LOGGER.exception("voice relay signaling failed for %s", sid)
 
     async def _send_offer(self, peer: PeerState) -> None:
@@ -240,6 +243,7 @@ class VoiceRelayService:
                 self._rooms.pop(room.room_id, None)
 
     async def _join(self, sid: str, room_id: str, uuid: str) -> None:
+        print(f"[voice_relay.main.py] Join sid={sid} uuid={uuid} room={room_id}")
         LOGGER.info("voice relay join sid=%s uuid=%s room=%s", sid, uuid, room_id)
 
         existing = self._peers_by_sid.get(sid)
@@ -285,8 +289,10 @@ class VoiceRelayService:
         await self._rebalance_room(room)
 
     async def _answer(self, sid: str, sdp: str, sdp_type: str = "answer") -> None:
+        print(f"[voice_relay.main.py] Answer sid={sid}")
         peer = self._peers_by_sid.get(sid)
         if peer is None or peer.closed:
+            print(f"[voice_relay.main.py] Answer ignored sid={sid} reason=no-peer")
             LOGGER.warning("voice relay answer ignored sid=%s reason=no-peer", sid)
             return
 
@@ -299,8 +305,10 @@ class VoiceRelayService:
             self._signal(peer.sid, "voice-relay-error", {"message": "answer-failed"})
 
     async def _renegotiate(self, sid: str) -> None:
+        print(f"[voice_relay.main.py] Renegotiate sid={sid}")
         peer = self._peers_by_sid.get(sid)
         if peer is None or peer.closed:
+            print(f"[voice_relay.main.py] Renegotiate ignored sid={sid} reason=no-peer")
             LOGGER.warning("voice relay renegotiate ignored sid=%s reason=no-peer", sid)
             return
 
