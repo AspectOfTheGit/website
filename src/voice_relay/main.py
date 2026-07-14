@@ -57,6 +57,7 @@ class PeerState:
     local_audio_track: Optional[object] = None
     remote_tracks: Dict[str, RemoteTrackBinding] = field(default_factory=dict)
     negotiation_lock: Optional[asyncio.Lock] = None
+    pending_offer: bool = False
     closed: bool = False
 
 
@@ -182,7 +183,17 @@ class VoiceRelayService:
             if peer.closed:
                 return
 
+            signaling_state = getattr(peer.peer_connection, "signalingState", "stable")
+            if signaling_state != "stable":
+                peer.pending_offer = True
+                print(
+                    f"[voice_relay.main.py] Offer deferred sid={peer.sid} uuid={peer.uuid} signalingState={signaling_state}",
+                    flush=True,
+                )
+                return
+
             try:
+                peer.pending_offer = False
                 offer = await peer.peer_connection.createOffer()
                 await peer.peer_connection.setLocalDescription(offer)
                 await self._wait_for_ice_gathering(peer.peer_connection)
@@ -342,6 +353,10 @@ class VoiceRelayService:
             await peer.peer_connection.setRemoteDescription(
                 RTCSessionDescription(sdp=sdp, type=sdp_type)
             )
+
+            if peer.pending_offer:
+                print(f"[voice_relay.main.py] Processing deferred offer sid={sid}", flush=True)
+                await self._send_offer(peer)
         except Exception:
             LOGGER.exception("failed applying answer for %s", peer.uuid)
             self._signal(peer.sid, "voice-relay-error", {"message": "answer-failed"})

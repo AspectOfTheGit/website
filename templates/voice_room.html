@@ -607,6 +607,10 @@
                     ? 0
                     : Math.max(0, Math.min(2, state.volume * state.spatialGain));
 
+                if (state.audio) {
+                    state.audio.muted = Boolean(isDeafened || state.muted);
+                }
+
                 if (state.gainNode) {
                     state.gainNode.gain.value = effectiveGain;
                 } else if (state.audio) {
