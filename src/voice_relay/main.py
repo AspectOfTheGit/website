@@ -82,17 +82,30 @@ class VoiceRelayService:
     def _submit(self, coroutine):
         return asyncio.run_coroutine_threadsafe(coroutine, self._loop)
 
+    def _submit_tracked(self, coroutine, sid: str, action: str):
+        future = self._submit(coroutine)
+
+        def _handle_result(done_future):
+            try:
+                done_future.result()
+            except Exception:
+                LOGGER.exception("voice relay %s failed for sid=%s", action, sid)
+                self._signal(sid, "voice-relay-error", {"message": f"{action}-failed"})
+
+        future.add_done_callback(_handle_result)
+        return future
+
     def join(self, sid: str, room_id: str, uuid: str):
-        return self._submit(self._join(sid, room_id, uuid))
+        return self._submit_tracked(self._join(sid, room_id, uuid), sid, "join")
 
     def answer(self, sid: str, sdp: str, sdp_type: str = "answer"):
-        return self._submit(self._answer(sid, sdp, sdp_type))
+        return self._submit_tracked(self._answer(sid, sdp, sdp_type), sid, "answer")
 
     def renegotiate(self, sid: str):
-        return self._submit(self._renegotiate(sid))
+        return self._submit_tracked(self._renegotiate(sid), sid, "renegotiate")
 
     def leave(self, sid: str):
-        return self._submit(self._leave(sid))
+        return self._submit_tracked(self._leave(sid), sid, "leave")
 
     def shutdown(self):
         future = self._submit(self._shutdown())
@@ -227,6 +240,8 @@ class VoiceRelayService:
                 self._rooms.pop(room.room_id, None)
 
     async def _join(self, sid: str, room_id: str, uuid: str) -> None:
+        LOGGER.info("voice relay join sid=%s uuid=%s room=%s", sid, uuid, room_id)
+
         existing = self._peers_by_sid.get(sid)
         if existing is not None:
             await self._remove_peer(existing)
@@ -272,6 +287,7 @@ class VoiceRelayService:
     async def _answer(self, sid: str, sdp: str, sdp_type: str = "answer") -> None:
         peer = self._peers_by_sid.get(sid)
         if peer is None or peer.closed:
+            LOGGER.warning("voice relay answer ignored sid=%s reason=no-peer", sid)
             return
 
         try:
@@ -285,6 +301,7 @@ class VoiceRelayService:
     async def _renegotiate(self, sid: str) -> None:
         peer = self._peers_by_sid.get(sid)
         if peer is None or peer.closed:
+            LOGGER.warning("voice relay renegotiate ignored sid=%s reason=no-peer", sid)
             return
 
         await self._send_offer(peer)
