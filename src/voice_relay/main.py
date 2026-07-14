@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import threading
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Set
@@ -69,17 +70,57 @@ class RoomState:
 class VoiceRelayService:
     def __init__(self, signal_callback: SignalCallback):
         self._signal_callback = signal_callback
-        self._loop = asyncio.new_event_loop()
-        self._thread = threading.Thread(target=self._run_loop, name="voice-relay-loop", daemon=True)
-        self._thread.start()
+        self._loop = None
+        self._thread = None
+        self._loop_ready = None
+        self._owner_pid = None
+        self._runtime_lock = threading.Lock()
         self._rooms: Dict[str, RoomState] = {}
         self._peers_by_sid: Dict[str, PeerState] = {}
+        self._ensure_runtime()
 
     def _run_loop(self) -> None:
+        print(f"[voice_relay.main.py] Relay loop thread starting pid={os.getpid()}", flush=True)
         asyncio.set_event_loop(self._loop)
+        if self._loop_ready is not None:
+            self._loop_ready.set()
         self._loop.run_forever()
 
+    def _start_runtime(self) -> None:
+        self._loop = asyncio.new_event_loop()
+        self._loop_ready = threading.Event()
+        self._thread = threading.Thread(target=self._run_loop, name="voice-relay-loop", daemon=True)
+        self._thread.start()
+        self._loop_ready.wait(timeout=2)
+        self._owner_pid = os.getpid()
+        print(f"[voice_relay.main.py] Relay runtime ready pid={self._owner_pid}", flush=True)
+
+    def _ensure_runtime(self) -> None:
+        with self._runtime_lock:
+            current_pid = os.getpid()
+            thread_alive = self._thread is not None and self._thread.is_alive()
+            loop_running = self._loop is not None and self._loop.is_running()
+
+            if self._owner_pid == current_pid and thread_alive and loop_running:
+                return
+
+            if self._owner_pid is not None and self._owner_pid != current_pid:
+                print(
+                    f"[voice_relay.main.py] Detected process change old_pid={self._owner_pid} new_pid={current_pid}; restarting relay runtime",
+                    flush=True,
+                )
+            elif not thread_alive or not loop_running:
+                print(
+                    f"[voice_relay.main.py] Relay runtime unavailable thread_alive={thread_alive} loop_running={loop_running}; restarting",
+                    flush=True,
+                )
+
+            self._rooms = {}
+            self._peers_by_sid = {}
+            self._start_runtime()
+
     def _submit(self, coroutine):
+        self._ensure_runtime()
         return asyncio.run_coroutine_threadsafe(coroutine, self._loop)
 
     def _submit_tracked(self, coroutine, sid: str, action: str):
@@ -109,6 +150,7 @@ class VoiceRelayService:
         return self._submit_tracked(self._leave(sid), sid, "leave")
 
     def shutdown(self):
+        self._ensure_runtime()
         future = self._submit(self._shutdown())
         future.result(timeout=10)
         self._loop.call_soon_threadsafe(self._loop.stop)
