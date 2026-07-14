@@ -560,11 +560,31 @@
                 }
             }
 
+            function getYawDegreesFromRotation(rotation) {
+                if (!Array.isArray(rotation) || rotation.length === 0) {
+                    return 0;
+                }
+
+                const first = Number(rotation[0] || 0);
+                if (rotation.length === 1) {
+                    return first;
+                }
+
+                const second = Number(rotation[1] || 0);
+
+                // Some payloads use [yaw, pitch], others [pitch, yaw].
+                if (Math.abs(second) > 90 && Math.abs(first) <= 90) {
+                    return second;
+                }
+
+                return first;
+            }
+
             function computeSpatialState(peerUUID) {
                 const speaker = players.get(peerUUID);
                 const listener = players.get(localUUID);
                 if (!speaker || !listener) {
-                    return { gain: 1, pan: 0 };
+                    return { gain: 1, pan: 0, dx: 0, dy: 0, dz: 0, listenerYawRadians: 0 };
                 }
 
                 const speakerPos = Array.isArray(speaker.pos) ? speaker.pos : [0, 0, 0];
@@ -577,16 +597,30 @@
 
                 const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
                 if (distance >= spatialMaxDistance) {
-                    return { gain: 0, pan: 0 };
+                    return {
+                        gain: 0,
+                        pan: 0,
+                        dx,
+                        dy,
+                        dz,
+                        listenerYawRadians: ((Number(listenerRot[0] || 0) + 90) * Math.PI) / 180,
+                    };
                 }
 
                 const normalized = Math.max(0, 1 - (distance / spatialMaxDistance));
                 const gain = normalized * normalized;
                 if (gain < spatialMinGain) {
-                    return { gain: 0, pan: 0 };
+                    return {
+                        gain: 0,
+                        pan: 0,
+                        dx,
+                        dy,
+                        dz,
+                        listenerYawRadians: ((Number(listenerRot[0] || 0) + 90) * Math.PI) / 180,
+                    };
                 }
 
-                const yawDegrees = Number(listenerRot[0] || 0);
+                const yawDegrees = getYawDegreesFromRotation(listenerRot);
                 const yawRadians = ((yawDegrees + 90) * Math.PI) / 180;
                 const rightX = Math.cos(yawRadians);
                 const rightZ = Math.sin(yawRadians);
@@ -598,7 +632,36 @@
                 return {
                     gain,
                     pan,
+                    dx,
+                    dy,
+                    dz,
+                    listenerYawRadians: yawRadians,
                 };
+            }
+
+            function applyListenerOrientationFromYaw(context, yawRadians) {
+                if (!context || !context.listener) {
+                    return;
+                }
+
+                const listener = context.listener;
+                const forwardX = Math.cos(yawRadians - (Math.PI / 2));
+                const forwardZ = Math.sin(yawRadians - (Math.PI / 2));
+
+                if (typeof listener.forwardX !== "undefined" && listener.forwardX && typeof listener.forwardX.setValueAtTime === "function") {
+                    const now = context.currentTime;
+                    listener.forwardX.setValueAtTime(forwardX, now);
+                    listener.forwardY.setValueAtTime(0, now);
+                    listener.forwardZ.setValueAtTime(forwardZ, now);
+                    listener.upX.setValueAtTime(0, now);
+                    listener.upY.setValueAtTime(1, now);
+                    listener.upZ.setValueAtTime(0, now);
+                    return;
+                }
+
+                if (typeof listener.setOrientation === "function") {
+                    listener.setOrientation(forwardX, 0, forwardZ, 0, 1, 0);
+                }
             }
 
             function applyPlaybackState(state) {
@@ -620,8 +683,23 @@
                     state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
                 }
 
-                if (state.pannerNode) {
+                if (state.pannerNode && state.pannerNode.pan) {
                     state.pannerNode.pan.value = Math.max(-1, Math.min(1, state.spatialPan));
+                }
+
+                if (state.panner3DNode) {
+                    const dx = Number(state.relativeDx || 0);
+                    const dy = Number(state.relativeDy || 0);
+                    const dz = Number(state.relativeDz || 0);
+
+                    if (typeof state.panner3DNode.positionX !== "undefined" && state.panner3DNode.positionX && typeof state.panner3DNode.positionX.setValueAtTime === "function") {
+                        const now = state.audioContext.currentTime;
+                        state.panner3DNode.positionX.setValueAtTime(dx, now);
+                        state.panner3DNode.positionY.setValueAtTime(dy, now);
+                        state.panner3DNode.positionZ.setValueAtTime(dz, now);
+                    } else if (typeof state.panner3DNode.setPosition === "function") {
+                        state.panner3DNode.setPosition(dx, dy, dz);
+                    }
                 }
             }
 
@@ -634,6 +712,14 @@
                 const spatial = computeSpatialState(peerUUID);
                 state.spatialGain = spatial.gain;
                 state.spatialPan = spatial.pan;
+                state.relativeDx = spatial.dx;
+                state.relativeDy = spatial.dy;
+                state.relativeDz = spatial.dz;
+
+                if (state.audioContext) {
+                    applyListenerOrientationFromYaw(state.audioContext, spatial.listenerYawRadians);
+                }
+
                 applyPlaybackState(state);
             }
 
@@ -666,8 +752,13 @@
                     spatialPan: 0,
                     gainNode: null,
                     pannerNode: null,
+                    panner3DNode: null,
                     sourceNode: null,
                     trackId: null,
+                    relativeDx: 0,
+                    relativeDy: 0,
+                    relativeDz: 0,
+                    audioContext: null,
                 };
 
                 const context = getPlaybackContext();
@@ -677,17 +768,41 @@
                         const gainNode = context.createGain();
                         sourceNode.connect(gainNode);
 
+                        let connectedToDestination = false;
+
+                        if (typeof context.createPanner === "function") {
+                            const panner3DNode = context.createPanner();
+                            panner3DNode.panningModel = "HRTF";
+                            panner3DNode.distanceModel = "inverse";
+                            panner3DNode.refDistance = 1;
+                            panner3DNode.rolloffFactor = 1;
+                            panner3DNode.maxDistance = Math.max(2, spatialMaxDistance * 2);
+                            panner3DNode.coneInnerAngle = 360;
+                            panner3DNode.coneOuterAngle = 360;
+                            panner3DNode.coneOuterGain = 0;
+                            gainNode.connect(panner3DNode);
+                            panner3DNode.connect(context.destination);
+                            state.panner3DNode = panner3DNode;
+                            connectedToDestination = true;
+                        }
+
                         if (typeof context.createStereoPanner === "function") {
                             const pannerNode = context.createStereoPanner();
-                            gainNode.connect(pannerNode);
-                            pannerNode.connect(context.destination);
+                            if (!connectedToDestination) {
+                                gainNode.connect(pannerNode);
+                                pannerNode.connect(context.destination);
+                                connectedToDestination = true;
+                            }
                             state.pannerNode = pannerNode;
-                        } else {
+                        }
+
+                        if (!connectedToDestination) {
                             gainNode.connect(context.destination);
                         }
 
                         state.sourceNode = sourceNode;
                         state.gainNode = gainNode;
+                        state.audioContext = context;
                         state.audio.muted = true;
                     } catch (_) {}
                 }
@@ -748,6 +863,10 @@
 
                 try {
                     state.pannerNode?.disconnect();
+                } catch (_) {}
+
+                try {
+                    state.panner3DNode?.disconnect();
                 } catch (_) {}
 
                 try {
