@@ -565,5 +565,13 @@ def handle_voice_relay_renegotiate():
         print(f"[socket.py] Voice relay renegotiate queued for {uuid} in {room} sid={request.sid}")
     except Exception:
         print(f"[socket.py] Voice relay renegotiation failed for {uuid} in {room}")
+
+
+@socketio.on("voice-relay-client-debug")
+def handle_voice_relay_client_debug(payload):
+    voice_state = voice_sid_state.get(request.sid, {})
+    room = voice_state.get("room") or socket_rooms.get(request.sid)
+    uuid = voice_state.get("uuid") or session.get("mc_uuid") or ".unknown"
+    print(f"[socket.py] Voice relay client debug sid={request.sid} uuid={uuid} room={room} payload={payload}")
     
 

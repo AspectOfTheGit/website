@@ -68,7 +68,7 @@ def create_app():
 
     def _emit_voice_relay_signal(sid, event, payload):
         print(f"[main.py] Voice relay signal -> sid={sid} event={event}")
-        socketio.emit(event, payload, room=sid)
+        socketio.emit(event, payload, to=sid, namespace="/")
 
     init_voice_relay(_emit_voice_relay_signal)
     return app

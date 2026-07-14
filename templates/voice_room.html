@@ -992,6 +992,11 @@
 
             async function handleRelayOffer(message) {
                 const connection = ensurePeerConnection();
+                socket.emit("voice-relay-client-debug", {
+                    stage: "offer-received",
+                    hasSdp: Boolean(message && message.sdp),
+                    trackCount: Array.isArray(message?.tracks) ? message.tracks.length : 0,
+                });
                 applyTrackMap(message.tracks || []);
 
                 await connection.setRemoteDescription({
@@ -1006,6 +1011,11 @@
                 await waitForIceGatheringComplete(connection);
 
                 if (socket.connected && connection.localDescription) {
+                    socket.emit("voice-relay-client-debug", {
+                        stage: "answer-sending",
+                        type: connection.localDescription.type,
+                        sdpLength: (connection.localDescription.sdp || "").length,
+                    });
                     socket.emit("voice-relay-answer", {
                         type: "answer",
                         sdp: connection.localDescription.sdp,
@@ -1110,10 +1120,17 @@
 
             socket.on("voice-relay-offer", message => {
                 if (!message || !message.sdp) {
+                    socket.emit("voice-relay-client-debug", {
+                        stage: "offer-missing-sdp",
+                        message,
+                    });
                     return;
                 }
 
                 handleRelayOffer(message).catch(() => {
+                    socket.emit("voice-relay-client-debug", {
+                        stage: "offer-handle-failed",
+                    });
                     setStatus("Voice negotiation failed", "bad");
                 });
             });
