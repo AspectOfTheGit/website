@@ -402,6 +402,7 @@
             const remoteAudioState = new Map();
             const midToPeerUUID = new Map();
             const pendingTrackEvents = new Map();
+            const spatialDebugLastSent = new Map();
 
             let localStream = null;
             let peerConnection = null;
@@ -422,6 +423,7 @@
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
             const ICE_GATHERING_TIMEOUT_MS = 1800;
+            const SPATIAL_DEBUG_INTERVAL_MS = 1200;
 
             muteBtn.classList.add("active");
             muteBtn.textContent = "Unmute";
@@ -564,7 +566,15 @@
                 const speaker = players.get(peerUUID);
                 const listener = players.get(localUUID);
                 if (!speaker || !listener) {
-                    return { gain: 1, pan: 0 };
+                    return {
+                        gain: 1,
+                        pan: 0,
+                        dx: 0,
+                        dy: 0,
+                        dz: 0,
+                        listenerRot0: null,
+                        listenerRot1: null,
+                    };
                 }
 
                 const speakerPos = Array.isArray(speaker.pos) ? speaker.pos : [0, 0, 0];
@@ -577,13 +587,29 @@
 
                 const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
                 if (distance >= spatialMaxDistance) {
-                    return { gain: 0, pan: 0 };
+                    return {
+                        gain: 0,
+                        pan: 0,
+                        dx,
+                        dy,
+                        dz,
+                        listenerRot0: Number(listenerRot[0] || 0),
+                        listenerRot1: Number(listenerRot[1] || 0),
+                    };
                 }
 
                 const normalized = Math.max(0, 1 - (distance / spatialMaxDistance));
                 const gain = normalized * normalized;
                 if (gain < spatialMinGain) {
-                    return { gain: 0, pan: 0 };
+                    return {
+                        gain: 0,
+                        pan: 0,
+                        dx,
+                        dy,
+                        dz,
+                        listenerRot0: Number(listenerRot[0] || 0),
+                        listenerRot1: Number(listenerRot[1] || 0),
+                    };
                 }
 
                 const yawDegrees = Number(listenerRot[0] || 0);
@@ -598,7 +624,49 @@
                 return {
                     gain,
                     pan: -pan,
+                    dx,
+                    dy,
+                    dz,
+                    listenerRot0: Number(listenerRot[0] || 0),
+                    listenerRot1: Number(listenerRot[1] || 0),
                 };
+            }
+
+            function emitSpatialDebug(peerUUID, state, spatial) {
+                if (!socket || !socket.connected || !peerUUID || peerUUID === localUUID || !state || !spatial) {
+                    return;
+                }
+
+                const now = Date.now();
+                const lastSent = spatialDebugLastSent.get(peerUUID) || 0;
+                if ((now - lastSent) < SPATIAL_DEBUG_INTERVAL_MS) {
+                    return;
+                }
+                spatialDebugLastSent.set(peerUUID, now);
+
+                const leftGainValue = state.panLeftGainNode ? Number(state.panLeftGainNode.gain.value || 0) : null;
+                const rightGainValue = state.panRightGainNode ? Number(state.panRightGainNode.gain.value || 0) : null;
+                const trackSettings = state.remoteTrack && typeof state.remoteTrack.getSettings === "function"
+                    ? state.remoteTrack.getSettings()
+                    : null;
+
+                socket.emit("voice-relay-client-debug", {
+                    stage: "spatial-apply",
+                    peer: peerUUID,
+                    pan: Number((state.spatialPan || 0).toFixed(4)),
+                    gain: Number((state.spatialGain || 0).toFixed(4)),
+                    dx: Number((spatial.dx || 0).toFixed(3)),
+                    dy: Number((spatial.dy || 0).toFixed(3)),
+                    dz: Number((spatial.dz || 0).toFixed(3)),
+                    listenerRot0: spatial.listenerRot0,
+                    listenerRot1: spatial.listenerRot1,
+                    leftGain: leftGainValue,
+                    rightGain: rightGainValue,
+                    usingManualPanMatrix: Boolean(state.panLeftGainNode && state.panRightGainNode),
+                    hasStereoPanner: Boolean(state.pannerNode),
+                    audioContextState: state.audioContext?.state || null,
+                    trackChannels: trackSettings?.channelCount ?? null,
+                });
             }
 
             function applyPlaybackState(state) {
@@ -659,6 +727,7 @@
                 state.spatialPan = spatial.pan;
 
                 applyPlaybackState(state);
+                emitSpatialDebug(peerUUID, state, spatial);
             }
 
             function refreshAllSpatialAudio() {
@@ -728,6 +797,18 @@
                         state.panRightGainNode = panRightGainNode;
                         state.panMergerNode = panMergerNode;
                         state.audio.muted = true;
+
+                        if (socket.connected) {
+                            socket.emit("voice-relay-client-debug", {
+                                stage: "audio-graph-created",
+                                peer: peerUUID,
+                                usingManualPanMatrix: true,
+                                hasStereoPanner: Boolean(state.pannerNode),
+                                audioContextState: context.state,
+                                destinationChannelCount: context.destination?.channelCount || null,
+                                destinationMaxChannelCount: context.destination?.maxChannelCount || null,
+                            });
+                        }
                     } catch (_) {}
                 }
 
@@ -743,6 +824,7 @@
 
                 const state = getOrCreateRemoteState(peerUUID);
                 state.trackId = track.id;
+                state.remoteTrack = track;
 
                 Array.from(state.stream.getAudioTracks()).forEach(existingTrack => {
                     state.stream.removeTrack(existingTrack);
@@ -764,6 +846,8 @@
                     if (!currentState || currentState.trackId !== track.id) {
                         return;
                     }
+
+                    currentState.remoteTrack = null;
 
                     Array.from(currentState.stream.getAudioTracks()).forEach(endedTrack => {
                         currentState.stream.removeTrack(endedTrack);
@@ -808,6 +892,7 @@
                 } catch (_) {}
 
                 remoteAudioState.delete(peerUUID);
+                spatialDebugLastSent.delete(peerUUID);
             }
 
             function removePlayer(peerUUID) {
