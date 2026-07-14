@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Set
 
@@ -10,6 +11,10 @@ from aiortc.contrib.media import MediaRelay
 from src.config import get_voice_webrtc_ice_servers
 
 LOGGER = logging.getLogger("voice_relay")
+ICE_GATHERING_TIMEOUT_SECONDS = max(
+    0.5,
+    float(os.environ.get("VOICE_WEBRTC_ICE_GATHER_TIMEOUT_SECONDS", "2.0")),
+)
 
 SignalCallback = Callable[[str, str, dict], None]
 
@@ -85,9 +90,58 @@ class VoiceRelayService:
         asyncio.set_event_loop(self._loop)
         if self._loop_ready is not None:
             self._loop_ready.set()
-        self._loop.run_forever()
+        try:
+            self._loop.run_forever()
+        finally:
+            try:
+                pending = asyncio.all_tasks(self._loop)
+                if pending:
+                    for task in pending:
+                        task.cancel()
+                    self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            except Exception:
+                LOGGER.exception("failed while draining relay event loop tasks")
+
+            try:
+                if not self._loop.is_closed():
+                    self._loop.close()
+            except Exception:
+                LOGGER.exception("failed closing relay event loop")
+
+            print(f"[voice_relay.main.py] Relay loop thread stopped pid={os.getpid()}", flush=True)
+
+    def _stop_runtime_locked(self) -> None:
+        loop = self._loop
+        thread = self._thread
+
+        if loop is None:
+            self._thread = None
+            self._loop_ready = None
+            self._owner_pid = None
+            return
+
+        try:
+            if loop.is_running():
+                loop.call_soon_threadsafe(loop.stop)
+        except Exception:
+            LOGGER.exception("failed stopping relay loop")
+
+        if thread is not None and thread.is_alive() and thread is not threading.current_thread():
+            thread.join(timeout=2)
+
+        try:
+            if not loop.is_running() and not loop.is_closed():
+                loop.close()
+        except Exception:
+            LOGGER.exception("failed closing relay loop")
+
+        self._loop = None
+        self._thread = None
+        self._loop_ready = None
+        self._owner_pid = None
 
     def _start_runtime(self) -> None:
+        self._stop_runtime_locked()
         self._loop = asyncio.new_event_loop()
         self._loop_ready = threading.Event()
         self._thread = threading.Thread(target=self._run_loop, name="voice-relay-loop", daemon=True)
@@ -151,13 +205,31 @@ class VoiceRelayService:
         return self._submit_tracked(self._leave(sid), sid, "leave")
 
     def shutdown(self):
-        self._ensure_runtime()
-        future = self._submit(self._shutdown())
-        future.result(timeout=10)
-        self._loop.call_soon_threadsafe(self._loop.stop)
+        loop = None
+
+        with self._runtime_lock:
+            if self._loop is not None and self._loop.is_running():
+                loop = self._loop
+
+        if loop is not None:
+            try:
+                future = asyncio.run_coroutine_threadsafe(self._shutdown(), loop)
+                future.result(timeout=10)
+            except Exception:
+                LOGGER.exception("voice relay shutdown coroutine failed")
+
+        with self._runtime_lock:
+            self._stop_runtime_locked()
 
     async def _wait_for_ice_gathering(self, peer_connection: RTCPeerConnection) -> None:
+        started_at = time.monotonic()
         while peer_connection.iceGatheringState != "complete":
+            if (time.monotonic() - started_at) >= ICE_GATHERING_TIMEOUT_SECONDS:
+                print(
+                    f"[voice_relay.main.py] ICE gathering timed out after {ICE_GATHERING_TIMEOUT_SECONDS:.1f}s; continuing with partial candidates",
+                    flush=True,
+                )
+                return
             await asyncio.sleep(0.05)
 
     def _get_or_create_room(self, room_id: str) -> RoomState:

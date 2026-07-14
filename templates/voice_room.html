@@ -251,6 +251,35 @@
             width: 140px;
         }
 
+        .voice-peer-meter {
+            display: grid;
+            gap: 4px;
+        }
+
+        .voice-peer-meter-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #97abc4;
+            font-size: 0.74rem;
+        }
+
+        .voice-peer-meter-track {
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(151, 171, 196, 0.12);
+            border: 1px solid rgba(151, 171, 196, 0.18);
+        }
+
+        .voice-peer-meter-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #53d2ae 0%, #ffce6a 65%, #ff6f7a 100%);
+            transition: width 90ms linear;
+        }
+
         .voice-empty {
             color: #97abc4;
             border: 1px dashed rgba(151, 171, 196, 0.24);
@@ -416,10 +445,12 @@
             let joinInProgress = false;
             let voiceSessionStarted = false;
             let playbackContext = null;
+            let remoteMeterAnimationFrame = null;
 
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
+            const ICE_GATHERING_TIMEOUT_MS = 1800;
 
             muteBtn.classList.add("active");
             muteBtn.textContent = "Unmute";
@@ -598,6 +629,56 @@
                 };
             }
 
+            function updatePeerMeter(peerUUID, levelPercent) {
+                const fill = document.getElementById(`peer-meter-fill-${peerUUID}`);
+                const value = document.getElementById(`peer-meter-value-${peerUUID}`);
+                if (fill) {
+                    fill.style.width = `${levelPercent}%`;
+                }
+                if (value) {
+                    value.textContent = `${levelPercent}%`;
+                }
+            }
+
+            function stopRemoteMeterLoop() {
+                if (remoteMeterAnimationFrame) {
+                    cancelAnimationFrame(remoteMeterAnimationFrame);
+                    remoteMeterAnimationFrame = null;
+                }
+            }
+
+            function ensureRemoteMeterLoop() {
+                if (remoteMeterAnimationFrame) {
+                    return;
+                }
+
+                const tick = () => {
+                    remoteAudioState.forEach((state, peerUUID) => {
+                        const analyser = state.analyserNode;
+                        const analyserData = state.analyserData;
+                        if (!analyser || !analyserData) {
+                            updatePeerMeter(peerUUID, 0);
+                            return;
+                        }
+
+                        analyser.getByteTimeDomainData(analyserData);
+                        let sumSquares = 0;
+                        for (let index = 0; index < analyserData.length; index++) {
+                            const sample = (analyserData[index] - 128) / 128;
+                            sumSquares += sample * sample;
+                        }
+
+                        const rms = Math.sqrt(sumSquares / analyserData.length);
+                        const level = Math.max(0, Math.min(100, Math.round((rms / 0.05) * 100)));
+                        updatePeerMeter(peerUUID, level);
+                    });
+
+                    remoteMeterAnimationFrame = requestAnimationFrame(tick);
+                };
+
+                remoteMeterAnimationFrame = requestAnimationFrame(tick);
+            }
+
             function applyPlaybackState(state) {
                 if (!state) {
                     return;
@@ -663,15 +744,23 @@
                     spatialPan: 0,
                     gainNode: null,
                     pannerNode: null,
+                    sourceNode: null,
+                    analyserNode: null,
+                    analyserData: null,
                     trackId: null,
                 };
 
                 const context = getPlaybackContext();
                 if (context) {
                     try {
-                        const sourceNode = context.createMediaElementSource(audio);
+                        const sourceNode = context.createMediaStreamSource(stream);
                         const gainNode = context.createGain();
+                        const analyserNode = context.createAnalyser();
+                        analyserNode.fftSize = 1024;
+                        analyserNode.smoothingTimeConstant = 0.3;
+
                         sourceNode.connect(gainNode);
+                        sourceNode.connect(analyserNode);
 
                         if (typeof context.createStereoPanner === "function") {
                             const pannerNode = context.createStereoPanner();
@@ -682,12 +771,17 @@
                             gainNode.connect(context.destination);
                         }
 
+                        state.sourceNode = sourceNode;
                         state.gainNode = gainNode;
+                        state.analyserNode = analyserNode;
+                        state.analyserData = new Uint8Array(analyserNode.fftSize);
+                        state.audio.muted = true;
                     } catch (_) {}
                 }
 
                 remoteAudioState.set(peerUUID, state);
                 refreshPeerSpatialAudio(peerUUID);
+                ensureRemoteMeterLoop();
                 return state;
             }
 
@@ -707,9 +801,12 @@
                 refreshPeerSpatialAudio(peerUUID);
                 ensurePlayerCard(peerUUID, players.get(peerUUID)?.name || peerUUID);
                 await ensurePlaybackUnlocked();
-                state.audio.play().catch(() => {
-                    setStatus("Audio Blocked", "bad");
-                });
+
+                if (!state.sourceNode) {
+                    state.audio.play().catch(() => {
+                        setStatus("Audio Blocked", "bad");
+                    });
+                }
 
                 track.addEventListener("ended", () => {
                     const currentState = remoteAudioState.get(peerUUID);
@@ -730,12 +827,33 @@
                 }
 
                 try {
+                    state.sourceNode?.disconnect();
+                } catch (_) {}
+
+                try {
+                    state.analyserNode?.disconnect();
+                } catch (_) {}
+
+                try {
+                    state.gainNode?.disconnect();
+                } catch (_) {}
+
+                try {
+                    state.pannerNode?.disconnect();
+                } catch (_) {}
+
+                try {
                     state.audio.pause();
                     state.audio.srcObject = null;
                     state.audio.remove();
                 } catch (_) {}
 
                 remoteAudioState.delete(peerUUID);
+                updatePeerMeter(peerUUID, 0);
+
+                if (remoteAudioState.size === 0) {
+                    stopRemoteMeterLoop();
+                }
             }
 
             function removePlayer(peerUUID) {
@@ -795,8 +913,27 @@
                 stateElement.className = "voice-peer-state";
                 stateElement.textContent = "Connected";
 
+                const meterWrap = document.createElement("div");
+                meterWrap.className = "voice-peer-meter";
+
+                const meterHead = document.createElement("div");
+                meterHead.className = "voice-peer-meter-head";
+                meterHead.innerHTML = `<span>Level</span><span id="peer-meter-value-${peerUUID}">0%</span>`;
+
+                const meterTrack = document.createElement("div");
+                meterTrack.className = "voice-peer-meter-track";
+
+                const meterFill = document.createElement("div");
+                meterFill.className = "voice-peer-meter-fill";
+                meterFill.id = `peer-meter-fill-${peerUUID}`;
+                meterTrack.appendChild(meterFill);
+
+                meterWrap.appendChild(meterHead);
+                meterWrap.appendChild(meterTrack);
+
                 textWrap.appendChild(nameElement);
                 textWrap.appendChild(stateElement);
+                textWrap.appendChild(meterWrap);
                 left.appendChild(avatar);
                 left.appendChild(textWrap);
 
@@ -842,6 +979,8 @@
                     state.volume = Number(slider.value);
                     applyPlaybackState(state);
                 });
+
+                updatePeerMeter(peerUUID, 0);
             }
 
             async function waitForIceGatheringComplete(connection) {
@@ -850,9 +989,15 @@
                 }
 
                 await new Promise(resolve => {
+                    const timeout = setTimeout(() => {
+                        connection.removeEventListener("icegatheringstatechange", handleChange);
+                        resolve();
+                    }, ICE_GATHERING_TIMEOUT_MS);
+
                     const handleChange = () => {
                         if (connection.iceGatheringState === "complete") {
                             connection.removeEventListener("icegatheringstatechange", handleChange);
+                            clearTimeout(timeout);
                             resolve();
                         }
                     };
@@ -958,8 +1103,20 @@
                     return peerConnection;
                 }
 
+                const hasTurn = Array.isArray(webrtcIceServers) && webrtcIceServers.some(server => {
+                    const urls = Array.isArray(server?.urls) ? server.urls : [server?.urls];
+                    return urls.some(url => typeof url === "string" && (url.startsWith("turn:") || url.startsWith("turns:")));
+                });
+
                 peerConnection = new RTCPeerConnection({
-                    iceServers: Array.isArray(webrtcIceServers) ? webrtcIceServers : []
+                    iceServers: Array.isArray(webrtcIceServers) ? webrtcIceServers : [],
+                    ...(hasTurn ? { iceTransportPolicy: "relay" } : {}),
+                });
+
+                socket.emit("voice-relay-client-debug", {
+                    stage: "peer-connection-created",
+                    turnConfigured: hasTurn,
+                    relayOnly: hasTurn,
                 });
 
                 peerConnection.addEventListener("connectionstatechange", () => {
@@ -1120,6 +1277,7 @@
                 voiceQuality.textContent = "Transport: disconnected";
                 destroyPeerConnection();
                 remoteAudioState.forEach((_, peerUUID) => destroyRemoteStream(peerUUID));
+                stopRemoteMeterLoop();
             });
 
             socket.on("voice-relay-offer", message => {
@@ -1242,6 +1400,7 @@
 
             window.addEventListener("beforeunload", () => {
                 remoteAudioState.forEach((_, peerUUID) => destroyRemoteStream(peerUUID));
+                stopRemoteMeterLoop();
                 tearDownMicGate();
 
                 if (localStream) {
