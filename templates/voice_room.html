@@ -350,8 +350,8 @@
                                 <div id="voice-meter-fill" class="voice-meter-fill"></div>
                             </div>
                         </div>
-                    <div id="voice-quality" class="voice-small">Quality: waiting</div>
-                    <div class="voice-small">Server-relayed audio</div>
+                    <div id="voice-quality" class="voice-small">Transport: waiting</div>
+                    <div class="voice-small">WebRTC relay audio</div>
                 </div>
             </aside>
 
@@ -373,8 +373,10 @@
             const worldUUID = "{{ world_uuid }}";
             const localUUID = "{{ mc_uuid }}";
             const authToken = "{{ auth }}";
+            const spatialMaxDistance = Number({{ voice_spatial_max_distance }});
+            const spatialMinGain = Number({{ voice_spatial_min_gain }});
 
-            const socket = io("https://aspectofthe.site", { transports: ["websocket"], autoConnect: false });
+            const socket = io(window.location.origin, { transports: ["websocket"], autoConnect: false });
 
             const statusDot = document.getElementById("status-dot");
             const statusText = document.getElementById("status-text");
@@ -396,37 +398,27 @@
 
             const players = new Map();
             const remoteAudioState = new Map();
+            const midToPeerUUID = new Map();
+            const pendingTrackEvents = new Map();
 
             let localStream = null;
-            let mediaRecorder = null;
-            let recorderBitrate = 0;
-            let recorderMimeType = "audio/webm;codecs=opus";
+            let peerConnection = null;
+            let localAudioSender = null;
             let isMuted = true;
             let isDeafened = false;
-            let latestVoiceState = { enabled: false, bitrateKbps: 0 };
             let micGateContext = null;
             let micGateAnalyser = null;
             let micGateSource = null;
             let micGateData = null;
             let micGateAnimationFrame = null;
             let micGateOpenUntil = 0;
-            let micVoiceActive = true;
-            let micVolumeLevel = 0;
             let joinInProgress = false;
             let voiceSessionStarted = false;
+            let playbackContext = null;
 
-            const REMOTE_MAX_LAG_SECONDS = 1.6;
-            const REMOTE_TARGET_LIVE_LATENCY_SECONDS = 0.35;
-            const REMOTE_BUFFER_KEEP_SECONDS = 6;
-            const REMOTE_HEALTHCHECK_MS = 1500;
-            const REMOTE_STALL_PACKET_WINDOW_MS = 5000;
-            const REMOTE_STALL_DETECT_MS = 2400;
-            const REMOTE_STALL_BUFFERED_SECONDS = 0.18;
-            const REMOTE_DEFER_MAX_AGE_MS = 250;
             const MIC_GATE_OPEN_RMS = 0.04;
             const MIC_GATE_CLOSE_RMS = 0.02;
             const MIC_GATE_HOLD_MS = 400;
-            const RECORDER_TIMESLICE_MS = 120;
 
             muteBtn.classList.add("active");
             muteBtn.textContent = "Unmute";
@@ -444,46 +436,8 @@
                 emptyState.style.display = count > 0 ? "none" : "block";
             }
 
-            function normalizeMimeType(mimeType) {
-                if (typeof mimeType === "string" && mimeType.trim()) return mimeType.trim();
-                return "audio/webm;codecs=opus";
-            }
-
-            function tearDownMicGate() {
-                if (micGateAnimationFrame) {
-                    cancelAnimationFrame(micGateAnimationFrame);
-                    micGateAnimationFrame = null;
-                }
-
-                try {
-                    if (micGateSource) {
-                        micGateSource.disconnect();
-                    }
-                } catch (_) {}
-
-                try {
-                    if (micGateAnalyser) {
-                        micGateAnalyser.disconnect();
-                    }
-                } catch (_) {}
-
-                micGateSource = null;
-                micGateAnalyser = null;
-                micGateData = null;
-
-                if (micGateContext) {
-                    micGateContext.close().catch(() => {});
-                    micGateContext = null;
-                }
-
-                micVoiceActive = true;
-                micGateOpenUntil = 0;
-                updateMicVolumeMeter(0);
-            }
-
             function updateMicVolumeMeter(level) {
                 const clamped = Math.max(0, Math.min(100, Math.round(level)));
-                micVolumeLevel = clamped;
 
                 if (voiceMeterFill) {
                     voiceMeterFill.style.width = `${clamped}%`;
@@ -499,18 +453,44 @@
                 }
             }
 
+            function tearDownMicGate() {
+                if (micGateAnimationFrame) {
+                    cancelAnimationFrame(micGateAnimationFrame);
+                    micGateAnimationFrame = null;
+                }
+
+                try {
+                    micGateSource?.disconnect();
+                } catch (_) {}
+
+                try {
+                    micGateAnalyser?.disconnect();
+                } catch (_) {}
+
+                micGateSource = null;
+                micGateAnalyser = null;
+                micGateData = null;
+
+                if (micGateContext) {
+                    micGateContext.close().catch(() => {});
+                    micGateContext = null;
+                }
+
+                micGateOpenUntil = 0;
+                updateMicVolumeMeter(0);
+            }
+
             function setupMicGate(stream) {
                 tearDownMicGate();
 
-                const Ctor = window.AudioContext || window.webkitAudioContext;
-                if (!Ctor) {
-                    micVoiceActive = true;
+                const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextCtor) {
                     updateMicVolumeMeter(0);
                     return;
                 }
 
                 try {
-                    micGateContext = new Ctor();
+                    micGateContext = new AudioContextCtor();
                     micGateSource = micGateContext.createMediaStreamSource(stream);
                     micGateAnalyser = micGateContext.createAnalyser();
                     micGateAnalyser.fftSize = 1024;
@@ -518,7 +498,6 @@
                     micGateSource.connect(micGateAnalyser);
                     micGateData = new Uint8Array(micGateAnalyser.fftSize);
                 } catch (_) {
-                    micVoiceActive = true;
                     updateMicVolumeMeter(0);
                     return;
                 }
@@ -531,383 +510,258 @@
                     micGateAnalyser.getByteTimeDomainData(micGateData);
 
                     let sumSquares = 0;
-                    for (let i = 0; i < micGateData.length; i++) {
-                        const sample = (micGateData[i] - 128) / 128;
+                    for (let index = 0; index < micGateData.length; index++) {
+                        const sample = (micGateData[index] - 128) / 128;
                         sumSquares += sample * sample;
                     }
 
                     const rms = Math.sqrt(sumSquares / micGateData.length);
-                    const volumeLevel = Math.min(100, Math.max(0, (rms / MIC_GATE_OPEN_RMS) * 100));
-                    updateMicVolumeMeter(volumeLevel);
-                    const now = Date.now();
+                    updateMicVolumeMeter(Math.min(100, Math.max(0, (rms / MIC_GATE_OPEN_RMS) * 100)));
 
+                    const now = Date.now();
                     if (rms >= MIC_GATE_OPEN_RMS) {
-                        micVoiceActive = true;
                         micGateOpenUntil = now + MIC_GATE_HOLD_MS;
                     } else if (rms <= MIC_GATE_CLOSE_RMS && now >= micGateOpenUntil) {
-                        micVoiceActive = false;
-                    } else if (now < micGateOpenUntil) {
-                        micVoiceActive = true;
+                        micGateOpenUntil = 0;
                     }
 
                     micGateAnimationFrame = requestAnimationFrame(tick);
                 };
 
-                micVoiceActive = false;
                 updateMicVolumeMeter(0);
                 tick();
             }
 
-            function pickSupportedMimeType(preferred) {
-                const candidates = [
-                    normalizeMimeType(preferred),
-                    "audio/webm;codecs=opus",
-                    "audio/ogg;codecs=opus"
-                ];
+            function getPlaybackContext() {
+                if (playbackContext) {
+                    return playbackContext;
+                }
 
-                if (!window.MediaSource || typeof MediaSource.isTypeSupported !== "function") {
+                const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextCtor) {
                     return null;
                 }
 
-                return candidates.find(type => MediaSource.isTypeSupported(type)) || null;
+                playbackContext = new AudioContextCtor();
+                return playbackContext;
+            }
+
+            async function ensurePlaybackUnlocked() {
+                const context = getPlaybackContext();
+                if (!context) {
+                    return;
+                }
+
+                if (context.state === "suspended") {
+                    await context.resume().catch(() => {});
+                }
+            }
+
+            function computeSpatialState(peerUUID) {
+                const speaker = players.get(peerUUID);
+                const listener = players.get(localUUID);
+                if (!speaker || !listener) {
+                    return { gain: 1, pan: 0 };
+                }
+
+                const speakerPos = Array.isArray(speaker.pos) ? speaker.pos : [0, 0, 0];
+                const listenerPos = Array.isArray(listener.pos) ? listener.pos : [0, 0, 0];
+                const listenerRot = Array.isArray(listener.rot) ? listener.rot : [0, 0];
+
+                const dx = Number(speakerPos[0] || 0) - Number(listenerPos[0] || 0);
+                const dy = Number(speakerPos[1] || 0) - Number(listenerPos[1] || 0);
+                const dz = Number(speakerPos[2] || 0) - Number(listenerPos[2] || 0);
+
+                const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+                if (distance >= spatialMaxDistance) {
+                    return { gain: 0, pan: 0 };
+                }
+
+                const normalized = Math.max(0, 1 - (distance / spatialMaxDistance));
+                const gain = normalized * normalized;
+                if (gain < spatialMinGain) {
+                    return { gain: 0, pan: 0 };
+                }
+
+                const yawRadians = (Number(listenerRot[0] || 0) * Math.PI) / 180;
+                const rightX = Math.cos(yawRadians);
+                const rightZ = Math.sin(yawRadians);
+                const horizontalDistance = Math.sqrt((dx * dx) + (dz * dz));
+                const pan = horizontalDistance <= 1e-6
+                    ? 0
+                    : Math.max(-1, Math.min(1, (dx * rightX + dz * rightZ) / horizontalDistance));
+
+                return {
+                    gain,
+                    pan: -pan,
+                };
             }
 
             function applyPlaybackState(state) {
-                if (!state) return;
+                if (!state) {
+                    return;
+                }
 
-                const spatialGain = typeof state.spatialGain === "number" ? state.spatialGain : 1;
-                const effectiveGain = (isDeafened || state.muted) ? 0 : (state.volume * spatialGain);
+                const effectiveGain = (isDeafened || state.muted)
+                    ? 0
+                    : Math.max(0, Math.min(2, state.volume * state.spatialGain));
 
-                if (state.audio) {
+                if (state.gainNode) {
+                    state.gainNode.gain.value = effectiveGain;
+                } else if (state.audio) {
                     state.audio.volume = Math.max(0, Math.min(1, effectiveGain));
+                }
+
+                if (state.pannerNode) {
+                    state.pannerNode.pan.value = Math.max(-1, Math.min(1, state.spatialPan));
                 }
             }
 
-            function applySpatialFromPacket(state, spatial) {
-                if (!state || !spatial || typeof spatial !== "object") return;
-
-                if (typeof spatial.gain === "number") {
-                    state.spatialGain = Math.max(0, spatial.gain);
-                }
-                if (typeof spatial.pan === "number") {
-                    state.spatialPan = Math.max(-1, Math.min(1, spatial.pan));
+            function refreshPeerSpatialAudio(peerUUID) {
+                const state = remoteAudioState.get(peerUUID);
+                if (!state) {
+                    return;
                 }
 
+                const spatial = computeSpatialState(peerUUID);
+                state.spatialGain = spatial.gain;
+                state.spatialPan = spatial.pan;
                 applyPlaybackState(state);
             }
 
-            function trimPlaybackLatency(state) {
-                if (!state || !state.audio) return;
-                if (!state.audio.buffered || state.audio.buffered.length === 0) return;
-
-                try {
-                    const end = state.audio.buffered.end(state.audio.buffered.length - 1);
-                    const lag = end - state.audio.currentTime;
-                    if (lag > REMOTE_MAX_LAG_SECONDS) {
-                        state.audio.currentTime = Math.max(0, end - REMOTE_TARGET_LIVE_LATENCY_SECONDS);
-                    }
-                } catch (_) {}
+            function refreshAllSpatialAudio() {
+                remoteAudioState.forEach((_, peerUUID) => refreshPeerSpatialAudio(peerUUID));
             }
 
-            function pruneBufferedAudio(peerUUID, state) {
-                if (!state || !state.audio || !state.sourceBuffer) return;
-                if (!state.audio.buffered || state.audio.buffered.length === 0) return;
-                if (state.sourceBuffer.updating || state.pruning) return;
-
-                try {
-                    const end = state.audio.buffered.end(state.audio.buffered.length - 1);
-                    const removeBefore = Math.max(0, end - REMOTE_BUFFER_KEEP_SECONDS);
-                    if (removeBefore <= 0) return;
-
-                    state.pruning = true;
-                    state.sourceBuffer.remove(0, removeBefore);
-                } catch (_) {
-                    state.pruning = false;
-                }
-            }
-
-            function appendStreamChunk(peerUUID, nextChunk) {
-                const state = remoteAudioState.get(peerUUID);
-                if (!state || !nextChunk || state.destroyed) return false;
-
-                if (!state.sourceBuffer || state.sourceBuffer.updating || !state.mediaSource || state.mediaSource.readyState !== "open") {
-                    state.deferredChunk = nextChunk;
-                    state.deferredChunkAt = Date.now();
-                    return false;
-                }
-
-                try {
-                    state.sourceBuffer.appendBuffer(nextChunk);
-                    return true;
-                } catch (err) {
-                    if (err && (err.name === "InvalidStateError" || err.name === "QuotaExceededError")) {
-                        pruneBufferedAudio(peerUUID, state);
-                        return false;
-                    }
-
-                    if (err && err.name === "TypeError") {
-                        rebuildRemoteStream(peerUUID, state, nextChunk);
-                        return false;
-                    }
-
-                    return false;
-                }
-            }
-
-            function monitorPlaybackProgress(state, nowMs) {
-                if (!state || !state.audio) return;
-
-                const current = state.audio.currentTime || 0;
-                if (Math.abs(current - state.lastCurrentTime) > 0.01) {
-                    state.lastCurrentTime = current;
-                    state.lastProgressAt = nowMs;
-                }
-            }
-
-            function recoverStalledRemoteAudio(peerUUID, state, nowMs) {
-                if (!state || !state.audio || state.destroyed || isDeafened) return;
-
-                const receivingNow = (nowMs - state.lastPacketAt) <= REMOTE_STALL_PACKET_WINDOW_MS;
-                if (!receivingNow) return;
-
-                let bufferedAhead = 0;
-                try {
-                    if (state.audio.buffered && state.audio.buffered.length > 0) {
-                        const end = state.audio.buffered.end(state.audio.buffered.length - 1);
-                        bufferedAhead = Math.max(0, end - state.audio.currentTime);
-                    }
-                } catch (_) {}
-
-                if (bufferedAhead < REMOTE_STALL_BUFFERED_SECONDS) return;
-
-                const notProgressing = (nowMs - state.lastProgressAt) >= REMOTE_STALL_DETECT_MS;
-                if (!notProgressing) return;
-
-                if (state.audio.paused) {
-                    state.audio.play().catch(() => {});
-                }
-
-                // If packets continue and buffered audio exists but playback doesn't progress,
-                // rebuild this peer stream in-place to recover from decoder/MSE deadlocks.
-                rebuildRemoteStream(peerUUID, state);
-            }
-
-            function runRemoteAudioHealthcheck() {
-                if (remoteAudioState.size === 0) return;
-
-                const nowMs = Date.now();
-                for (const [peerUUID, state] of remoteAudioState.entries()) {
-                    monitorPlaybackProgress(state, nowMs);
-                    recoverStalledRemoteAudio(peerUUID, state, nowMs);
-                }
-            }
-
-            function destroyRemoteStream(peerUUID) {
-                const state = remoteAudioState.get(peerUUID);
-                if (!state) return;
-
-                state.destroyed = true;
-
-                try {
-                    if (state.audio) {
-                        state.audio.pause();
-                        state.audio.src = "";
-                        state.audio.remove();
-                    }
-                } catch (_) {}
-
-                if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
-                remoteAudioState.delete(peerUUID);
-            }
-
-            function rebuildRemoteStream(peerUUID, previousState, initialChunk = null) {
-                if (!previousState) return;
-
-                const snapshot = {
-                    mimeType: previousState.mimeType,
-                    muted: previousState.muted,
-                    volume: previousState.volume,
-                    spatialGain: previousState.spatialGain,
-                    spatialPan: previousState.spatialPan
-                };
-
-                destroyRemoteStream(peerUUID);
-                const replacement = getOrCreateRemoteState(peerUUID, snapshot.mimeType);
-                if (!replacement) return;
-
-                replacement.muted = snapshot.muted;
-                replacement.volume = snapshot.volume;
-                replacement.spatialGain = snapshot.spatialGain;
-                replacement.spatialPan = snapshot.spatialPan;
-
-                applyPlaybackState(replacement);
-                if (initialChunk) {
-                    appendStreamChunk(peerUUID, initialChunk);
-                }
-            }
-
-            function getOrCreateRemoteState(peerUUID, requestedMimeType) {
-                const supportedMimeType = pickSupportedMimeType(requestedMimeType);
-                if (!supportedMimeType) return null;
-
+            function getOrCreateRemoteState(peerUUID) {
                 const existing = remoteAudioState.get(peerUUID);
-                if (existing && existing.mimeType === supportedMimeType) return existing;
-                if (existing) destroyRemoteStream(peerUUID);
+                if (existing) {
+                    return existing;
+                }
 
-                const mediaSource = new MediaSource();
-                const objectUrl = URL.createObjectURL(mediaSource);
                 const audio = document.createElement("audio");
-                audio.src = objectUrl;
                 audio.autoplay = true;
                 audio.playsInline = true;
-                audio.muted = false;
-                audio.volume = 1;
                 audio.preload = "auto";
+                audio.muted = false;
+
+                const stream = new MediaStream();
+                audio.srcObject = stream;
                 remoteAudioHost.appendChild(audio);
 
                 const state = {
-                    mimeType: supportedMimeType,
-                    mediaSource,
-                    sourceBuffer: null,
-                    deferredChunk: null,
-                    deferredChunkAt: 0,
-                    pruning: false,
+                    audio,
+                    stream,
                     muted: false,
                     volume: 1,
                     spatialGain: 1,
                     spatialPan: 0,
-                    lastPacketAt: Date.now(),
-                    lastProgressAt: Date.now(),
-                    lastCurrentTime: 0,
-                    destroyed: false,
-                    objectUrl,
-                    audio
+                    gainNode: null,
+                    pannerNode: null,
+                    trackId: null,
                 };
 
-                mediaSource.addEventListener("sourceopen", () => {
+                const context = getPlaybackContext();
+                if (context) {
                     try {
-                        state.sourceBuffer = mediaSource.addSourceBuffer(supportedMimeType);
-                        state.sourceBuffer.mode = "sequence";
-                        state.sourceBuffer.addEventListener("updateend", () => {
-                            state.pruning = false;
-                            trimPlaybackLatency(state);
-                            pruneBufferedAudio(peerUUID, state);
+                        const sourceNode = context.createMediaElementSource(audio);
+                        const gainNode = context.createGain();
+                        sourceNode.connect(gainNode);
 
-                            if (state.deferredChunk) {
-                                const age = Date.now() - state.deferredChunkAt;
-                                const chunk = state.deferredChunk;
-                                state.deferredChunk = null;
-                                state.deferredChunkAt = 0;
-                                if (age <= REMOTE_DEFER_MAX_AGE_MS) {
-                                    appendStreamChunk(peerUUID, chunk);
-                                }
-                            }
-                        });
-
-                        if (state.deferredChunk) {
-                            const chunk = state.deferredChunk;
-                            state.deferredChunk = null;
-                            state.deferredChunkAt = 0;
-                            appendStreamChunk(peerUUID, chunk);
+                        if (typeof context.createStereoPanner === "function") {
+                            const pannerNode = context.createStereoPanner();
+                            gainNode.connect(pannerNode);
+                            pannerNode.connect(context.destination);
+                            state.pannerNode = pannerNode;
+                        } else {
+                            gainNode.connect(context.destination);
                         }
-                    } catch (_) {
-                        destroyRemoteStream(peerUUID);
-                    }
-                }, { once: true });
 
-                audio.play().catch(() => {});
-
-                const tryResume = () => {
-                    audio.play().catch(() => {});
-                };
-
-                audio.addEventListener("stalled", tryResume);
-                audio.addEventListener("waiting", tryResume);
-                audio.addEventListener("pause", () => {
-                    if (!isDeafened) tryResume();
-                });
-
-                applyPlaybackState(state);
+                        state.gainNode = gainNode;
+                    } catch (_) {}
+                }
 
                 remoteAudioState.set(peerUUID, state);
+                refreshPeerSpatialAudio(peerUUID);
                 return state;
             }
 
-            function normalizeIncomingAudioChunk(audioChunk) {
-                if (!audioChunk) return null;
-                if (audioChunk instanceof Blob || audioChunk instanceof ArrayBuffer || audioChunk instanceof Uint8Array) return audioChunk;
-
-                if (Array.isArray(audioChunk) && audioChunk.every(x => Number.isInteger(x) && x >= 0 && x <= 255)) {
-                    return new Uint8Array(audioChunk);
+            async function attachRemoteTrack(peerUUID, track) {
+                if (!track || peerUUID === localUUID) {
+                    return;
                 }
 
-                if (audioChunk.type === "Buffer" && Array.isArray(audioChunk.data)) {
-                    return new Uint8Array(audioChunk.data);
-                }
+                const state = getOrCreateRemoteState(peerUUID);
+                state.trackId = track.id;
 
-                if (typeof audioChunk === "string") {
-                    try {
-                        const binary = atob(audioChunk);
-                        const bytes = new Uint8Array(binary.length);
-                        for (let i = 0; i < binary.length; i++) {
-                            bytes[i] = binary.charCodeAt(i);
-                        }
-                        return bytes;
-                    } catch (_) {
-                        return null;
+                Array.from(state.stream.getAudioTracks()).forEach(existingTrack => {
+                    state.stream.removeTrack(existingTrack);
+                });
+
+                state.stream.addTrack(track);
+                refreshPeerSpatialAudio(peerUUID);
+                ensurePlayerCard(peerUUID, players.get(peerUUID)?.name || peerUUID);
+                await ensurePlaybackUnlocked();
+                state.audio.play().catch(() => {
+                    setStatus("Audio Blocked", "bad");
+                });
+
+                track.addEventListener("ended", () => {
+                    const currentState = remoteAudioState.get(peerUUID);
+                    if (!currentState || currentState.trackId !== track.id) {
+                        return;
                     }
-                }
 
-                return null;
+                    Array.from(currentState.stream.getAudioTracks()).forEach(endedTrack => {
+                        currentState.stream.removeTrack(endedTrack);
+                    });
+                }, { once: true });
             }
 
-            function detectMimeTypeFromChunk(chunk) {
-                const bytes = chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk);
-                if (bytes.length >= 4) {
-                    if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
-                        return "audio/webm;codecs=opus";
-                    }
-                    if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
-                        return "audio/ogg;codecs=opus";
-                    }
+            function destroyRemoteStream(peerUUID) {
+                const state = remoteAudioState.get(peerUUID);
+                if (!state) {
+                    return;
                 }
-                return null;
-            }
 
-            function updateRemoteAudio(peerUUID, audioChunk, mimeType, spatial) {
-                if (peerUUID === localUUID) return;
+                try {
+                    state.audio.pause();
+                    state.audio.srcObject = null;
+                    state.audio.remove();
+                } catch (_) {}
 
-                const normalizedChunk = normalizeIncomingAudioChunk(audioChunk);
-                if (!normalizedChunk) return;
-
-                const bytes = normalizedChunk instanceof Uint8Array ? normalizedChunk : new Uint8Array(normalizedChunk);
-                const detectedMimeType = detectMimeTypeFromChunk(bytes);
-                const effectiveMimeType = mimeType || detectedMimeType || recorderMimeType;
-
-                const state = getOrCreateRemoteState(peerUUID, effectiveMimeType);
-                if (!state) return;
-
-                state.lastPacketAt = Date.now();
-
-                applySpatialFromPacket(state, spatial);
-                appendStreamChunk(peerUUID, bytes);
-                trimPlaybackLatency(state);
+                remoteAudioState.delete(peerUUID);
             }
 
             function removePlayer(peerUUID) {
                 const card = document.getElementById(`peer-${peerUUID}`);
-                if (card) card.remove();
+                if (card) {
+                    card.remove();
+                }
+
                 destroyRemoteStream(peerUUID);
                 players.delete(peerUUID);
+
+                for (const [mid, mappedPeerUUID] of Array.from(midToPeerUUID.entries())) {
+                    if (mappedPeerUUID === peerUUID) {
+                        midToPeerUUID.delete(mid);
+                    }
+                }
+
                 updateOnlineCount();
             }
 
             function ensurePlayerCard(peerUUID, playerName) {
-                if (peerUUID === localUUID) return;
+                if (peerUUID === localUUID) {
+                    return;
+                }
+
                 let card = document.getElementById(`peer-${peerUUID}`);
                 if (card) {
-                    const nameEl = card.querySelector(".voice-user-name");
-                    if (nameEl) nameEl.textContent = playerName || peerUUID;
+                    const nameElement = card.querySelector(".voice-user-name");
+                    if (nameElement) {
+                        nameElement.textContent = playerName || peerUUID;
+                    }
                     return;
                 }
 
@@ -928,25 +782,25 @@
                 avatar.height = 36;
 
                 const textWrap = document.createElement("div");
-                const nameEl = document.createElement("div");
-                nameEl.className = "voice-user-name";
-                nameEl.textContent = playerName || peerUUID;
+                const nameElement = document.createElement("div");
+                nameElement.className = "voice-user-name";
+                nameElement.textContent = playerName || peerUUID;
 
-                const stateEl = document.createElement("div");
-                stateEl.className = "voice-peer-state";
-                stateEl.textContent = "Connected";
+                const stateElement = document.createElement("div");
+                stateElement.className = "voice-peer-state";
+                stateElement.textContent = "Connected";
 
-                textWrap.appendChild(nameEl);
-                textWrap.appendChild(stateEl);
+                textWrap.appendChild(nameElement);
+                textWrap.appendChild(stateElement);
                 left.appendChild(avatar);
                 left.appendChild(textWrap);
 
                 const actions = document.createElement("div");
                 actions.className = "voice-user-actions";
 
-                const toggleBtn = document.createElement("button");
-                toggleBtn.className = "voice-btn";
-                toggleBtn.textContent = "Sound";
+                const toggleButton = document.createElement("button");
+                toggleButton.className = "voice-btn";
+                toggleButton.textContent = "Sound";
 
                 const slider = document.createElement("input");
                 slider.type = "range";
@@ -955,82 +809,216 @@
                 slider.step = "0.01";
                 slider.value = "1";
 
-                actions.appendChild(toggleBtn);
+                actions.appendChild(toggleButton);
                 actions.appendChild(slider);
                 main.appendChild(left);
                 main.appendChild(actions);
                 card.appendChild(main);
                 usersList.appendChild(card);
 
-                toggleBtn.addEventListener("click", () => {
+                toggleButton.addEventListener("click", async () => {
+                    await ensurePlaybackUnlocked();
                     const state = remoteAudioState.get(peerUUID);
-                    if (!state) return;
+                    if (!state) {
+                        return;
+                    }
+
                     state.muted = !state.muted;
-                    toggleBtn.textContent = state.muted ? "Muted" : "Sound";
+                    toggleButton.textContent = state.muted ? "Muted" : "Sound";
                     applyPlaybackState(state);
                 });
 
                 slider.addEventListener("input", () => {
                     const state = remoteAudioState.get(peerUUID);
-                    if (!state) return;
+                    if (!state) {
+                        return;
+                    }
+
                     state.volume = Number(slider.value);
                     applyPlaybackState(state);
                 });
             }
 
-            function stopRecorder() {
-                if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                    mediaRecorder.stop();
+            async function waitForIceGatheringComplete(connection) {
+                if (!connection || connection.iceGatheringState === "complete") {
+                    return;
+                }
+
+                await new Promise(resolve => {
+                    const handleChange = () => {
+                        if (connection.iceGatheringState === "complete") {
+                            connection.removeEventListener("icegatheringstatechange", handleChange);
+                            resolve();
+                        }
+                    };
+
+                    connection.addEventListener("icegatheringstatechange", handleChange);
+                });
+            }
+
+            async function configureLocalSender(sender) {
+                if (!sender || typeof sender.getParameters !== "function" || typeof sender.setParameters !== "function") {
+                    return;
+                }
+
+                try {
+                    const parameters = sender.getParameters();
+                    parameters.encodings = parameters.encodings && parameters.encodings.length > 0
+                        ? parameters.encodings
+                        : [{}];
+                    parameters.encodings[0].maxBitrate = 32000;
+                    await sender.setParameters(parameters);
+                } catch (_) {}
+            }
+
+            async function syncLocalTrackToPeerConnection({ requestRenegotiation = false } = {}) {
+                if (!peerConnection || !localStream) {
+                    return;
+                }
+
+                const localTrack = localStream.getAudioTracks()[0];
+                if (!localTrack) {
+                    return;
+                }
+
+                localTrack.enabled = !isMuted;
+                try {
+                    localTrack.contentHint = "speech";
+                } catch (_) {}
+
+                if (localAudioSender) {
+                    await localAudioSender.replaceTrack(localTrack);
+                    await configureLocalSender(localAudioSender);
+                    return;
+                }
+
+                localAudioSender = peerConnection.addTrack(localTrack, localStream);
+                await configureLocalSender(localAudioSender);
+
+                if (requestRenegotiation && socket.connected) {
+                    socket.emit("voice-relay-renegotiate");
                 }
             }
 
-            function startRecorderForBitrate(bitrateKbps) {
-                if (!localStream || bitrateKbps <= 0) return;
+            function bindPendingTrackEvents() {
+                for (const [mid, event] of Array.from(pendingTrackEvents.entries())) {
+                    const peerUUID = midToPeerUUID.get(mid);
+                    if (!peerUUID) {
+                        continue;
+                    }
 
-                stopRecorder();
+                    pendingTrackEvents.delete(mid);
+                    attachRemoteTrack(peerUUID, event.track).catch(() => {});
+                }
+            }
 
-                const candidates = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus"];
-                const supported = candidates.find(type => {
-                    return window.MediaRecorder && typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type);
-                });
+            function applyTrackMap(tracks) {
+                const activeMids = new Set();
 
-                const options = { audioBitsPerSecond: bitrateKbps * 1000 };
-                if (supported) options.mimeType = supported;
+                if (Array.isArray(tracks)) {
+                    tracks.forEach(entry => {
+                        if (!entry || !entry.mid || !entry.peer) {
+                            return;
+                        }
 
-                try {
-                    mediaRecorder = new MediaRecorder(localStream, options);
-                } catch (_) {
-                    mediaRecorder = new MediaRecorder(localStream);
+                        activeMids.add(entry.mid);
+                        midToPeerUUID.set(entry.mid, entry.peer);
+                    });
                 }
 
-                recorderMimeType = mediaRecorder.mimeType || options.mimeType || "audio/webm;codecs=opus";
+                for (const mid of Array.from(midToPeerUUID.keys())) {
+                    if (!activeMids.has(mid)) {
+                        midToPeerUUID.delete(mid);
+                    }
+                }
 
-                mediaRecorder.ondataavailable = async event => {
-                    // Always forward live chunks; server-side gating handles background noise.
-                    if (!event.data || event.data.size === 0 || isMuted || !latestVoiceState.enabled) return;
-                    const audioBuffer = await event.data.arrayBuffer();
-                    socket.emit("audio", { audio: audioBuffer, mimeType: recorderMimeType });
-                };
+                bindPendingTrackEvents();
+            }
 
-                mediaRecorder.start(RECORDER_TIMESLICE_MS);
-                recorderBitrate = bitrateKbps;
+            function destroyPeerConnection() {
+                if (peerConnection) {
+                    try {
+                        peerConnection.close();
+                    } catch (_) {}
+                }
+
+                peerConnection = null;
+                localAudioSender = null;
+                midToPeerUUID.clear();
+                pendingTrackEvents.clear();
+            }
+
+            function ensurePeerConnection() {
+                if (peerConnection) {
+                    return peerConnection;
+                }
+
+                peerConnection = new RTCPeerConnection();
+
+                peerConnection.addEventListener("connectionstatechange", () => {
+                    const state = peerConnection?.connectionState || "new";
+                    voiceQuality.textContent = `Transport: WebRTC ${state}`;
+
+                    if (state === "connected") {
+                        setStatus("Voice live", "ok");
+                    } else if (["failed", "closed", "disconnected"].includes(state)) {
+                        setStatus("Voice transport offline", "bad");
+                    }
+                });
+
+                peerConnection.addEventListener("track", event => {
+                    const mid = event.transceiver?.mid || "";
+                    const peerUUID = midToPeerUUID.get(mid);
+                    if (!peerUUID) {
+                        pendingTrackEvents.set(mid, event);
+                        return;
+                    }
+
+                    attachRemoteTrack(peerUUID, event.track).catch(() => {});
+                });
+
+                return peerConnection;
+            }
+
+            async function handleRelayOffer(message) {
+                const connection = ensurePeerConnection();
+                applyTrackMap(message.tracks || []);
+
+                await connection.setRemoteDescription({
+                    type: message.sdpType || "offer",
+                    sdp: message.sdp,
+                });
+
+                await syncLocalTrackToPeerConnection();
+
+                const answer = await connection.createAnswer();
+                await connection.setLocalDescription(answer);
+                await waitForIceGatheringComplete(connection);
+
+                if (socket.connected && connection.localDescription) {
+                    socket.emit("voice-relay-answer", {
+                        type: "answer",
+                        sdp: connection.localDescription.sdp,
+                        sdpType: connection.localDescription.type,
+                    });
+                }
             }
 
             async function refreshMicList() {
-                const prev = micSelect.value;
+                const previousDeviceId = micSelect.value;
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const mics = devices.filter(d => d.kind === "audioinput");
+                const microphones = devices.filter(device => device.kind === "audioinput");
 
                 micSelect.innerHTML = "";
-                mics.forEach((mic, idx) => {
+                microphones.forEach((microphone, index) => {
                     const option = document.createElement("option");
-                    option.value = mic.deviceId;
-                    option.textContent = mic.label || `Microphone ${idx + 1}`;
+                    option.value = microphone.deviceId;
+                    option.textContent = microphone.label || `Microphone ${index + 1}`;
                     micSelect.appendChild(option);
                 });
 
-                if (prev && Array.from(micSelect.options).some(opt => opt.value === prev)) {
-                    micSelect.value = prev;
+                if (previousDeviceId && Array.from(micSelect.options).some(option => option.value === previousDeviceId)) {
+                    micSelect.value = previousDeviceId;
                 }
             }
 
@@ -1042,26 +1030,28 @@
                         noiseSuppression: true,
                         autoGainControl: true,
                     },
-                    video: false
+                    video: false,
                 };
 
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const nextStream = await navigator.mediaDevices.getUserMedia(constraints);
+
                 if (localStream) {
                     localStream.getTracks().forEach(track => track.stop());
                 }
 
-                localStream = stream;
+                localStream = nextStream;
                 localStream.getAudioTracks().forEach(track => {
                     track.enabled = !isMuted;
                 });
                 setupMicGate(localStream);
 
-                if (latestVoiceState.enabled && latestVoiceState.bitrateKbps > 0) {
-                    startRecorderForBitrate(latestVoiceState.bitrateKbps);
+                if (peerConnection) {
+                    await syncLocalTrackToPeerConnection({ requestRenegotiation: !localAudioSender });
                 }
             }
 
-            muteBtn.addEventListener("click", () => {
+            muteBtn.addEventListener("click", async () => {
+                await ensurePlaybackUnlocked();
                 isMuted = !isMuted;
                 muteBtn.classList.toggle("active", isMuted);
                 muteBtn.textContent = isMuted ? "Unmute" : "Mute";
@@ -1071,9 +1061,14 @@
                         track.enabled = !isMuted;
                     });
                 }
+
+                if (localAudioSender && localStream) {
+                    await syncLocalTrackToPeerConnection();
+                }
             });
 
-            deafenBtn.addEventListener("click", () => {
+            deafenBtn.addEventListener("click", async () => {
+                await ensurePlaybackUnlocked();
                 isDeafened = !isDeafened;
                 deafenBtn.classList.toggle("active", isDeafened);
                 deafenBtn.textContent = isDeafened ? "Undeafen" : "Deafen";
@@ -1090,59 +1085,55 @@
             });
 
             socket.on("connect", () => {
-                setStatus("Connected", "ok");
+                ensurePeerConnection();
                 socket.emit("join", `voice-${worldUUID}`, localUUID, authToken);
+                setStatus("Negotiating voice...", "ok");
+                voiceQuality.textContent = "Transport: WebRTC negotiating";
             });
 
             socket.on("disconnect", () => {
-                setStatus("Disconnected", "bad");
-                voiceSessionStarted = false;
+                setStatus("Voice disconnected", "bad");
+                voiceQuality.textContent = "Transport: disconnected";
+                destroyPeerConnection();
+                remoteAudioState.forEach((_, peerUUID) => destroyRemoteStream(peerUUID));
             });
 
-            socket.on("voice-status", state => {
-                if (!state || !state.enabled) {
-                    latestVoiceState = { enabled: false, bitrateKbps: 0 };
-                    voiceQuality.textContent = "Quality: voice disabled";
-                    stopRecorder();
-                    recorderBitrate = 0;
+            socket.on("voice-relay-offer", message => {
+                if (!message || !message.sdp) {
                     return;
                 }
 
-                latestVoiceState = { enabled: true, bitrateKbps: state.bitrate_kbps || 0 };
-                voiceQuality.textContent = `Quality: ${latestVoiceState.bitrateKbps} kbps`;
+                handleRelayOffer(message).catch(() => {
+                    setStatus("Voice negotiation failed", "bad");
+                });
+            });
 
-                if (latestVoiceState.bitrateKbps > 0 && latestVoiceState.bitrateKbps !== recorderBitrate) {
-                    startRecorderForBitrate(latestVoiceState.bitrateKbps);
+            socket.on("voice-relay-error", payload => {
+                setStatus(`Relay error: ${payload?.message || "unknown"}`, "bad");
+            });
+
+            socket.on("peer-left", peerUUID => {
+                if (!peerUUID || peerUUID === localUUID) {
+                    return;
                 }
-            });
 
-            socket.on("existing-peers", peers => {
-                if (!Array.isArray(peers)) return;
-            });
-
-            socket.on("audio", data => {
-                if (!data || !data.from || !data.audio) return;
-                if (data.from === localUUID) return;
-                updateRemoteAudio(data.from, data.audio, data.mimeType || recorderMimeType, data.spatial || null);
-            });
-
-            socket.on("peer-left", uuid => {
-                if (!uuid || uuid === localUUID) return;
-                removePlayer(uuid);
+                removePlayer(peerUUID);
             });
 
             socket.on("update", packet => {
-                if (!Array.isArray(packet)) return;
+                if (!Array.isArray(packet)) {
+                    return;
+                }
 
-                const active = new Set();
+                const activePeers = new Set();
 
                 packet.forEach(player => {
-                    active.add(player.uuid);
+                    activePeers.add(player.uuid);
 
                     const entry = {
                         name: player.Name || player.uuid,
                         pos: Array.isArray(player.Pos) ? player.Pos : [0, 0, 0],
-                        rot: Array.isArray(player.Rot) ? player.Rot : [0, 0]
+                        rot: Array.isArray(player.Rot) ? player.Rot : [0, 0],
                     };
 
                     players.set(player.uuid, entry);
@@ -1155,61 +1146,78 @@
                     ensurePlayerCard(player.uuid, entry.name);
                 });
 
-                Array.from(players.keys()).forEach(uuid => {
-                    if (uuid !== localUUID && !active.has(uuid)) {
-                        removePlayer(uuid);
+                Array.from(players.keys()).forEach(peerUUID => {
+                    if (peerUUID !== localUUID && !activePeers.has(peerUUID)) {
+                        removePlayer(peerUUID);
                     }
                 });
 
-                if (!active.has(localUUID)) {
+                if (!activePeers.has(localUUID)) {
                     setStatus("Room closed", "bad");
                     window.close();
                 }
 
+                refreshAllSpatialAudio();
                 updateOnlineCount();
             });
 
             async function beginVoiceSession() {
-                if (joinInProgress || voiceSessionStarted) return;
+                if (joinInProgress || voiceSessionStarted) {
+                    return;
+                }
+
                 joinInProgress = true;
 
                 try {
+                    if (!window.RTCPeerConnection || !window.WebSocket) {
+                        setStatus("WebRTC unsupported", "bad");
+                        return;
+                    }
+
                     setStatus("Starting voice...", "ok");
+                    voiceQuality.textContent = "Transport: starting";
 
                     try {
                         await startLocalStream();
                         await refreshMicList();
                         setStatus("Microphone ready", "ok");
                     } catch (_) {
-                        // Continue in listen-only mode when mic permission is denied.
-                        setStatus("Microphone unavailable (listen-only)", "bad");
+                        await refreshMicList().catch(() => {});
+                        setStatus("Microphone unavailable", "bad");
                     }
 
                     if (!socket.connected) {
                         socket.connect();
                     }
-
                     voiceSessionStarted = true;
                 } finally {
                     joinInProgress = false;
                 }
             }
 
+            document.addEventListener("click", () => {
+                ensurePlaybackUnlocked().catch(() => {});
+            });
+
             beginVoiceSession().catch(() => {
                 setStatus("Voice startup failed", "bad");
             });
 
-            setInterval(runRemoteAudioHealthcheck, REMOTE_HEALTHCHECK_MS);
-
-            navigator.mediaDevices.addEventListener("devicechange", () => {
-                refreshMicList().catch(() => {});
-            });
+            if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === "function") {
+                navigator.mediaDevices.addEventListener("devicechange", () => {
+                    refreshMicList().catch(() => {});
+                });
+            }
 
             window.addEventListener("beforeunload", () => {
-                stopRecorder();
-                remoteAudioState.forEach((_, uuid) => destroyRemoteStream(uuid));
+                remoteAudioState.forEach((_, peerUUID) => destroyRemoteStream(peerUUID));
                 tearDownMicGate();
-                if (localStream) localStream.getTracks().forEach(track => track.stop());
+
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                destroyPeerConnection();
                 socket.disconnect();
             });
         });

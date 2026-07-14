@@ -16,20 +16,19 @@ from src.config import (
     VOICE_NOISE_GATE_CLOSE_BYTES,
     VOICE_NOISE_GATE_HOLD_MS,
 )
-from src.voice_bandwidth import get_voice_bandwidth_controller
+from src.voice_relay.main import get_voice_relay
 import time
 import base64
 import re
 import math
 
-socketio = SocketIO(cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(cors_allowed_origins="*", async_mode="threading")
 
 rooms = {}
 connected = {} # Who's connected in a voice room
 socket_rooms = {}
 voice_sid_state = {}
 voice_gate_state = {}
-voice_bandwidth_controller = get_voice_bandwidth_controller()
 
 #
 
@@ -307,6 +306,12 @@ def disconnect():
 
     print(f"[socket.py] Client disconnected: {uuid or '.anonymous'}")
 
+    if room and uuid and isinstance(room, str) and re.match("^voice-", room):
+        try:
+            get_voice_relay().leave(request.sid)
+        except Exception:
+            print(f"[socket.py] Voice relay leave failed for {uuid} in {room}")
+
     if room and uuid:
         members = rooms.get(room)
         if members and uuid in members:
@@ -363,11 +368,14 @@ def handle_join(room, uuid=None, auth=None):
         connected.setdefault(room, {})[uuid] = request.sid
         rooms.setdefault(room, set()).add(uuid)
 
+        try:
+            get_voice_relay().join(request.sid, room, uuid)
+        except Exception:
+            print(f"[socket.py] Voice relay join failed for {uuid} in {room}")
+
         existing_peers = [peer_uuid for peer_uuid, sid in connected.get(room, {}).items() if peer_uuid != uuid and sid]
         emit("existing-peers", existing_peers)
         emit("peer-joined", uuid, room=room, include_self=False)
-
-        emit("voice-status", voice_bandwidth_controller.get_state())
         print(f"[socket.py] {uuid} joined room: {room}")
         return
 
@@ -518,158 +526,41 @@ def bot_chat(rdata):
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
+
+
+@socketio.on("voice-relay-answer")
+def handle_voice_relay_answer(payload):
+    if not isinstance(payload, dict):
+        return
+
+    voice_state = voice_sid_state.get(request.sid, {})
+    room = voice_state.get("room") or socket_rooms.get(request.sid)
+    uuid = voice_state.get("uuid")
+    if not room or not uuid or not re.match("^voice-", room):
+        return
+
+    sdp = payload.get("sdp")
+    sdp_type = payload.get("sdpType", "answer")
+    if not sdp:
+        return
+
+    try:
+        get_voice_relay().answer(request.sid, sdp, sdp_type)
+    except Exception:
+        print(f"[socket.py] Voice relay answer failed for {uuid} in {room}")
+
+
+@socketio.on("voice-relay-renegotiate")
+def handle_voice_relay_renegotiate():
+    voice_state = voice_sid_state.get(request.sid, {})
+    room = voice_state.get("room") or socket_rooms.get(request.sid)
+    uuid = voice_state.get("uuid")
+    if not room or not uuid or not re.match("^voice-", room):
+        return
+
+    try:
+        get_voice_relay().renegotiate(request.sid)
+    except Exception:
+        print(f"[socket.py] Voice relay renegotiation failed for {uuid} in {room}")
     
 
-@socketio.on("audio")
-def handle_audio(data=None, *args):
-    voice_state = voice_sid_state.get(request.sid, {})
-    room = voice_state.get("room") or socket_rooms.get(request.sid)
-    uuid = voice_state.get("uuid") or session.get("mc_uuid")
-
-    payload_room, payload_uuid, chunk, mime_type = parse_audio_event_payload(
-        data,
-        next((arg for arg in args if arg is not None), None),
-    )
-    room = payload_room or room
-    uuid = payload_uuid or uuid
-
-    if room and room in connected and request.sid not in connected.get(room, {}).values():
-        return
-
-    if uuid is None and room:
-        uuid = next((member_uuid for member_uuid, member_sid in connected.get(room, {}).items() if member_sid == request.sid), None)
-
-    if not room or not re.match("^voice-", room):
-        return
-
-    if uuid is None:
-        return
-
-    if room not in rooms or uuid not in rooms[room]:
-        return
-
-    if chunk is None:
-        return
-
-    size = len(chunk)
-
-    if not should_forward_audio_chunk(room, uuid, size):
-        return
-
-    world_uuid = room[len("voice-"):]
-    speaker_options = _get_player_volume_options(world_uuid, uuid)
-    input_gain = max(0.0, min(1.0, speaker_options.get("input_volume", 100) / 100.0))
-
-    eligible_peers = []
-    for peer_uuid, peer_sid in list(connected.get(room, {}).items()):
-        if peer_uuid == uuid:
-            continue
-
-        spatial = get_spatial_audio_state(room, uuid, peer_uuid)
-        if not spatial:
-            continue
-
-        if spatial.get("distance", VOICE_SPATIAL_MAX_DISTANCE + 1) >= VOICE_SPATIAL_MAX_DISTANCE:
-            continue
-
-        if spatial.get("gain", 0.0) < VOICE_SPATIAL_MIN_GAIN:
-            continue
-
-        listener_options = _get_player_volume_options(world_uuid, peer_uuid)
-        output_gain = max(0.0, min(1.0, listener_options.get("output_volume", 100) / 100.0))
-        effective_gain = spatial.get("gain", 0.0) * input_gain * output_gain
-        if effective_gain < VOICE_SPATIAL_MIN_GAIN:
-            continue
-
-        spatial = {
-            **spatial,
-            "gain": effective_gain,
-        }
-
-        eligible_peers.append((peer_uuid, peer_sid, spatial))
-
-    if not eligible_peers:
-        return
-
-    # Approximate egress usage by counting one chunk per forwarded recipient.
-    voice_bandwidth_controller.record_bytes(size * len(eligible_peers))
-    state = voice_bandwidth_controller.get_state()
-
-    if not state["enabled"]:
-        emit("voice-status", state)
-        return
-
-    for peer_uuid, peer_sid, spatial in eligible_peers:
-
-        socketio.emit(
-            "audio",
-            {
-                "from": uuid,
-                "audio": chunk,
-                "mimeType": mime_type,
-                "spatial": spatial,
-            },
-            room=peer_sid,
-        )
-
-    emit("voice-status", state)
-
-
-@socketio.on("voice-request-restart")
-def handle_voice_request_restart(data=None):
-    if not isinstance(data, dict):
-        return
-
-    voice_state = voice_sid_state.get(request.sid, {})
-    room = voice_state.get("room") or socket_rooms.get(request.sid)
-    requester_uuid = voice_state.get("uuid")
-
-    if room and room in connected and not requester_uuid:
-        requester_uuid = next((member_uuid for member_uuid, member_sid in connected[room].items() if member_sid == request.sid), None)
-
-    if not room or not re.match("^voice-", room) or not requester_uuid:
-        return
-
-    target_uuid = data.get("peer")
-    if not target_uuid or target_uuid == requester_uuid:
-        return
-
-    target_sid = connected.get(room, {}).get(target_uuid)
-    if not target_sid:
-        return
-
-    socketio.emit(
-        "voice-restart-stream",
-        {
-            "reason": "peer-request",
-            "requestedBy": requester_uuid,
-        },
-        room=target_sid,
-    )
-
-
-@socketio.on("signal")
-def handle_signal(data):
-    if not isinstance(data, dict):
-        return
-
-    target = data.get("to")
-    signal_data = data.get("signal")
-    if not target or signal_data is None:
-        return
-
-    voice_state = voice_sid_state.get(request.sid, {})
-    sender_room = voice_state.get("room")
-    sender_uuid = voice_state.get("uuid")
-
-    if not sender_room or not sender_uuid:
-        return
-
-    if sender_room not in connected or connected[sender_room].get(sender_uuid) != request.sid:
-        return
-
-    target_sid = connected.get(sender_room, {}).get(target)
-    if not target_sid:
-        return
-
-    emit("signal", {"from": sender_uuid, "signal": signal_data}, room=target_sid)

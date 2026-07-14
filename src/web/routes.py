@@ -16,7 +16,7 @@ import os
 from src.data import data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE, VOICE_SPATIAL_MAX_DISTANCE, VOICE_SPATIAL_MIN_GAIN
 from src.api.voice import voice_rooms
 
 from src.utils.data_api import (
@@ -323,5 +323,7 @@ def voice_room(world):
         mc_uuid=uuid,
         world_uuid=world,
         world_display_name=world_display_name,
-        auth=auth
+        auth=auth,
+        voice_spatial_max_distance=VOICE_SPATIAL_MAX_DISTANCE,
+        voice_spatial_min_gain=VOICE_SPATIAL_MIN_GAIN,
     )

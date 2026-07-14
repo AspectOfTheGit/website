@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 import signal
 import atexit
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -9,6 +6,7 @@ from flask_cors import CORS
 from src.socket import socketio
 from src.data import load_data, flush_data
 from src.config import CLIENT_SECRET
+from src.voice_relay.main import init_voice_relay, shutdown_voice_relay
 
 def create_app():
     app = Flask(
@@ -67,13 +65,16 @@ def create_app():
         return render_template("404.html",error=error), 404
 
     socketio.init_app(app)
+    init_voice_relay(lambda sid, event, payload: socketio.emit(event, payload, room=sid))
     return app
 
 app = create_app()
 
 atexit.register(flush_data)
+atexit.register(shutdown_voice_relay)
 
 def _shutdown_handler(*_args):
+    shutdown_voice_relay()
     flush_data()
     raise SystemExit(0)
 

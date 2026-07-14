@@ -133,7 +133,6 @@ def apivoiceusage():
             },
         }
     ), 200
-
 @voice.post("/update")
 def apivoiceupdate():
     match = re.search(r"world:([a-zA-Z0-9-]+)", request.headers.get("User-Agent", ""))
