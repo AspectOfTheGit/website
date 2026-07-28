@@ -160,6 +160,7 @@ class DataStore:
             "account": manifest.get("account", {}),
             "world": manifest.get("world", {}),
             "bot": manifest.get("bot", {}),
+            "egg": manifest.get("egg", {}),
         }
 
     def _get_collection(self, kind):
@@ -194,23 +195,23 @@ class DataStore:
         self._dirty_items.add((kind, key))
 
     def __getitem__(self, key):
-        if key in ("account", "world", "bot"):
+        if key in ("account", "world", "bot", "egg"):
             return self._get_collection(key)
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        if key in ("account", "world", "bot"):
+        if key in ("account", "world", "bot", "egg"):
             self._collections[key] = value
         else:
             raise KeyError(key)
 
     def get(self, key, default=None):
-        if key in ("account", "world", "bot"):
+        if key in ("account", "world", "bot", "egg"):
             return self._get_collection(key)
         return default
 
     def setdefault(self, key, default=None):
-        if key in ("account", "world", "bot"):
+        if key in ("account", "world", "bot", "egg"):
             return self._get_collection(key)
         if key in self._collections:
             return self._collections[key]
@@ -224,7 +225,7 @@ class DataStore:
 
     def update(self, other):
         for key, value in other.items():
-            if key in ("account", "world", "bot"):
+            if key in ("account", "world", "bot", "egg"):
                 if isinstance(value, dict):
                     collection = self._get_collection(key)
                     for item_key, item_value in value.items():
@@ -243,6 +244,7 @@ def _default_data():
         "bot": {},
         "account": {},
         "world": {},
+        "egg": {},
     }
 
 
@@ -253,6 +255,8 @@ def _default_path(kind, key):
         return f"data/worlds/{key}/data.json"
     if kind == "bot":
         return f"data/bots/{key}/data.json"
+    if kind == "egg":
+        return f"data/eggs/{key}/data.json"
     return f"data/{kind}/{key}.json"
 
 
@@ -336,9 +340,10 @@ def _write_data_locked():
         "account": {},
         "world": {},
         "bot": {},
+        "egg": {},
     }
 
-    for kind in ("account", "world", "bot"):
+    for kind in ("account", "world", "bot", "egg"):
         for item_key in sorted(changed_items):
             if item_key[0] != kind:
                 continue
@@ -350,7 +355,7 @@ def _write_data_locked():
             manifest[kind][item_key[1]] = {"path": path}
             data._manifest.setdefault(kind, {})[item_key[1]] = {"path": path}
 
-    for kind in ("account", "world", "bot"):
+    for kind in ("account", "world", "bot", "egg"):
         for key in data._get_collection(kind).keys():
             if kind not in manifest:
                 manifest[kind] = {}

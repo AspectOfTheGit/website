@@ -13,7 +13,7 @@ import requests
 import time
 import os
 
-from src.data import data
+from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE, VOICE_SPATIAL_MAX_DISTANCE, VOICE_SPATIAL_MIN_GAIN, get_voice_webrtc_ice_servers
@@ -41,10 +41,28 @@ AUTH_REQ_URL = (
 
 uuid_auth = {}
 
+
+def openWebsite(account):
+    if data["account"][account].get("flag_0", True) == False:
+        data["account"][account]["flag_0"] = True
+
+        save_data()
+
+        text = "It seems you have everything."
+        for world_uuid in data["egg"].keys():
+            visited = data["account"][account]["man"].get(world_uuid, False)
+            if visited == False:
+                text = f"The next world you visit should be {world_uuid}."
+                break
+
+        return render_template("man.html", text=text)
+
 # Misc
 
 @web.route("/")
 def index():
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    
     return render_template(
         "index.html",
         username=session.get("mc_username")
@@ -93,6 +111,8 @@ def logout():
 
 @web.route("/account")
 def account():
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+
     if not session.get("mc_access_token"):
         return redirect("/login")
 
@@ -115,6 +135,8 @@ def account():
 
 @web.route("/utils")
 def utilities():
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    
     return render_template(
         "utilities.html",
         username=session.get("mc_username")
@@ -147,6 +169,8 @@ def voice_datapack_template_download():
 
 @web.route("/bots")
 def bots_home():
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    
     return render_template(
         "aspectbots.html",
         username=session.get("mc_username")
@@ -157,6 +181,8 @@ def bots_home():
 def bots_deploy():
     if not session.get("mc_access_token"):
         return redirect("/login")
+
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
 
     refresh_account_info(session["mc_username"], session["mc_uuid"])
     refresh_bot_info()
@@ -172,6 +198,8 @@ def bots_deploy():
 
 @web.route("/bots/status")
 def bots_status():
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+
     refresh_bot_info()
     return render_template(
         "status.html",
@@ -182,6 +210,8 @@ def bots_status():
 
 @web.route("/bots/status/<bot>")
 def bot_status(bot):
+    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    
     if bot not in data["bot"]:
         abort(400)
 

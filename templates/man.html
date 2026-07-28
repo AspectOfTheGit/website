@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>?</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="man">
+    <p style="font-family: '8bitoperator JVE', monospace; font-size: 24px;"></p>
+
+    <script>
+        const audio = new Audio("{{ url_for('static', filename='AUDIO_DRONE.ogg') }}");
+        audio.loop = true;
+        audio.play();
+
+        const text = "{{ text|tojson }}";
+
+        // gradually display the text character by character
+        let index = 0;
+        function displayNextCharacter() {
+            if (index < text.length) {
+                switch (text[index]) {
+                    case '^':
+                        if (index + 1 < text.length && !isNaN(text[index + 1])) {
+                            const pauseMS = parseInt(text[index + 1]);
+                            index += 2;
+                            setTimeout(displayNextCharacter, pauseMS * 333);
+                            return;
+                        }
+                        document.querySelector('p').textContent += text[index];
+                        break;
+                    default:
+                        document.querySelector('p').textContent += text[index];
+                        break;
+                }
+                index++;
+                setTimeout(displayNextCharacter, 50);
+            }
+        }
+        displayNextCharacter();
+    </script>
+</body>
+</html>

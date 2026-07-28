@@ -1,14 +1,17 @@
+import json
+
 from flask import (
     Blueprint,
     session,
     request,
     jsonify
 )
+import requests
 
 from src.data import data, save_data
 from src.config import OTHER_TOKEN
 from src.utils.player_api import get_uuid
-from src.utils.data_api import refresh_account_info
+from src.utils.data_api import refresh_account_info, create_world
 from src.bots.manager import refresh_bot_info
 from src.discord.announce import announce
 
@@ -43,6 +46,33 @@ def changeaccountpermission():
 
     return jsonify({"success": True}), 200
 
+
+@debug.post("/man")
+def addman():
+    rdata = request.get_json()
+    man = rdata.get("man", {})
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    worlduuid = man.get("world", "")
+
+    if worlduuid not in data["world"]:
+        # fetch owner uuid from legiti.dev
+        owneruuid = requests.get(f"https://legiti.dev/api/world/{worlduuid}/owner").json().get("owner", False)
+
+        if not owneruuid:
+            return jsonify({"error": "World doesn't exist"}), 400
+
+        create_world(worlduuid, owneruuid)
+
+    data["egg"].setdefault(worlduuid, {})
+    data["egg"][worlduuid] = man.get("token", "")
+
+    save_data()
+
+    return jsonify({"success": True}), 200
 
 @debug.post("/trusted")
 def toggletrusted():

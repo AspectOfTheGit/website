@@ -1,3 +1,5 @@
+import re
+
 from flask import (
     Blueprint,
     session,
@@ -18,6 +20,34 @@ world = Blueprint(
     subdomain="api",
     url_prefix="/world"
 )
+
+
+@world.post("/man")
+def apiworldman():
+    rdata = request.get_json()
+    token = rdata.get("token", "")
+    account = rdata.get("player", "")
+
+    match = re.search(r"world:([a-zA-Z0-9-]+)", request.headers.get("User-Agent", ""))
+    match = match.group(1) if match else False
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    if token != data["egg"][match]["man"]:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data["account"][account].setdefault("man", {})
+
+    if not data["account"][account]["man"].get(match, False):
+        data["account"][account]["flag_0"] = False # i dunno what to call it :skul:
+
+    data["account"][account]["man"][match] = True
+    
+    save_data()
+
+    return jsonify({"success": True})
+
 
 @world.post("/<world>/permissions")
 def apiworldbotpermissions(world):
@@ -44,12 +74,14 @@ def apiworldbotpermissions(world):
 
     return jsonify({"success": True})
 
+
 @world.get("/<world>/getpermissions")
 def apiworldgetbotpermissions(world):
     if world not in data["world"]:
         return jsonify({"success": True, "permissions": BOT_PERMISSION_DEFAULTS})
 
     return jsonify({"success": True, "permissions": data["world"][world].get("permissions",BOT_PERMISSION_DEFAULTS)})
+
 
 @world.post("/<world>/edit/save/elements")
 def apiworldeditelements(world):
@@ -95,6 +127,7 @@ def apiworldeditelements(world):
 
     return jsonify({"success": True}), 200
 
+
 @world.post("/<world>/edit/save/settings")
 def apiworldeditsettings(world):
     rdata = request.get_json()
@@ -123,6 +156,7 @@ def apiworldeditsettings(world):
     notify(account, f"{world} settings saved", "webpage.save")
 
     return jsonify({"success": True}), 200
+
 
 @world.post("/<world>/edit/update")
 def apiworldeditupdate(world):
