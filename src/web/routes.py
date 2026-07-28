@@ -56,12 +56,18 @@ def openWebsite(account):
                 break
 
         return render_template("man.html", text=text)
+    return None
+    
 
 # Misc
 
 @web.route("/")
 def index():
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
+    if open_result is not None:
+        return open_result
     
     return render_template(
         "index.html",
@@ -111,7 +117,9 @@ def logout():
 
 @web.route("/account")
 def account():
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
 
     if not session.get("mc_access_token"):
         return redirect("/login")
@@ -135,7 +143,9 @@ def account():
 
 @web.route("/utils")
 def utilities():
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
     
     return render_template(
         "utilities.html",
@@ -169,7 +179,9 @@ def voice_datapack_template_download():
 
 @web.route("/bots")
 def bots_home():
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
     
     return render_template(
         "aspectbots.html",
@@ -182,7 +194,9 @@ def bots_deploy():
     if not session.get("mc_access_token"):
         return redirect("/login")
 
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
 
     refresh_account_info(session["mc_username"], session["mc_uuid"])
     refresh_bot_info()
@@ -198,7 +212,9 @@ def bots_deploy():
 
 @web.route("/bots/status")
 def bots_status():
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
 
     refresh_bot_info()
     return render_template(
@@ -210,7 +226,9 @@ def bots_status():
 
 @web.route("/bots/status/<bot>")
 def bot_status(bot):
-    openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    open_result = openWebsite(session["mc_uuid"]) if session.get("mc_uuid") else None
+    if open_result is not None:
+        return open_result
     
     if bot not in data["bot"]:
         abort(400)
