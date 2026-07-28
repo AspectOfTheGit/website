@@ -183,7 +183,7 @@ def debug_getdata():
 
     refresh_bot_info()
 
-    return jsonify({"success": True, "value": data}), 200
+    return jsonify({"success": True, "value": dict(data)}), 200
 
 
 @debug.post("/setdata")
@@ -194,7 +194,9 @@ def debug_setdata():
     if token != OTHER_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = json.loads(rdata.get("value", ""))
+    new_data = json.loads(rdata.get("value", ""))
+    data.clear()
+    data.update(new_data)
 
     save_data()
 
