@@ -59,7 +59,7 @@ def addman():
     worlduuid = man.get("world", "")
 
     data["egg"].setdefault(worlduuid, man.get("token", ""))
-    data["egg"].set(worlduuid, man.get("token", ""))
+    data["egg"][worlduuid] = man.get("token", "")
 
     save_data()
 
