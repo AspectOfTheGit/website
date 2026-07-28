@@ -125,6 +125,7 @@ class LazyCollection:
         self._store.mark_dirty(self._kind, key)
         return item
 
+# .set()
     def set(self, key, value):
         item = DirtyTrackingDict(self._store, self._kind, key, value)
         self._items[key] = item
@@ -146,6 +147,9 @@ class LazyCollection:
 
     def __len__(self):
         return len(self.keys())
+
+    def __setitem__(self, key, value):
+        self.set(key, value)
 
     def clear(self):
         self._items.clear()
