@@ -56,6 +56,9 @@ class DirtyTrackingDict(dict):
         super().clear()
         self._mark_dirty()
 
+    def set(self, key, value):
+        self[key] = value
+
     def pop(self, key, default=None):
         value = super().pop(key, default)
         self._mark_dirty()
@@ -125,7 +128,6 @@ class LazyCollection:
         self._store.mark_dirty(self._kind, key)
         return item
 
-# .set()
     def set(self, key, value):
         item = DirtyTrackingDict(self._store, self._kind, key, value)
         self._items[key] = item
