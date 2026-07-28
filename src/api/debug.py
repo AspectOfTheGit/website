@@ -183,7 +183,7 @@ def debug_getdata():
 
     refresh_bot_info()
 
-    return jsonify({"success": True, "value": dict(data)}), 200
+    return jsonify({"success": True, "value": data.to_dict()}), 200
 
 
 @debug.post("/setdata")

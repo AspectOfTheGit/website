@@ -225,6 +225,13 @@ class DataStore:
         self._get_collection(kind)._items[key] = item
         return item
 
+    def to_dict(self):
+        result = {}
+        for kind in ("account", "world", "bot", "egg"):
+            collection = self._get_collection(kind)
+            result[kind] = {key: dict(collection[key]) for key in collection.keys()}
+        return result
+
     def mark_dirty(self, kind, key):
         self._dirty_items.add((kind, key))
 
