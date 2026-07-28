@@ -60,7 +60,7 @@ def addman():
 
     if worlduuid not in data["world"]:
         # fetch owner uuid from legiti.dev
-        owneruuid = requests.get(f"https://legiti.dev/api/world/{worlduuid}/owner").json().get("owner", False)
+        owneruuid = requests.get(f"https://api.legiti.dev/world/{worlduuid}/owner").json().get("owner_uuid", False)
 
         if not owneruuid:
             return jsonify({"error": "World doesn't exist"}), 400
