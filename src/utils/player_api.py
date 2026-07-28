@@ -25,7 +25,15 @@ def get_uuid(username: str) -> str | None:
     except Exception:
         return None
 
-def format_uuid(u):
+def int_array_to_uuid(int_array):
+    most_sig = (int_array[0] << 32) | (int_array[1] & 0xFFFFFFFF)
+    least_sig = (int_array[2] << 32) | (int_array[3] & 0xFFFFFFFF)
+    
+    combined = (most_sig << 64) | least_sig
+    
+    return f"{combined:032x}"
+
+def hyphenate_uuid(u):
     u = u.replace("-", "").strip()
     u = (
         u[:8] + "-" +

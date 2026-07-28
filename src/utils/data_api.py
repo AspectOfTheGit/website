@@ -3,7 +3,7 @@ from datetime import datetime
 
 from src.data import data, save_data
 from src.utils.world_api import get_world_info
-from src.utils.player_api import format_uuid
+from src.utils.player_api import hyphenate_uuid
 
 
 def _now() -> float:
@@ -32,7 +32,7 @@ def create_world(world: str, uuid: str):
     if worlddata is None:
         raise ValueError("World does not exist")
 
-    if worlddata["owner_uuid"] != format_uuid(uuid):
+    if worlddata["owner_uuid"] != hyphenate_uuid(uuid):
         raise PermissionError("Unauthorized")
 
     data.setdefault("world", {})

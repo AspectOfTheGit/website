@@ -9,7 +9,7 @@ from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
-from src.utils.player_api import format_uuid
+from src.utils.player_api import hyphenate_uuid
 from src.socket import emit_log
 from src.config import DEFAULT_ABILITIES
 
@@ -55,7 +55,7 @@ def apideploybot():
         worldinfo = False
         
     if not data["account"][account]["abilities"].get("unowned", DEFAULT_ABILITIES.get("unowned",False)):
-        if worldinfo == False or worldinfo.get("owner_uuid",None) != format_uuid(account):
+        if worldinfo == False or worldinfo.get("owner_uuid",None) != hyphenate_uuid(account):
             world = "lobby"
             
     # Can account deploy?

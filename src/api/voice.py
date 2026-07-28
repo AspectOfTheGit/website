@@ -7,7 +7,7 @@ from flask import (
 from src.data import data
 from src.socket import emit_log, connected
 from src.config import MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_VERSION, OTHER_TOKEN
-from src.utils.player_api import format_uuid
+from src.utils.player_api import hyphenate_uuid
 from src.voice_bandwidth import get_voice_bandwidth_controller
 import re
 import time
@@ -185,7 +185,7 @@ def apivoiceupdate():
     request_uuids = []
 
     for player in value["players"]:
-        uuid = format_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])) # Convert UUID from array to hex
+        uuid = hyphenate_uuid(''.join(f'{x & 0xffffffff:08x}' for x in player["UUID"])) # Convert UUID from array to hex
         request_uuids.append(uuid)
 
         # Persist only supported options and keep existing values when omitted.

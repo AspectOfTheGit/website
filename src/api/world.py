@@ -9,8 +9,8 @@ from flask import (
 
 from src.data import data, save_data
 from src.config import VALID_BOT_PERMISSIONS, BOT_PERMISSION_DEFAULTS, USER_SOCKET_LIMIT, VALID_WORLD_ELEMENT_KEYS
-from src.utils.data_api import create_world
-from src.utils.player_api import storage_size
+from src.utils.data_api import create_world, refresh_account_info
+from src.utils.player_api import storage_size, get_username, int_array_to_uuid
 from src.discord.notify import notify
 from src.socket import emit_log
 
@@ -28,11 +28,13 @@ def apiworldman():
     token = rdata.get("token", "")
     account = rdata.get("player", "")
 
+    account = int_array_to_uuid(account)
+
     match = re.search(r"world:([a-zA-Z0-9-]+)", request.headers.get("User-Agent", ""))
     match = match.group(1) if match else False
 
     if account not in data["account"]:
-        return jsonify({"error": "Account doesn't exist"}), 400
+        refresh_account_info(get_username(account), account)
 
     if token != data["egg"][match]["man"]:
         return jsonify({"error": "Unauthorized"}), 401

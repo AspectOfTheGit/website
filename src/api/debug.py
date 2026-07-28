@@ -71,7 +71,7 @@ def removeman():
     rdata = request.get_json()
     man = rdata.get("man", {})
     token = rdata.get("token", "")
-    
+
     if token != OTHER_TOKEN:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -83,6 +83,7 @@ def removeman():
     save_data()
 
     return jsonify({"success": True}), 200
+
 
 @debug.post("/setman")
 def setaccountman():
