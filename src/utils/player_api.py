@@ -1,3 +1,5 @@
+import re
+
 import requests
 
 from src.data import data, save_data
@@ -26,10 +28,15 @@ def get_uuid(username: str) -> str | None:
         return None
 
 def int_array_to_uuid(int_array):
-    most_sig = (int_array[0] << 32) | (int_array[1] & 0xFFFFFFFF)
-    least_sig = (int_array[2] << 32) | (int_array[3] & 0xFFFFFFFF)
+    numbers = re.findall(r'-?\d+', int_array)
     
-    combined = (most_sig << 64) | least_sig
+    int_array = [int(n) for n in numbers]
+    
+    if len(int_array) != 4:
+        raise ValueError("Invalid Minecraft UUID array. Must contain 4 integers.")
+
+    unsigned = [i & 0xFFFFFFFF for i in int_array]
+    combined = (unsigned[0] << 96) | (unsigned[1] << 64) | (unsigned[2] << 32) | unsigned[3]
     
     return f"{combined:032x}"
 
