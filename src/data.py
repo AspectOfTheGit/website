@@ -323,10 +323,14 @@ def flush_data():
 
 
 def _write_data_locked():
+    print("Saving data...")
+
     if not isinstance(data, DataStore):
+        print("Data is not a DataStore instance, skipping save.")
         return
 
     if not data._dirty_items:
+        print("No dirty items to save, skipping save.")
         return
 
     current_signatures = {}
@@ -343,6 +347,7 @@ def _write_data_locked():
     }
 
     if not changed_items:
+        print("No changed items to save, skipping save.")
         data._dirty_items.clear()
         return
 
@@ -377,6 +382,8 @@ def _write_data_locked():
     _write_json_object(MANIFEST_KEY, manifest)
     data._last_saved_signatures.update(changed_items)
     data._dirty_items.clear()
+
+    print("Data Saved")
 
 
 def _snapshot_item(item):
