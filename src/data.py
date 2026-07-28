@@ -256,7 +256,7 @@ def _default_path(kind, key):
     if kind == "bot":
         return f"data/bots/{key}/data.json"
     if kind == "egg":
-        return f"data/eggs/{key}/data.json"
+        return f"data/egg/{key}/data.json"
     return f"data/{kind}/{key}.json"
 
 
