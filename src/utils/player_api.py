@@ -31,6 +31,8 @@ def int_array_to_uuid(int_array):
     numbers = re.findall(r'-?\d+', int_array)
     
     int_array = [int(n) for n in numbers]
+
+    print(f"[player_api.py] DEBUG Converting int array to UUID: {int_array}")
     
     if len(int_array) != 4:
         raise ValueError("Invalid Minecraft UUID array. Must contain 4 integers.")
