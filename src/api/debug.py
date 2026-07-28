@@ -6,12 +6,11 @@ from flask import (
     request,
     jsonify
 )
-import requests
 
 from src.data import data, save_data
 from src.config import OTHER_TOKEN
 from src.utils.player_api import get_uuid
-from src.utils.data_api import refresh_account_info, create_world
+from src.utils.data_api import refresh_account_info
 from src.bots.manager import refresh_bot_info
 from src.discord.announce import announce
 
@@ -60,7 +59,7 @@ def addman():
 
     data.setdefault("egg", {})
     data["egg"].setdefault(worlduuid, man.get("token", ""))
-    data["egg"][worlduuid] = man.get("token", "")
+    data["egg"][worlduuid].set(man.get("token", ""))
 
     save_data()
 
