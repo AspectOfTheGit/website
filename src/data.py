@@ -148,7 +148,7 @@ class LazyCollection:
         return iter(self.keys())
 
     def __len__(self):
-        return len(self.keys())
+        return len(list(self.keys()))
 
     def __setitem__(self, key, value):
         self.set(key, value)
@@ -182,6 +182,29 @@ class DataStore:
     def _manifest_keys(self, kind):
         return set(self._manifest.get(kind, {}).keys())
 
+    def __iter__(self):
+        seen = set()
+        for kind in ("account", "world", "bot", "egg"):
+            for key in self._manifest_keys(kind):
+                if key not in seen:
+                    seen.add(key)
+                    yield key
+            for key in self._collections.get(kind, LazyCollection(self, kind)).keys():
+                if key not in seen:
+                    seen.add(key)
+                    yield key
+
+    def __getitem__(self, key):
+        if key in ("account", "world", "bot", "egg"):
+            return self._get_collection(key)
+        raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        if key in ("account", "world", "bot", "egg"):
+            self._collections[key] = value
+        else:
+            raise KeyError(key)
+
     def _has_item(self, kind, key):
         return key in self._manifest.get(kind, {}) or key in self._collections.get(kind, LazyCollection(self, kind))._items
 
@@ -204,17 +227,6 @@ class DataStore:
 
     def mark_dirty(self, kind, key):
         self._dirty_items.add((kind, key))
-
-    def __getitem__(self, key):
-        if key in ("account", "world", "bot", "egg"):
-            return self._get_collection(key)
-        raise KeyError(key)
-
-    def __setitem__(self, key, value):
-        if key in ("account", "world", "bot", "egg"):
-            self._collections[key] = value
-        else:
-            raise KeyError(key)
 
     def get(self, key, default=None):
         if key in ("account", "world", "bot", "egg"):
