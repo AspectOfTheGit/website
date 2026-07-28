@@ -11,7 +11,7 @@
     <p style="font-family: '8bitoperator JVE', monospace; font-size: 24px;"></p>
 
     <script>
-        const audio = new Audio("{{ url_for('static', filename='AUDIO_DRONE.ogg') }}");
+        const audio = new Audio("/static/sound/AUDIO_DRONE.ogg");
         audio.loop = true;
         audio.play();
 
@@ -36,7 +36,7 @@
                         break;
                 }
                 index++;
-                setTimeout(displayNextCharacter, 50);
+                setTimeout(displayNextCharacter, 100);
             }
         }
         displayNextCharacter();
