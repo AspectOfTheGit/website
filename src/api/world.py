@@ -36,7 +36,7 @@ def apiworldman():
     if account not in data["account"]:
         refresh_account_info(get_username(account), account)
 
-    if token != data["egg"][match]["man"]:
+    if token != data["egg"][match]:
         return jsonify({"error": "Unauthorized"}), 401
 
     data["account"][account].setdefault("man", {})
