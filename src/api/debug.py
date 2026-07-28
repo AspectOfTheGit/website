@@ -59,11 +59,54 @@ def addman():
 
     data.setdefault("egg", {})
     data["egg"].setdefault(worlduuid, {})
-    data["egg"][worlduuid].set("token", man.get("token", ""))
+    data["egg"][worlduuid]["token"] = man.get("token", "")
 
     save_data()
 
     return jsonify({"success": True}), 200
+
+
+@debug.post("/removeman")
+def removeman():
+    rdata = request.get_json()
+    man = rdata.get("man", {})
+    token = rdata.get("token", "")
+    
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    worlduuid = man.get("world", "")
+
+    if "egg" in data and worlduuid in data["egg"]:
+        del data["egg"][worlduuid]
+
+    save_data()
+
+    return jsonify({"success": True}), 200
+
+@debug.post("/setman")
+def setaccountman():
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    man = rdata.get("man", {})
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    worlduuid = man.get("world", "")
+    value = man.get("value", False)
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+    
+    data["account"][account].setdefault("man", {})
+    data["account"][account]["man"][worlduuid] = value
+
+    save_data()
+
+    return jsonify({"success": True}), 200
+
 
 @debug.post("/trusted")
 def toggletrusted():
