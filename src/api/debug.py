@@ -58,15 +58,6 @@ def addman():
 
     worlduuid = man.get("world", "")
 
-    if worlduuid not in data["world"]:
-        # fetch owner uuid from legiti.dev
-        owneruuid = requests.get(f"https://api.legiti.dev/world/{worlduuid}/owner").json().get("owner_uuid", False)
-
-        if not owneruuid:
-            return jsonify({"error": "World doesn't exist"}), 400
-
-        create_world(worlduuid, owneruuid)
-
     data["egg"].setdefault(worlduuid, {})
     data["egg"][worlduuid] = man.get("token", "")
 
