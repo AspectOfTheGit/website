@@ -37,7 +37,9 @@ def apiworldman():
         return jsonify({"error": "Unauthorized"}), 401
 
     if account not in data["account"]:
-        refresh_account_info(get_username(account), account)
+        username = get_username(account)
+        if username is not None:
+            refresh_account_info(username, account)
 
     data["account"][account].setdefault("man", {})
 

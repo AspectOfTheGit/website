@@ -151,6 +151,25 @@ def deletebotdata():
     return jsonify({"success": True}), 200
 
 
+@debug.post("/deleteaccountdata")
+def deleteaccountdata():
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+        
+    data["account"][account] = {}
+
+    save_data()
+
+    return jsonify({"success": True}), 200
+
+
 @debug.post("/deleteworlddata")
 def deleteworldpage():
     rdata = request.get_json()
