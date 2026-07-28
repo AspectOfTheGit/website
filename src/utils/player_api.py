@@ -1,4 +1,5 @@
 import re
+import uuid
 
 import requests
 
@@ -28,12 +29,14 @@ def get_uuid(username: str) -> str | None:
         return None
 
 def int_array_to_uuid(int_array):
-    most_sig = (int_array[0] << 32) | (int_array[1] & 0xFFFFFFFF)
-    least_sig = (int_array[2] << 32) | (int_array[3] & 0xFFFFFFFF)
+    combined = (int_array[0] & 0xFFFFFFFF) << 96 | \
+        (int_array[1] & 0xFFFFFFFF) << 64 | \
+        (int_array[2] & 0xFFFFFFFF) << 32 | \
+        (int_array[3] & 0xFFFFFFFF)
+
+    hex_uuid = uuid.UUID(int=combined).hex
     
-    combined = (most_sig << 64) | least_sig
-    
-    return f"{combined:032x}"
+    return hex_uuid
 
 def hyphenate_uuid(u):
     u = u.replace("-", "").strip()

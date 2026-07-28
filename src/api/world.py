@@ -33,11 +33,11 @@ def apiworldman():
     match = re.search(r"world:([a-zA-Z0-9-]+)", request.headers.get("User-Agent", ""))
     match = match.group(1) if match else False
 
-    if account not in data["account"]:
-        refresh_account_info(get_username(account), account)
-
     if token != data["egg"][match]["token"]:
         return jsonify({"error": "Unauthorized"}), 401
+
+    if account not in data["account"]:
+        refresh_account_info(get_username(account), account)
 
     data["account"][account].setdefault("man", {})
 
