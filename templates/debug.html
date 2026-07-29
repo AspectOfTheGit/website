@@ -96,6 +96,8 @@
     function displayUserData(uuid, user) {
         // display user's data and stuff
 
+        const userList = document.getElementById('user-list');
+
         const backButton = document.createElement('button');
         backButton.textContent = 'Back to User List';
         backButton.onclick = () => {
@@ -105,11 +107,10 @@
         };
         userList.appendChild(backButton);
 
-        const userList = document.getElementById('user-list');
         const escapedUser = JSON.stringify(user, null, 4)
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-        userList.innerHTML = `<pre>${escapedUser}</pre>`;
+        userList.innerHTML += `<br><pre>${escapedUser}</pre>`;
 
         // setup permissions
 

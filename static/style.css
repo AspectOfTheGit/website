@@ -39,6 +39,7 @@ body {
     color: #e9f8f2;
     font-family: 'Poppins', sans-serif;
     text-align: center;
+    padding-bottom: 100px;
 }
 
 body.world {
@@ -55,6 +56,8 @@ body.debug {
     background-color: #0b1c22;
     color: #e9f8f2;
     font-family: 'Poppins', sans-serif;
+    text-align: left;
+    margin-left: 20px;
 }
 
 .navbar {
@@ -1218,11 +1221,6 @@ span.hovered .hover-popup {
 
 main {
     padding-bottom: 4.5rem;
-}
-
-body {
-    margin: 0;
-    padding-bottom: 100px;
 }
 
 .site-footer {
