@@ -84,6 +84,8 @@
 
         const userList = document.getElementById('user-list');
         userList.innerHTML = '';
+        document.getElementById('user-options').style.display = 'none';
+        document.getElementById('user-permissions').innerHTML = '';
         Object.entries(data.account).forEach(([uuid, user]) => {
             const button = document.createElement('button');
             button.innerHTML = `<img src="https://mc-heads.net/avatar/${uuid}/32" alt="?" style="vertical-align: middle; margin-right: 8px;"> ${user.username}`;
@@ -101,11 +103,7 @@
 
         const backButton = document.createElement('button');
         backButton.textContent = 'Back to User List';
-        backButton.onclick = () => {
-            document.getElementById('user-options').style.display = 'none';
-            document.getElementById('user-permissions').innerHTML = '';
-            displayUsers(window.data);
-        };
+        backButton.onclick = () => displayUsers(window.data);
         userList.appendChild(backButton);
 
         const escapedUser = JSON.stringify(user, null, 4)
