@@ -104,12 +104,12 @@
         const backButton = document.createElement('button');
         backButton.textContent = 'Back to User List';
         backButton.onclick = () => displayUsers(window.data);
-        userList.appendChild(backButton);
 
         const escapedUser = JSON.stringify(user, null, 4)
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
         userList.innerHTML += `<br><pre>${escapedUser}</pre>`;
+        userList.insertBefore(backButton, userList.firstChild);
 
         // setup permissions
 
