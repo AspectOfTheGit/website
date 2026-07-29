@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="https://aspectofthe.site/" class="logo">
+                <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
+            </a>
+            Debug
+        </div>
+    </nav>
+
+    <div class="debug-navigator">
+        <button onclick="document.getElementById('user-management').style.display='block';">
+            Open User Management
+        </button>
+
+        <button onclick="document.getElementById('bot-management').style.display='block';">
+            Open Bot Management
+        </button>
+
+        <button onclick="document.getElementById('world-management').style.display='block';">
+            Open World Management
+        </button>
+    </div>
+
+    <div id="user-management" style="display: none;">
+        <h2>User Management</h2>
+        <button onclick="document.getElementById('user-management').style.display='none';">Back</button>
+         <div id="user-list">
+            <p>Loading users...</p>
+        </div>
+
+        <div id="user-options" style="display: none;">
+            <h3>User Options</h3>
+            <button onclick="document.getElementById('user-options').style.display='none';">Back</button>
+            <div id="user-permissions"></div>
+        </div>
+    </div>
+
+    <div id="bot-management" style="display: none;">
+        <h2>Bot Management</h2>
+        <button onclick="document.getElementById('bot-management').style.display='none';">Back</button>
+    </div>
+
+    <div id="world-management" style="display: none;">
+        <h2>World Management</h2>
+        <button onclick="document.getElementById('world-management').style.display='none';">Back</button>
+    </div>
+<script>
+    const token = "{{ token }}";
+    const abilitydefaults = {{ abilitydefaults|tojson }};
+    
+    fetch(`https://api.aspectofthe.site/debug/getdata`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: token })
+    })
+        .then(response => response.json())
+        .then(data => {
+            window.data = data.value;
+            displayUsers(data.value)
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+        });
+
+    function displayUsers(data) {
+        // display list of users
+
+        const userList = document.getElementById('user-list');
+        userList.innerHTML = '';
+        Object.entries(data.account).forEach(([uuid, user]) => {
+            const button = document.createElement('button');
+            button.innerHTML = `<img src="https://mc-heads.net/avatar/${uuid}/72" alt="Head" style="vertical-align: middle; margin-right: 8px;"> ${user.username}`;
+            button.title = uuid;
+            button.onclick = () => displayUserData(uuid, user);
+            userList.appendChild(button);
+        });
+    }
+
+    function displayUserData(uuid, user) {
+        // display user's data and stuff
+
+        const userList = document.getElementById('user-list');
+        const escapedUser = JSON.stringify(user, null, 4)
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        userList.innerHTML = `<pre>${escapedUser}</pre>`;
+        const backButton = document.createElement('button');
+        backButton.textContent = 'Back to User List';
+        backButton.onclick = () => {
+            document.getElementById('user-options').style.display = 'none';
+            document.getElementById('user-permissions').innerHTML = '';
+            displayUsers(window.data);
+        };
+        userList.appendChild(backButton);
+
+        // setup permissions
+
+        const permissions = {
+            "send": {"type": "boolean", "text": "Can send messages through bots"},
+            "unowned": {"type": "boolean", "text": "Deploy on unowned worlds"},
+            "abandoned": {"type": "boolean", "text": "Whether bot leaves when abandoned"},
+            "simultaneous": {"type": "int", "text": "How many bots can be deployed at once"},
+            "uptime": {"type": "int", "text": "How long bots can be deployed for (seconds)"},
+            "uses": {"type": "int", "text": "Times bots can be deployed per day"},
+            "capacity": {"type": "int", "text": "Capacity of User Storage (MB)"},
+        };
+
+        for (const [permission, info] of Object.entries(permissions)) {
+            if (abilitydefaults.hasOwnProperty(permission)) {
+                info.default = abilitydefaults[permission];
+            }
+        }
+
+        // user permissions
+
+        const permissionTable = document.createElement('table');
+        for (const [permission, info] of Object.entries(permissions)) {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            nameCell.textContent = info.text;
+            const inputCell = document.createElement('td');
+            let input;
+            if (info.type === "boolean") {
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = user.abilities && user.abilities[permission] === true ? user.abilities[permission] : info.default;
+            } else if (info.type === "int") {
+                input = document.createElement('input');
+                input.type = 'number';
+                input.value = user.abilities && user.abilities[permission] ? user.abilities[permission] : info.default;
+            }
+            input.onchange = () => {
+                const value = info.type === "boolean" ? input.checked : parseInt(input.value);
+                fetch(`https://api.aspectofthe.site/debug/permission`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        account: uuid,
+                        permission: permission,
+                        value: value,
+                        token: token
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Permission updated:', data);
+                    window.data.account[uuid].abilities[permission] = value;
+                })
+                .catch(error => {
+                    console.error('Error updating permission:', error);
+                });
+            };
+            inputCell.appendChild(input);
+            row.appendChild(nameCell);
+            row.appendChild(inputCell);
+            permissionTable.appendChild(row);
+        }
+        document.getElementById('user-permissions').appendChild(permissionTable);
+        document.getElementById('user-options').style.display = 'block';
+
+        // more management stuff below later
+
+    }
+</script>
+</body>
+</html>

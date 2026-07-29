@@ -63,8 +63,11 @@ def apiworldgetman():
 
     account = int_array_to_uuid(account)
 
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
     for world_uuid in data["egg"].keys():
-        visited = data["account"][account]["man"].get(world_uuid, False)
+        visited = data["account"][account].get("man", {}).get(world_uuid, False)
         if visited == False:
             return jsonify({"success": True, "man": False})
 

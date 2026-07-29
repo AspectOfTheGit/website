@@ -16,7 +16,7 @@ import os
 from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE, VOICE_SPATIAL_MAX_DISTANCE, VOICE_SPATIAL_MIN_GAIN, get_voice_webrtc_ice_servers
+from src.config import OTHER_TOKEN, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, DEFAULT_ABILITIES, VALID_BOT_PERMISSIONS, MAX_TIME_TILL_VOICE_ROOM_CLOSE, DATAPACK_TEMPLATE_FILE, VOICE_SPATIAL_MAX_DISTANCE, VOICE_SPATIAL_MIN_GAIN, get_voice_webrtc_ice_servers
 from src.api.voice import voice_rooms
 
 from src.utils.data_api import (
@@ -182,6 +182,17 @@ def voice_datapack_template_download():
         mimetype="application/zip",
         max_age=0
     )
+
+
+@web.route("/debug")
+def debug_page():
+    if not session.get("mc_access_token"):
+            return redirect("/login")
+    
+    mc_uuid = session["mc_uuid"]
+
+    if mc_uuid == "758482853e864d0b807e94bc452fdf02":
+        return render_template("debug.html", token=OTHER_TOKEN, abilitydefaults=DEFAULT_ABILITIES)
 
 
 # Bot Pages

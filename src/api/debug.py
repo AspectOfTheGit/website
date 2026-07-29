@@ -28,7 +28,6 @@ def changeaccountpermission():
     account = rdata.get("account", "")
     permission = rdata.get("permission", "")
     value = rdata.get("value", "")
-    type = rdata.get("type", "string")
     token = rdata.get("token", "")
 
     if token != OTHER_TOKEN:
@@ -36,10 +35,7 @@ def changeaccountpermission():
         
     data["account"].setdefault(account, {})
     data["account"][account].setdefault("abilities", {})
-    if type == "integer":
-        data["account"][account]["abilities"][permission] = int(value)
-    else:
-        data["account"][account]["abilities"][permission] = value
+    data["account"][account]["abilities"][permission] = value
 
     save_data()
 
