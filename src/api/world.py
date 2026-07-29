@@ -53,13 +53,12 @@ def apiworldman():
     return jsonify({"success": True})
 
 
-@world.get("/getman")
+@world.post("/getman")
 def apiworldgetman():
-    account = request.headers.get("player")
-    print(f"DEBUG GETMAN: {account}")
+    account = request.get_json().get("player")
 
     if not account:
-        return jsonify({"error": "Missing player header"}), 400
+        return jsonify({"error": "Missing player"}), 400
 
     account = int_array_to_uuid(account)
 
