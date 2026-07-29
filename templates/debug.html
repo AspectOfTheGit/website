@@ -96,7 +96,6 @@
     function displayUserData(uuid, user) {
         // display user's data and stuff
 
-        const userList = document.getElementById('user-list');
         const backButton = document.createElement('button');
         backButton.textContent = 'Back to User List';
         backButton.onclick = () => {
@@ -105,6 +104,8 @@
             displayUsers(window.data);
         };
         userList.appendChild(backButton);
+
+        const userList = document.getElementById('user-list');
         const escapedUser = JSON.stringify(user, null, 4)
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
@@ -204,7 +205,7 @@
         // edit user egg data
 
         const eggTable = document.createElement('table');
-        for (const [worldUUID, eggInfo] of Object.entries(egg)) {
+        for (const [worldUUID, eggInfo] of Object.entries(window.data.egg)) {
             const row = document.createElement('tr');
             const nameCell = document.createElement('td');
             nameCell.textContent = worldUUID;
