@@ -43,8 +43,9 @@ uuid_auth = {}
 
 
 def openWebsite(account):
-    if data["account"][account].get("flag_0", True) == False:
-        data["account"][account]["flag_0"] = True
+    if data["account"][account].get("flag", {}).get("0", True) == False:
+        data["account"][account].setdefault("flag", {})
+        data["account"][account]["flag"]["0"] = True
 
         save_data()
 

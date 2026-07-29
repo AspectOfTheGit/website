@@ -109,6 +109,26 @@ def setaccountman():
     return jsonify({"success": True}), 200
 
 
+@debug.post("/setflag")
+def setaccountflag():
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    flag = str(rdata.get("flag", ""))
+    value = rdata.get("value", False)
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data["account"].setdefault(account, {})
+    data["account"][account].setdefault("flag", {})
+    data["account"][account]["flag"][flag] = value
+
+    save_data()
+
+    return jsonify({"success": True}), 200
+
+
 @debug.post("/trusted")
 def toggletrusted():
     rdata = request.get_json()

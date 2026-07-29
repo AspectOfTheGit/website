@@ -44,7 +44,8 @@ def apiworldman():
     data["account"][account].setdefault("man", {})
 
     if not data["account"][account]["man"].get(match, False):
-        data["account"][account]["flag_0"] = False # i dunno what to call it :skul:
+        data["account"][account].setdefault("flag", {})
+        data["account"][account]["flag"]["0"] = False # i dunno what to call it :skul:
 
     data["account"][account]["man"][match] = True
     
