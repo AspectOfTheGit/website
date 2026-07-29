@@ -53,6 +53,19 @@ def apiworldman():
     return jsonify({"success": True})
 
 
+@world.get("/getman")
+def apiworldgetman():
+    rdata = request.get_json()
+    account = rdata.get("player", "")
+
+    for world_uuid in data["egg"].keys():
+        visited = data["account"][account]["man"].get(world_uuid, False)
+        if visited == False:
+            return jsonify({"success": True, "man": False})
+
+    return jsonify({"success": True, "man": True})
+
+
 @world.post("/<world>/permissions")
 def apiworldbotpermissions(world):
     rdata = request.get_json()

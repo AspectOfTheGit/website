@@ -48,19 +48,19 @@ def openWebsite(account):
 
         save_data()
 
-        text = "It seems you have everything."
+        text = "It seems^2 you have^1 everything.&Visit %ec47b834-bf42-4761-b3a9-3b9b5018f142,^4 I will be waiting."
         for world_uuid in data["egg"].keys():
             visited = data["account"][account]["man"].get(world_uuid, False)
             if visited == False:
                 match world_uuid:
-                    case "6c4e4446-9974-4334-a423-92d6c52e97c6":
-                        text = f"What you seek,^2 or not,^2 lies under %6c4e4446-9974-4334-a423-92d6c52e97c6.^4\nFollow the path of candles to the fake altar."
+                    case "6c4e4446-9974-4334-a423-92d6c52e97c6":# The Tower
+                        text = "What you seek,^2 or not,^2 lies under %6c4e4446-9974-4334-a423-92d6c52e97c6.^4&Follow the path of candles to the fake altar."
                         break
-                    case "93d2aa1d-7eb4-426c-879e-e5ec955d91c4":
-                        text = f"What you seek,^2 or not,^2 lies within the %93d2aa1d-7eb4-426c-879e-e5ec955d91c4.^4\nFrom the lamppost to the mineshaft,^2\nPast the flipped house, to the null room.^4\n\nFind the room of sea lanterns, and fall from the cobble path.^4\nA distortion lies north in the void, an invisible doorway..."
+                    case "93d2aa1d-7eb4-426c-879e-e5ec955d91c4":# Forgotten Rooms
+                        text = "What you seek,^2 or not,^2 lies within the %93d2aa1d-7eb4-426c-879e-e5ec955d91c4.^4&&From the lamppost to the mineshaft,^2&Past the flipped house, to the null room.^4&&Find the room of sea lanterns, and fall from the cobble path.^4&A distortion lies north in the void, an invisible doorway..."
                         break
                     case _: # this should only show if I forget to add a world here
-                        text = f"Hmm, you are missing something^1.^2.^3.^5\n\nYet,^4 Not even I know what it is.^6\nInteresting^1.^3.^5.^5\nPerhaps you should return later."
+                        text = "Hmm, you are missing something^1.^2.^3.^5&&Yet,^4 Not even I know what it is.^6&Interesting^1.^3.^5.^5&Perhaps you should return later."
                         break
 
         return render_template("man.html", text=text)
