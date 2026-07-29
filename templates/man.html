@@ -15,31 +15,83 @@
         audio.loop = true;
         audio.play();
 
-        const text = {{ text|tojson }};
+        let text = {{ text|tojson }};
+
+        function getWorldName(worldUUID) {
+            return fetch(`https://api.legiti.dev/world/${worldUUID}`)
+                .then(response => response.json())
+                .then(data => data.name)
+                .catch(error => {
+                    console.error('Error fetching world name:', error);
+                    return worldUUID; // fallback to UUID if there's an error
+                });
+        }
+
+        function replaceWorldUUIDs(text) {
+            const regex = /%([0-9a-fA-F-]{36})/g;
+            const promises = [];
+            let match;
+
+            while ((match = regex.exec(text)) !== null) {
+                const worldUUID = match[1];
+                const promise = getWorldName(worldUUID).then(worldName => {
+                    text = text.replace(`%${worldUUID}`, `*${worldName}*`);
+                });
+                promises.push(promise);
+            }
+
+            return Promise.all(promises).then(() => text);
+        }
+
+        replaceWorldUUIDs(text).then(updatedText => {
+            text = updatedText;
+            displayNextCharacter();
+        });
 
         // gradually display the text character by character
-        let index = 0;
+        let index = -1;
         function displayNextCharacter() {
-            if (index < text.length) {
+            if (index < text.length-1) {
+                index++;
                 switch (text[index]) {
-                    case '^':
+                    case '^':// wait
                         if (index + 1 < text.length && !isNaN(text[index + 1])) {
                             const pauseMS = parseInt(text[index + 1]);
-                            index += 2;
+                            index ++;
                             setTimeout(displayNextCharacter, pauseMS * 333);
                             return;
                         }
-                        document.querySelector('p').textContent += text[index];
-                        break;
+                        displayNextCharacter();
+                        return;
+                    case '&': // newline
+                        document.querySelector('p').innerHTML += '<br>';
+                        displayNextCharacter();
+                        return;
+                    case '*':// bold
+                        if (!window.Bold) {
+                            document.querySelector('p').innerHTML += '<strong>';
+                            window.Bold = true;
+                        } else {
+                            document.querySelector('p').innerHTML += '</strong>';
+                            window.Bold = false;
+                        }
+                        displayNextCharacter();
+                        return;
                     default:
-                        document.querySelector('p').textContent += text[index];
+                        displayCharacter(index);
                         break;
                 }
-                index++;
                 setTimeout(displayNextCharacter, 100);
             }
         }
-        displayNextCharacter();
+
+        function displayCharacter(i) {
+            if(window.Bold) {
+                document.querySelector('p').innerHTML += '<strong>' + text[i] + '</strong>';
+            } else {
+                document.querySelector('p').innerHTML += text[i];
+            }
+        }
     </script>
 </body>
 </html>
