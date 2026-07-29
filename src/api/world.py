@@ -55,8 +55,9 @@ def apiworldman():
 
 @world.get("/getman")
 def apiworldgetman():
-    rdata = request.get_json()
-    account = rdata.get("player", "")
+    account = request.headers.get("player", "")
+
+    account = int_array_to_uuid(account)
 
     for world_uuid in data["egg"].keys():
         visited = data["account"][account]["man"].get(world_uuid, False)
