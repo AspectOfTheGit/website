@@ -51,6 +51,12 @@ body.man {
     color: #fff;
 }
 
+body.debug {
+    background-color: #0b1c22;
+    color: #e9f8f2;
+    font-family: 'Poppins', sans-serif;
+}
+
 .navbar {
     display: flex;
     justify-content: space-between;

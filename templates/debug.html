@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
 </head>
 
-<body>
+<body class="debug">
     <nav class="navbar">
         <div class="logo">
             <a href="https://aspectofthe.site/" class="logo">
@@ -20,41 +20,44 @@
     </nav>
 
     <div class="debug-navigator">
-        <button onclick="document.getElementById('user-management').style.display='block';">
+        <button onclick="document.getElementById('user-management').style.display='block';document.getElementById('bot-management').style.display='none';document.getElementById('world-management').style.display='none';">
             Open User Management
         </button>
 
-        <button onclick="document.getElementById('bot-management').style.display='block';">
+        <button onclick="document.getElementById('bot-management').style.display='block';document.getElementById('user-management').style.display='none';document.getElementById('world-management').style.display='none';">
             Open Bot Management
         </button>
 
-        <button onclick="document.getElementById('world-management').style.display='block';">
+        <button onclick="document.getElementById('world-management').style.display='block';document.getElementById('user-management').style.display='none';document.getElementById('bot-management').style.display='none';">
             Open World Management
         </button>
     </div>
 
     <div id="user-management" style="display: none;">
         <h2>User Management</h2>
-        <button onclick="document.getElementById('user-management').style.display='none';">Back</button>
          <div id="user-list">
             <p>Loading users...</p>
         </div>
 
         <div id="user-options" style="display: none;">
             <h3>User Options</h3>
-            <button onclick="document.getElementById('user-options').style.display='none';">Back</button>
             <div id="user-permissions"></div>
+            <h3>Trusted</h3>
+            <label>
+                <input type="checkbox" id="trusted-checkbox">
+                Trusted
+            </label>
+            <h3>Eggs Obtained</h3>
+            <div id="user-eggs"></div>
         </div>
     </div>
 
     <div id="bot-management" style="display: none;">
         <h2>Bot Management</h2>
-        <button onclick="document.getElementById('bot-management').style.display='none';">Back</button>
     </div>
 
     <div id="world-management" style="display: none;">
         <h2>World Management</h2>
-        <button onclick="document.getElementById('world-management').style.display='none';">Back</button>
     </div>
 <script>
     const token = "{{ token }}";
@@ -83,7 +86,7 @@
         userList.innerHTML = '';
         Object.entries(data.account).forEach(([uuid, user]) => {
             const button = document.createElement('button');
-            button.innerHTML = `<img src="https://mc-heads.net/avatar/${uuid}/72" alt="Head" style="vertical-align: middle; margin-right: 8px;"> ${user.username}`;
+            button.innerHTML = `<img src="https://mc-heads.net/avatar/${uuid}/32" alt="?" style="vertical-align: middle; margin-right: 8px;"> ${user.username}`;
             button.title = uuid;
             button.onclick = () => displayUserData(uuid, user);
             userList.appendChild(button);
@@ -94,10 +97,6 @@
         // display user's data and stuff
 
         const userList = document.getElementById('user-list');
-        const escapedUser = JSON.stringify(user, null, 4)
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-        userList.innerHTML = `<pre>${escapedUser}</pre>`;
         const backButton = document.createElement('button');
         backButton.textContent = 'Back to User List';
         backButton.onclick = () => {
@@ -106,6 +105,10 @@
             displayUsers(window.data);
         };
         userList.appendChild(backButton);
+        const escapedUser = JSON.stringify(user, null, 4)
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        userList.innerHTML = `<pre>${escapedUser}</pre>`;
 
         // setup permissions
 
@@ -174,8 +177,72 @@
         document.getElementById('user-permissions').appendChild(permissionTable);
         document.getElementById('user-options').style.display = 'block';
 
-        // more management stuff below later
+        // trusted checkbox
 
+        document.getElementById('trusted-checkbox').checked = user.trusted === true;
+        document.getElementById('trusted-checkbox').onchange = () => {
+            fetch(`https://api.aspectofthe.site/debug/trusted`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    account: uuid,
+                    token: token
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Trusted toggled:', data);
+                window.data.account[uuid].trusted = !window.data.account[uuid].trusted;
+            })
+            .catch(error => {
+                console.error('Error toggling trusted:', error);
+            });
+        };
+
+        // edit user egg data
+
+        const eggTable = document.createElement('table');
+        for (const [worldUUID, eggInfo] of Object.entries(egg)) {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            nameCell.textContent = worldUUID;
+            const inputCell = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = user.man && user.man[worldUUID] === true ? user.man[worldUUID] : false;
+            input.onchange = () => {
+                const value = input.checked;
+                fetch(`https://api.aspectofthe.site/debug/setman`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        account: uuid,
+                        man: {
+                            world: worldUUID,
+                            value: value
+                        },
+                        token: token
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Man data updated:', data);
+                    window.data.account[uuid].man[worldUUID] = value;
+                })
+                .catch(error => {
+                    console.error('Error updating man data:', error);
+                });
+            };
+            inputCell.appendChild(input);
+            row.appendChild(nameCell);
+            row.appendChild(inputCell);
+            eggTable.appendChild(row);
+        }
+        document.getElementById('user-eggs').appendChild(eggTable);
     }
 </script>
 </body>
