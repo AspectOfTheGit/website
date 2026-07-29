@@ -55,7 +55,11 @@ def apiworldman():
 
 @world.get("/getman")
 def apiworldgetman():
-    account = request.headers.get("player", "")
+    account = request.headers.get("player")
+    print(f"DEBUG GETMAN: {account}")
+
+    if not account:
+        return jsonify({"error": "Missing player header"}), 400
 
     account = int_array_to_uuid(account)
 
