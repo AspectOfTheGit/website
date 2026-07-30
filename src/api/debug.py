@@ -105,6 +105,26 @@ def setaccountman():
     return jsonify({"success": True}), 200
 
 
+@debug.post("/setaccountdata")
+def setaccountdata():
+    rdata = request.get_json()
+    account = rdata.get("account", "")
+    data_ = rdata.get("data", {})
+    token = rdata.get("token", "")
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if account not in data["account"]:
+        return jsonify({"error": "Account doesn't exist"}), 400
+
+    data["account"][account] = data_
+
+    save_data()
+
+    return jsonify({"success": True}), 200
+
+
 @debug.post("/setflag")
 def setaccountflag():
     rdata = request.get_json()

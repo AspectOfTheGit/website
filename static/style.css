@@ -50,6 +50,7 @@ body.world {
 body.man {
     background-color: #000;
     color: #fff;
+    font-size: 1.75rem;
 }
 
 body.debug {

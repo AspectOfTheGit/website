@@ -49,7 +49,7 @@ def openWebsite(account):
 
         save_data()
 
-        text = "It seems^2 you have^1 everything.&Visit %ec47b834-bf42-4761-b3a9-3b9b5018f142,^4 I will be waiting."
+        text = "It seems^2 you have^2 everything.^6&Visit %ec47b834-bf42-4761-b3a9-3b9b5018f142,^4 I will be waiting."
         for world_uuid in data["egg"].keys():
             visited = data["account"][account]["man"].get(world_uuid, False)
             if visited == False:
