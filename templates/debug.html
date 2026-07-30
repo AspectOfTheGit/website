@@ -47,6 +47,8 @@
                 <input type="checkbox" id="trusted-checkbox">
                 Trusted
             </label>
+            <h3>User Flags</h3>
+            <div id="user-flags"></div>
             <h3>Eggs Obtained</h3>
             <div id="user-eggs"></div>
         </div>
@@ -86,6 +88,8 @@
         userList.innerHTML = '';
         document.getElementById('user-options').style.display = 'none';
         document.getElementById('user-permissions').innerHTML = '';
+        document.getElementById('user-flags').innerHTML = '';
+        document.getElementById('user-eggs').innerHTML = '';
         Object.entries(data.account).forEach(([uuid, user]) => {
             const button = document.createElement('button');
             button.innerHTML = `<img src="https://mc-heads.net/avatar/${uuid}/32" alt="?" style="vertical-align: middle; margin-right: 8px;"> ${user.username}`;
@@ -201,6 +205,46 @@
                 console.error('Error toggling trusted:', error);
             });
         };
+
+        // edit user flags
+
+        const flagsTable = document.createElement('table');
+        for (const [flag, value] of Object.entries(user.flags || {})) {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            nameCell.textContent = flag;
+            const inputCell = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = value === true;
+            input.onchange = () => {
+                const newValue = input.checked;
+                fetch(`https://api.aspectofthe.site/debug/setflag`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        account: uuid,
+                        flag: flag,
+                        value: newValue,
+                        token: token
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Flag updated:', data);
+                    window.data.account[uuid].flags[flag] = newValue;
+                })
+                .catch(error => {
+                    console.error('Error updating flag:', error);
+                });
+            };
+            inputCell.appendChild(input);
+            row.appendChild(nameCell);
+            row.appendChild(inputCell);
+            flagsTable.appendChild(row);
+        }
 
         // edit user egg data
 
