@@ -122,7 +122,7 @@
             "unowned": {"type": "boolean", "text": "Deploy on unowned worlds"},
             "abandoned": {"type": "boolean", "text": "Whether bot leaves when abandoned"},
             "simultaneous": {"type": "int", "text": "How many bots can be deployed at once"},
-            "uptime": {"type": "int", "text": "How long bots can be deployed for (seconds)"},
+            "uptime": {"type": "int", "text": "How long bots can be deployed for (minutes)"},
             "uses": {"type": "int", "text": "Times bots can be deployed per day"},
             "capacity": {"type": "int", "text": "Capacity of User Storage (MB)"},
         };
@@ -209,7 +209,14 @@
         // edit user flags
 
         const flagsTable = document.createElement('table');
-        for (const [flag, value] of Object.entries(user.flag || {})) {
+        let flags = user.flag || {};
+        let defaultFlags = {"0": true};
+        for (const flag in defaultFlags) {
+            if (!flags.hasOwnProperty(flag)) {
+                flags[flag] = defaultFlags[flag];
+            }
+        }
+        for (const [flag, value] of Object.entries(flags)) {
             const row = document.createElement('tr');
             const nameCell = document.createElement('td');
             nameCell.textContent = flag;
@@ -245,6 +252,8 @@
             row.appendChild(inputCell);
             flagsTable.appendChild(row);
         }
+
+        document.getElementById('user-flags').appendChild(flagsTable);
 
         // edit user egg data
 
