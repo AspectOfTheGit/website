@@ -209,7 +209,7 @@
         // edit user flags
 
         const flagsTable = document.createElement('table');
-        for (const [flag, value] of Object.entries(user.flags || {})) {
+        for (const [flag, value] of Object.entries(user.flag || {})) {
             const row = document.createElement('tr');
             const nameCell = document.createElement('td');
             nameCell.textContent = flag;
@@ -234,7 +234,7 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Flag updated:', data);
-                    window.data.account[uuid].flags[flag] = newValue;
+                    window.data.account[uuid].flag[flag] = newValue;
                 })
                 .catch(error => {
                     console.error('Error updating flag:', error);
