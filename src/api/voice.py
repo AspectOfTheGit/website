@@ -210,7 +210,7 @@ def apivoiceupdate():
         # Update data for all users (this data is sent to all other users connected to voice room)
         existing = next((p for p in voice_rooms[world]["players"] if p["uuid"] == uuid), None)
         existing["options"] = current_options
-        existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Name": player.get("Name",uuid), "Rot": player["Rotation"]}
+        existing["socket"] = {"Pos": player["Eyes"], "uuid": uuid, "Rot": player["Rotation"]}
 
     voice_rooms[world]["players"] = [
         p for p in voice_rooms[world]["players"]
@@ -227,7 +227,7 @@ def apivoiceupdate():
 
     '''
     Sent to Users:
-    [{"Pos":[x,y,z],"Rot":[x,y],"Name":"PlayerUsername","uuid":"player-uuid"},{...}...]
+    [{"Pos":[x,y,z],"Rot":[x,y],"uuid":"player-uuid"},{...}...]
     List of Dictionaries. Each dictionary is the data of one player.
 
     Sent to World:
