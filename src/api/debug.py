@@ -291,3 +291,9 @@ def debug_forcelogin():
     refresh_account_info(account, accountuuid)
 
     return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
+
+
+@debug.get("session")
+def debug_getsession():
+    session_data = session if session else None
+    return jsonify({"success": True, "session": session_data}), 200
