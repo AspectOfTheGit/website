@@ -296,4 +296,5 @@ def debug_forcelogin():
 @debug.get("session")
 def debug_getsession():
     session_data = session if session else None
+    print(f"session data:", session_data)
     return jsonify({"success": True, "session": session_data}), 200
