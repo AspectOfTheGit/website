@@ -290,4 +290,4 @@ def debug_forcelogin():
 
     refresh_account_info(account, accountuuid)
 
-    return jsonify({"success": True}), 200
+    return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
