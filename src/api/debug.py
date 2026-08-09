@@ -281,6 +281,7 @@ def debug_announce():
 @debug.post("/forcelogin")
 def debug_forcelogin():
     rdata = request.get_json()
+    redirect = rdata.get("redirect", False)
     token = rdata.get("token", "")
     account = rdata.get("account", "")
 
@@ -295,7 +296,10 @@ def debug_forcelogin():
 
     refresh_account_info(account, accountuuid)
 
-    return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
+    if redirect:
+        return redirect("https://aspectofthe.site/")
+    else:
+        return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
 
 
 @debug.get("session")
