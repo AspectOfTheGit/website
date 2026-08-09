@@ -2,9 +2,14 @@ import json
 
 from flask import (
     Blueprint,
-    session,
+    render_template,
     request,
-    jsonify
+    redirect,
+    session,
+    jsonify,
+    abort,
+    current_app,
+    send_file
 )
 
 from src.data import data, save_data
@@ -290,7 +295,7 @@ def debug_forcelogin():
 
     refresh_account_info(account, accountuuid)
 
-    return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}, "session": session}), 200
+    return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
 
 
 @debug.get("session")
