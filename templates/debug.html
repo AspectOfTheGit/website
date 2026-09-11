@@ -118,8 +118,8 @@
         });
 
         document.querySelectorAll('.debug-filter-dropdown').forEach(dropdown => {
+            dropdown.addEventListener('click', event => event.stopPropagation());
             dropdown.querySelector('.dropdown-selected').addEventListener('click', event => {
-                event.stopPropagation();
                 document.querySelectorAll('.debug-filter-dropdown').forEach(item => {
                     if (item !== dropdown) item.classList.remove('open');
                 });
@@ -150,10 +150,93 @@
             entry.className = 'bot-log-entry';
             entry.dataset.bot = contents[3] || '';
             entry.dataset.category = contents[2] || 'chat';
-            entry.textContent = `[${entry.dataset.bot}] [${contents[0]}] ${contents[1].replace(/<br\s*\/?>(\n)?/gi, '\n')}`;
+            entry.innerHTML = `<span>[${entry.dataset.bot}] [${contents[0]}] </span>${contents[1]}<br>`;
             log.appendChild(entry);
             updateFilters();
-            log.scrollTop = log.scrollHeight;
+        });
+
+        let activeTooltip = null;
+
+        function removeTooltip() {
+            if (activeTooltip) {
+                activeTooltip.remove();
+                activeTooltip = null;
+            }
+        }
+
+        log.addEventListener('mouseover', event => {
+            const span = event.target.closest('span[data-hover]');
+            if (!span) return;
+
+            removeTooltip();
+            const popup = document.createElement('div');
+            popup.classList.add('hover-popup');
+
+            try {
+                const hoverData = JSON.parse(span.dataset.hover);
+
+                function renderHover(data) {
+                    if (Array.isArray(data)) return data.map(renderHover).join('');
+                    if (data.components) return data.components.map(renderHover).join('');
+
+                    let style = '';
+                    if (data.style) {
+                        if (data.style.color) style += `color:${data.style.color};`;
+                        if (data.style.isBold) style += 'font-weight:bold;';
+                        if (data.style.isItalic) style += 'font-style:italic;';
+                        if (data.style.isUnderlined) style += 'text-decoration:underline;';
+                        if (data.style.isStrikethrough) style += 'text-decoration:line-through;';
+                    }
+
+                    return `<span style="${style}">${(data.text || '').replace(/\n/g, '<br>')}</span>`;
+                }
+
+                popup.innerHTML = renderHover(hoverData);
+            } catch (error) {
+                popup.textContent = span.dataset.hover;
+            }
+
+            document.body.appendChild(popup);
+            popup.style.display = 'block';
+            activeTooltip = popup;
+        });
+
+        document.addEventListener('mousemove', event => {
+            if (!activeTooltip) return;
+            activeTooltip.style.left = `${event.clientX + 12}px`;
+            activeTooltip.style.top = `${event.clientY + 12}px`;
+        });
+
+        log.addEventListener('mouseout', event => {
+            if (event.target.closest('span[data-hover]')) removeTooltip();
+        });
+
+        log.addEventListener('click', event => {
+            const span = event.target.closest('span[data-click]');
+            if (!span) return;
+
+            const clickData = JSON.parse(span.dataset.click);
+            const overlay = document.createElement('div');
+            overlay.classList.add('click-confirm');
+
+            let html = `<p>Would you like to ${clickData.type === 'OPEN_URL' ? 'open this URL?' : 'copy to clipboard?'}</p>`;
+            html += `<pre>${clickData.command}</pre>`;
+            html += '<button class="copy">Copy</button>';
+            if (clickData.type === 'OPEN_URL') html += '<button class="open">Open URL</button>';
+            html += '<button class="cancel">Cancel</button>';
+            overlay.innerHTML = html;
+            document.body.appendChild(overlay);
+            overlay.style.display = 'block';
+
+            overlay.querySelector('button.copy')?.addEventListener('click', () => {
+                navigator.clipboard.writeText(clickData.command);
+                overlay.remove();
+            });
+            overlay.querySelector('button.open')?.addEventListener('click', () => {
+                window.open(clickData.command, '_blank');
+                overlay.remove();
+            });
+            overlay.querySelector('button.cancel').addEventListener('click', () => overlay.remove());
         });
     }
 

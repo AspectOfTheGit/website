@@ -217,6 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     socket.on("log", (contents) => {
+        if (contents[2] !== "chat") return;
+
         const prefix = contents[0];
         const msg = contents[1].replace(/<br\s*\/?>/gi, "\n");
     
