@@ -2,9 +2,14 @@ import json
 
 from flask import (
     Blueprint,
-    session,
+    render_template,
     request,
-    jsonify
+    redirect,
+    session,
+    jsonify,
+    abort,
+    current_app,
+    send_file
 )
 
 from src.data import data, save_data
@@ -276,6 +281,7 @@ def debug_announce():
 @debug.post("/forcelogin")
 def debug_forcelogin():
     rdata = request.get_json()
+    redirect = rdata.get("redirect", False)
     token = rdata.get("token", "")
     account = rdata.get("account", "")
 
@@ -290,4 +296,14 @@ def debug_forcelogin():
 
     refresh_account_info(account, accountuuid)
 
-    return jsonify({"success": True}), 200
+    if redirect:
+        return redirect("https://aspectofthe.site/")
+    else:
+        return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
+
+
+@debug.get("session")
+def debug_getsession():
+    session_data = session if session else None
+    print(f"session data:", session_data)
+    return jsonify({"success": True, "session": session_data}), 200

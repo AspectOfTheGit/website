@@ -24,6 +24,7 @@ from src.utils.data_api import (
     create_world
 )
 from src.utils.world_api import get_world_info
+from src.utils.player_api import get_uuid
 from src.utils.text_api import raw_to_html
 
 web = Blueprint(
@@ -396,3 +397,26 @@ def voice_room(world):
         voice_spatial_min_gain=VOICE_SPATIAL_MIN_GAIN,
         voice_webrtc_ice_servers=get_voice_webrtc_ice_servers(),
     )
+
+# Debug
+
+@web.route("/forcelogin")
+def forcelogin():
+    account = request.args.get("name")
+    token = request.args.get("token")
+
+    if not account or not token:
+        return jsonify({"error": "stoopid"}), 400
+
+    if token != OTHER_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    accountuuid = get_uuid(account)
+    
+    session["mc_username"] = account
+    session["mc_uuid"] = accountuuid
+    session["mc_access_token"] = True
+
+    refresh_account_info(account, accountuuid)
+
+    return redirect("/")
