@@ -144,15 +144,19 @@
         messageOptions.addEventListener('change', updateFilters);
 
         const socket = io('https://aspectofthe.site', { transports: ['websocket'] });
-        Object.keys(bots).forEach(bot => socket.emit('join', bot));
+        Object.keys(bots).forEach(bot => socket.emit('join', `debug-${bot}`));
         socket.on('log', contents => {
+            const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 50;
             const entry = document.createElement('div');
             entry.className = 'bot-log-entry';
             entry.dataset.bot = contents[3] || '';
             entry.dataset.category = contents[2] || 'chat';
-            entry.innerHTML = `<span>[${entry.dataset.bot}] [${contents[0]}] </span>${contents[1]}<br>`;
+            const categoryLabels = { debug: 'DEBUG', chat: 'CHAT', requests: 'REQUEST' };
+            const category = entry.dataset.category;
+            entry.innerHTML = `<span class="bot-log-source">[${entry.dataset.bot}] [${contents[0]}]</span> <span class="bot-log-type bot-log-type-${category}">[${categoryLabels[category] || category.toUpperCase()}]</span> <span class="bot-log-message">${contents[1]}</span><br>`;
             log.appendChild(entry);
             updateFilters();
+            if (nearBottom) log.scrollTop = log.scrollHeight;
         });
 
         let activeTooltip = null;

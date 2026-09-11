@@ -21,6 +21,7 @@ REDIRECT_URI = "https://aspectofthe.site/login"
 DATA_FILE = "/data/values.json"
 
 BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"] # Valid bots
+DEBUG_ACCOUNT_UUID = "758482853e864d0b807e94bc452fdf02"
 VALID_BOT_PERMISSIONS = {"annihilate","fly","baritone","attack","place","break"} # Permissions that can be given to the bot
 BOT_PERMISSION_DEFAULTS = ["baritone","attack"] # Permissions given to the bot by default while in any world
 BOT_LOBBY_PERMISSIONS = ["fly","baritone","attack","annihilate"] # Permissions given to the bot while in lobby

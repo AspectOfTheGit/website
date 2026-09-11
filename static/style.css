@@ -1188,6 +1188,28 @@ span.hovered .hover-popup {
     white-space: pre-wrap;
 }
 
+.bot-log-source {
+    color: #888;
+}
+
+.bot-log-type-debug {
+    color: #555;
+}
+
+.bot-log-type-chat {
+    color: #2f6b3f;
+}
+
+.bot-log-type-requests {
+    color: #254f7a;
+}
+
+.bot-log-entry[data-category="debug"] .bot-log-message,
+.bot-log-entry[data-category="requests"] .bot-log-message {
+    color: #aaa;
+    font-style: italic;
+}
+
 .dropdown-option {
     display: block;
     padding: 8px 10px;

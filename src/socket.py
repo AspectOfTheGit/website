@@ -1,7 +1,7 @@
 from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
-from src.data import data, save_data
+from src.data import data, save_data, flush_data
 from src.config import (
     BOTS,
     DEFAULT_ABILITIES,
@@ -15,6 +15,7 @@ from src.config import (
     VOICE_NOISE_GATE_OPEN_BYTES,
     VOICE_NOISE_GATE_CLOSE_BYTES,
     VOICE_NOISE_GATE_HOLD_MS,
+    DEBUG_ACCOUNT_UUID,
 )
 from src.voice_relay.main import get_voice_relay
 import time
@@ -42,7 +43,11 @@ def emit_storage_log(account, message, event, world_id=None):
     print(f"[socket.py] Emitted storage log to '{account}': {contents[1]}")
 
 def emit_log(type, contents, room, notify=False, event=None):
-    socketio.emit(type, list(contents) + [room], room=room)
+    target_room = room
+    if type == "log" and room in BOTS and len(contents) > 2 and contents[2] != "chat":
+        target_room = f"debug-{room}"
+
+    socketio.emit(type, list(contents) + [room], room=target_room)
     if notify:
         notify(room, contents[1], event)
     print(f"[socket.py] Emitted log to '{room}'")
@@ -383,7 +388,8 @@ def handle_join(room, uuid=None, auth=None):
     if uuid is None:
         uuid = session.get("mc_uuid", ".anonymous")
 
-    if room in BOTS or uuid == room:
+    is_debug_room = isinstance(room, str) and room.startswith("debug-") and room[6:] in BOTS
+    if (is_debug_room and uuid == DEBUG_ACCOUNT_UUID) or room in BOTS or uuid == room:
         join_room(room)
         print(f"[socket.py] {uuid} joined room: {room}")
     else:
@@ -402,6 +408,7 @@ def screenshot_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
+    flush_data()
     
 
 @socketio.on("bot_disconnect")
@@ -423,6 +430,7 @@ def disconnect_request(rdata):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
     data["bot"][bot_name]["deployer"] = ""
+    flush_data()
     
 
 @socketio.on("bot_switch_server")
@@ -448,6 +456,7 @@ def switch_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid
+    flush_data()
     
 
 @socketio.on("bot_chat")
@@ -529,6 +538,7 @@ def bot_chat(rdata):
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
+    flush_data()
 
 
 @socketio.on("voice-relay-answer")
