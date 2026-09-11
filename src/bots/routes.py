@@ -26,6 +26,21 @@ bots = Blueprint(
 )
 
 
+@bots.before_request
+def log_bot_request():
+    if request.headers.get("Authorization") != BOT_TOKEN:
+        return
+
+    payload = request.form if request.form else (request.get_json(silent=True) or {})
+    account = payload.get("account") or request.view_args.get("bot")
+    if account in data.get("bot", {}):
+        emit_log(
+            'log',
+            [time.strftime('%H:%M:%S'), f"{request.method} {request.path}", "requests"],
+            account
+        )
+
+
 def require_bot_auth():
     if request.headers.get("Authorization") != BOT_TOKEN:
         abort(401, description="Unauthorized")
@@ -101,7 +116,7 @@ def bot_log():
     room_name = request.json.get('account')
     ts = time.strftime('%H:%M:%S')
 
-    contents = [ts, msg]
+    contents = [ts, msg, "chat"]
 
     #print(f"[app.py] Emitting to room: {room_name}, message: {msg}") # debug
     emit_log('log', contents, room_name)

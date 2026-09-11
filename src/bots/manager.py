@@ -84,7 +84,7 @@ def refresh_bot_info():
         else:
             if data["bot"][bot]["deployer"] == "" and data["bot"][bot]["status"]:
                 data["bot"][bot]["do"]["disconnect"] = True # Disconnect bot if no deployer
-                contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}"]
+                contents = [time.strftime('%H:%M:%S'), f"Disconnect requested for {bot}", "debug"]
                 emit_log('log', contents, bot)
         if data["bot"][bot]["last_menu_ping"] != 0 and now - data["bot"][bot]["last_menu_ping"] > TIMEOUT*2 and data["bot"][bot]["available"]:
             data["bot"][bot]["available"] = False

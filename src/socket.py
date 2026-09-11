@@ -42,7 +42,7 @@ def emit_storage_log(account, message, event, world_id=None):
     print(f"[socket.py] Emitted storage log to '{account}': {contents[1]}")
 
 def emit_log(type, contents, room, notify=False, event=None):
-    socketio.emit(type, contents, room=room)
+    socketio.emit(type, list(contents) + [room], room=room)
     if notify:
         notify(room, contents[1], event)
     print(f"[socket.py] Emitted log to '{room}'")
@@ -398,6 +398,8 @@ def screenshot_request(rdata):
 
     print(f"[socket.py] Screenshot requested for {bot_name}")
 
+    emit_log('log', [time.strftime('%H:%M:%S'), "Screenshot requested.", "debug"], bot_name)
+
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
     
@@ -416,7 +418,7 @@ def disconnect_request(rdata):
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
 
-    emit_log('log', ["INFO","Bot disconnected; requested by deployer."], bot_name)
+    emit_log('log', ["INFO","Bot disconnected; requested by deployer.", "debug"], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
@@ -442,7 +444,7 @@ def switch_request(rdata):
 
     print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
 
-    emit_log('log', ["INFO","Bot switching server; requested by deployer."], bot_name)
+    emit_log('log', ["INFO","Bot switching server; requested by deployer.", "debug"], bot_name)
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid

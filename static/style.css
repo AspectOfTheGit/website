@@ -1147,6 +1147,47 @@ span.hovered .hover-popup {
     z-index: 1000;
 }
 
+.custom-dropdown.open .dropdown-options {
+    display: block;
+}
+
+.dropdown-option input {
+    margin-right: 8px;
+    accent-color: #2fa08c;
+}
+
+.bot-management-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.5rem auto;
+}
+
+.debug-filter-dropdown {
+    text-align: left;
+}
+
+.debug-filter-dropdown .dropdown-options {
+    left: 0;
+    right: auto;
+    min-width: 100%;
+}
+
+.bot-management-log {
+    width: 90%;
+    height: 65vh;
+    box-sizing: border-box;
+    margin: 20px auto 0;
+    padding: 10px;
+    overflow-y: auto;
+    background: #031014;
+    color: #f7fffc;
+    border-radius: 8px;
+    font-family: 'MinecraftDefault';
+    white-space: pre-wrap;
+}
+
 .dropdown-option {
     padding: 8px 10px;
     cursor: pointer;

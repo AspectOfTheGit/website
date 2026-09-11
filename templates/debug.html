@@ -61,11 +61,27 @@
 
     <div id="bot-management" style="display: none;">
         <h2>Bot Management</h2>
+        <div class="bot-management-controls">
+            <div class="custom-dropdown debug-filter-dropdown">
+                <div class="dropdown-selected">Bots: <span id="bot-filter-label">All</span></div>
+                <div id="bot-filter-options" class="dropdown-options"></div>
+            </div>
+            <div class="custom-dropdown debug-filter-dropdown">
+                <div class="dropdown-selected">Messages: <span id="message-filter-label">All</span></div>
+                <div id="message-filter-options" class="dropdown-options">
+                    <label class="dropdown-option"><input type="checkbox" value="chat" checked> Chat</label>
+                    <label class="dropdown-option"><input type="checkbox" value="debug" checked> Debug</label>
+                    <label class="dropdown-option"><input type="checkbox" value="requests" checked> Requests</label>
+                </div>
+            </div>
+        </div>
+        <div id="bot-management-log" class="bot-management-log"></div>
     </div>
 
     <div id="world-management" style="display: none;">
         <h2>World Management</h2>
     </div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 <script>
     const token = "{{ token }}";
     const abilitydefaults = {{ abilitydefaults|tojson }};
@@ -81,10 +97,65 @@
         .then(data => {
             window.data = data.value;
             displayUsers(data.value)
+            setupBotManagement(data.value.bot || {});
         })
         .catch(error => {
             console.error('Error fetching data:', error);
         });
+
+    function setupBotManagement(bots) {
+        const log = document.getElementById('bot-management-log');
+        const botOptions = document.getElementById('bot-filter-options');
+        const messageOptions = document.getElementById('message-filter-options');
+        const selectedBots = new Set(Object.keys(bots));
+        const selectedMessages = new Set(['chat', 'debug', 'requests']);
+
+        Object.keys(bots).forEach(bot => {
+            const label = document.createElement('label');
+            label.className = 'dropdown-option';
+            label.innerHTML = `<input type="checkbox" value="${bot}" checked> ${bot}`;
+            botOptions.appendChild(label);
+        });
+
+        document.querySelectorAll('.debug-filter-dropdown').forEach(dropdown => {
+            dropdown.querySelector('.dropdown-selected').addEventListener('click', event => {
+                event.stopPropagation();
+                document.querySelectorAll('.debug-filter-dropdown').forEach(item => {
+                    if (item !== dropdown) item.classList.remove('open');
+                });
+                dropdown.classList.toggle('open');
+            });
+        });
+        document.addEventListener('click', () => document.querySelectorAll('.debug-filter-dropdown').forEach(item => item.classList.remove('open')));
+
+        function updateFilters() {
+            selectedBots.clear();
+            botOptions.querySelectorAll('input:checked').forEach(input => selectedBots.add(input.value));
+            selectedMessages.clear();
+            messageOptions.querySelectorAll('input:checked').forEach(input => selectedMessages.add(input.value));
+            document.getElementById('bot-filter-label').textContent = selectedBots.size === Object.keys(bots).length ? 'All' : `${selectedBots.size} selected`;
+            document.getElementById('message-filter-label').textContent = selectedMessages.size === 3 ? 'All' : `${selectedMessages.size} selected`;
+            log.querySelectorAll('.bot-log-entry').forEach(entry => {
+                entry.style.display = selectedBots.has(entry.dataset.bot) && selectedMessages.has(entry.dataset.category) ? '' : 'none';
+            });
+        }
+
+        botOptions.addEventListener('change', updateFilters);
+        messageOptions.addEventListener('change', updateFilters);
+
+        const socket = io('https://aspectofthe.site', { transports: ['websocket'] });
+        Object.keys(bots).forEach(bot => socket.emit('join', bot));
+        socket.on('log', contents => {
+            const entry = document.createElement('div');
+            entry.className = 'bot-log-entry';
+            entry.dataset.bot = contents[3] || '';
+            entry.dataset.category = contents[2] || 'chat';
+            entry.textContent = `[${entry.dataset.bot}] [${contents[0]}] ${contents[1].replace(/<br\s*\/?>(\n)?/gi, '\n')}`;
+            log.appendChild(entry);
+            updateFilters();
+            log.scrollTop = log.scrollHeight;
+        });
+    }
 
     function displayUsers(data) {
         // display list of users

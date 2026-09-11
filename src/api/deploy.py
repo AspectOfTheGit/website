@@ -113,7 +113,7 @@ def apideploybot():
     except:
         data["bot"][bot]["do"]["deploy"]["uptime"] = DEFAULT_ABILITIES.get("uptime",0)
 
-    contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {accountusername}"]
+    contents = [time.strftime('%H:%M:%S'), f"{bot} deployed to {world} ({worldname}) by {accountusername}", "debug"]
     emit_log('log', contents, bot)
     notify(bot, contents[1], "bot.deploy")
 
