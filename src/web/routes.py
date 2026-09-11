@@ -193,7 +193,7 @@ def debug_page():
     mc_uuid = session["mc_uuid"]
 
     if mc_uuid == DEBUG_ACCOUNT_UUID:
-        return render_template("debug.html", token=OTHER_TOKEN, abilitydefaults=DEFAULT_ABILITIES)
+        return render_template("debug.html", token=OTHER_TOKEN, abilitydefaults=DEFAULT_ABILITIES, mcuuid=mc_uuid)
 
 
 # Bot Pages

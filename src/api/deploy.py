@@ -11,7 +11,7 @@ from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
 from src.utils.player_api import hyphenate_uuid
 from src.socket import emit_log
-from src.config import DEFAULT_ABILITIES
+from src.config import DEBUG_ACCOUNT_UUID, DEFAULT_ABILITIES, OTHER_TOKEN
 
 from datetime import datetime
 import time
@@ -30,12 +30,13 @@ def apideploybot():
     world = rdata.get("world", "")
     account = rdata.get("account", "")
     token = rdata.get("token", "")
+    debug_override = token == OTHER_TOKEN and account == DEBUG_ACCOUNT_UUID
     # Does account exist?
     if account not in data["account"]:
         return jsonify({"error": "Account doesn't exist"}), 400
     # Does token match?
     try:
-        if token != data["account"][account]["token"]["deploy"]:
+        if not debug_override and token != data["account"][account]["token"]["deploy"]:
             return jsonify({"error": "Unauthorized"}), 401
     except:
         return jsonify({"error": "No Token Generated"}), 400
@@ -44,7 +45,7 @@ def apideploybot():
     if bot not in data["bot"]:
         return jsonify({"error": "Bot doesn't exist"}), 400
     # Is bot in use?
-    if data["bot"][bot]["status"] == True or data["bot"][bot]["available"] == False or data["bot"][bot]["deployer"] != "":
+    if not debug_override and (data["bot"][bot]["status"] == True or data["bot"][bot]["available"] == False or data["bot"][bot]["deployer"] != ""):
         return ({"error": "Bot is unavailable"}), 400
     # Can account deploy to unowned world?
     try:
@@ -54,7 +55,7 @@ def apideploybot():
     except:
         worldinfo = False
         
-    if not data["account"][account]["abilities"].get("unowned", DEFAULT_ABILITIES.get("unowned",False)):
+    if not debug_override and not data["account"][account]["abilities"].get("unowned", DEFAULT_ABILITIES.get("unowned",False)):
         if worldinfo == False or worldinfo.get("owner_uuid",None) != hyphenate_uuid(account):
             world = "lobby"
             
@@ -72,14 +73,14 @@ def apideploybot():
         botdata.setdefault("deployer", "")
         if botdata["deployer"] == account:
             deployed += 1
-    if deployed >= dlimits:
+    if not debug_override and deployed >= dlimits:
         return jsonify({"error": f"Deploy limit reached ({dlimits})"}), 400
     today = datetime.now().date().isoformat()
     try:
         if data["account"][account]["last_deploy"] != today:
             data["account"][account]["last_deploy"] = today
             data["account"][account]["used"] = 0
-        if data["account"][account]["used"] >= dlimitu:
+        if not debug_override and data["account"][account]["used"] >= dlimitu:
             return jsonify({"error": f"Deploy uses spent ({dlimitu})"}), 400
     except:
         data["account"][account].setdefault("last_deploy", today)
@@ -117,7 +118,8 @@ def apideploybot():
     emit_log('log', contents, bot)
     notify(bot, contents[1], "bot.deploy")
 
-    data["account"][account]["used"] += 1
+    if not debug_override:
+        data["account"][account]["used"] += 1
     
     save_data()
     return jsonify({"success": True, "value": {"name": worldname}})

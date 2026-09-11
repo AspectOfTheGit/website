@@ -76,6 +76,29 @@
             </div>
         </div>
         <div id="bot-management-log" class="bot-management-log"></div>
+        <div id="bot-screenshot-gallery" class="bot-screenshot-gallery"></div>
+        <div class="bot-action-controls">
+            <label for="bot-action-select" class="headerlabel">Bot:</label>
+            <select id="bot-action-select" class="dropdown"></select>
+            <div class="controls">
+                <button title="Disconnect bot" id="debug-disconnect-btn" class="disconnect-button">
+                    <img src="{{ url_for('static', filename='icons/disconnect.svg') }}" class="disconnect-icon" alt="Disconnect">
+                </button>
+                <button title="Switch server" id="debug-switch-server-btn" class="switch-server-button">
+                    <img src="{{ url_for('static', filename='icons/switch.svg') }}" class="switch-icon" alt="Switch Server">
+                </button>
+                <button title="Screenshot" id="debug-screenshot-btn" class="screenshot-button">
+                    <img src="{{ url_for('static', filename='icons/screenshot.svg') }}" class="camera-icon" alt="Screenshot">
+                </button>
+                <button title="Chat" id="debug-chat-btn" class="debug-chat-button">Chat</button>
+            </div>
+            <label for="debug-world-uuid" class="headerlabel">Deploy world:</label>
+            <div class="world-input-wrapper debug-world-wrapper">
+                <textarea id="debug-world-uuid" class="world-uuid" placeholder="World UUID (or empty for Lobby)" aria-label="Deploy world"></textarea>
+                <div id="debug-world-suggestions" class="world-suggestions"></div>
+            </div>
+            <button id="debug-deploy-btn" class="button">Deploy</button>
+        </div>
     </div>
 
     <div id="world-management" style="display: none;">
@@ -105,10 +128,19 @@
 
     function setupBotManagement(bots) {
         const log = document.getElementById('bot-management-log');
+        const gallery = document.getElementById('bot-screenshot-gallery');
         const botOptions = document.getElementById('bot-filter-options');
         const messageOptions = document.getElementById('message-filter-options');
         const selectedBots = new Set(Object.keys(bots));
         const selectedMessages = new Set(['chat', 'debug', 'requests']);
+        const actionSelect = document.getElementById('bot-action-select');
+
+        Object.keys(bots).forEach(bot => {
+            const option = document.createElement('option');
+            option.value = bot;
+            option.textContent = bot;
+            actionSelect.appendChild(option);
+        });
 
         Object.keys(bots).forEach(bot => {
             const label = document.createElement('label');
@@ -138,6 +170,9 @@
             log.querySelectorAll('.bot-log-entry').forEach(entry => {
                 entry.style.display = selectedBots.has(entry.dataset.bot) && selectedMessages.has(entry.dataset.category) ? '' : 'none';
             });
+            gallery.querySelectorAll('.bot-screenshot').forEach(entry => {
+                entry.style.display = selectedBots.has(entry.dataset.bot) ? '' : 'none';
+            });
         }
 
         botOptions.addEventListener('change', updateFilters);
@@ -158,6 +193,42 @@
             updateFilters();
             if (nearBottom) log.scrollTop = log.scrollHeight;
         });
+
+        socket.on('screenshot', screenshot => {
+            const bot = screenshot.bot || '';
+            const figure = document.createElement('figure');
+            figure.className = 'bot-screenshot';
+            figure.dataset.bot = bot;
+            const image = document.createElement('img');
+            image.src = `data:image/png;base64,${screenshot.image}`;
+            image.alt = `Screenshot from ${bot}`;
+            const caption = document.createElement('figcaption');
+            caption.textContent = bot;
+            figure.append(image, caption);
+            gallery.appendChild(figure);
+            updateFilters();
+        });
+
+        function selectedBot() {
+            return actionSelect.value;
+        }
+
+        document.getElementById('debug-screenshot-btn').addEventListener('click', () => {
+            socket.emit('get_screenshot', { bot: selectedBot() });
+        });
+        document.getElementById('debug-disconnect-btn').addEventListener('click', () => {
+            socket.emit('bot_disconnect', { bot: selectedBot() });
+        });
+        document.getElementById('debug-switch-server-btn').addEventListener('click', () => {
+            const world = prompt('World UUID');
+            if (world !== null) socket.emit('bot_switch_server', { bot: selectedBot(), world });
+        });
+        document.getElementById('debug-chat-btn').addEventListener('click', () => {
+            const message = prompt('Message');
+            if (message !== null) socket.emit('bot_chat', { bot: selectedBot(), msg: message });
+        });
+
+        setupDebugDeployment(bots, token, '{{ mcuuid }}');
 
         let activeTooltip = null;
 
@@ -241,6 +312,88 @@
                 overlay.remove();
             });
             overlay.querySelector('button.cancel').addEventListener('click', () => overlay.remove());
+        });
+    }
+
+    function setupDebugDeployment(bots, deployToken, accountUUID) {
+        const worldBox = document.getElementById('debug-world-uuid');
+        const suggestionBox = document.getElementById('debug-world-suggestions');
+        const botSelect = document.getElementById('bot-action-select');
+        const deployButton = document.getElementById('debug-deploy-btn');
+        let allWorlds = [];
+        let ownedWorlds = [];
+        let worldsLoaded = false;
+
+        function formatUUID(uuid) {
+            const value = uuid.replace(/-/g, '').trim();
+            return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+        }
+
+        function showSuggestions(worlds) {
+            if (!worlds.length) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            suggestionBox.innerHTML = '';
+            worlds.slice(0, 10).forEach(world => {
+                const item = document.createElement('div');
+                item.className = 'world-suggestion';
+                item.textContent = world.name;
+                item.addEventListener('click', () => {
+                    worldBox.value = world.world_uuid;
+                    suggestionBox.style.display = 'none';
+                });
+                suggestionBox.appendChild(item);
+            });
+            suggestionBox.style.display = 'block';
+        }
+
+        worldBox.addEventListener('focus', () => {
+            if (worldsLoaded && worldBox.value.trim() === '') showSuggestions(ownedWorlds);
+        });
+        worldBox.addEventListener('input', () => {
+            if (!worldsLoaded) return;
+            const query = worldBox.value.trim();
+            if (!query) {
+                showSuggestions(ownedWorlds);
+                return;
+            }
+            showSuggestions(allWorlds.filter(world => new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(world.name)));
+        });
+        document.addEventListener('click', event => {
+            if (!worldBox.contains(event.target) && !suggestionBox.contains(event.target)) suggestionBox.style.display = 'none';
+        });
+
+        Promise.all([
+            fetch('https://api.legiti.dev/top/0').then(response => response.json()),
+            fetch(`https://api.legiti.dev/owner/${formatUUID(accountUUID)}`).then(response => response.json())
+        ]).then(([worlds, owned]) => {
+            allWorlds = worlds;
+            ownedWorlds = owned;
+            worldsLoaded = true;
+        }).catch(error => console.error('Failed to load debug deployment worlds:', error));
+
+        deployButton.addEventListener('click', async () => {
+            deployButton.disabled = true;
+            try {
+                const response = await fetch('https://api.aspectofthe.site/bots/deploy', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account: accountUUID,
+                        token: deployToken,
+                        bot: botSelect.value,
+                        world: worldBox.value
+                    })
+                });
+                if (!response.ok) console.error('Debug deploy failed:', await response.text());
+            } catch (error) {
+                console.error('Debug deploy failed:', error);
+            } finally {
+                deployButton.disabled = false;
+            }
         });
     }
 

