@@ -1,7 +1,7 @@
 from flask import session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from src.discord.notify import notify
-from src.data import data, save_data
+from src.data import data, save_data, flush_data
 from src.config import (
     BOTS,
     DEFAULT_ABILITIES,
@@ -411,6 +411,7 @@ def screenshot_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["screenshot"] = True
+    flush_data()
     
 
 @socketio.on("bot_disconnect")
@@ -432,6 +433,7 @@ def disconnect_request(rdata):
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["disconnect"] = True
     data["bot"][bot_name]["deployer"] = ""
+    flush_data()
     
 
 @socketio.on("bot_switch_server")
@@ -457,6 +459,7 @@ def switch_request(rdata):
 
     data["bot"][bot_name].setdefault("do", {})
     data["bot"][bot_name]["do"]["switch"] = world_uuid
+    flush_data()
     
 
 @socketio.on("bot_chat")
@@ -538,6 +541,7 @@ def bot_chat(rdata):
     data["bot"][bot_name]["do"]["chat"].append(msg)
 
     save_data()
+    flush_data()
 
 
 @socketio.on("voice-relay-answer")
