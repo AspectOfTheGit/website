@@ -225,6 +225,16 @@ class DataStore:
         self._get_collection(kind)._items[key] = item
         return item
 
+    def reload_item(self, kind, key):
+        manifest_entry = self._manifest.get(kind, {}).get(key, {})
+        item_data = _load_json_object(manifest_entry.get("path") or _default_path(kind, key))
+        if item_data is None:
+            return self._load_item(kind, key)
+
+        item = DirtyTrackingDict(self, kind, key, item_data)
+        self._get_collection(kind)._items[key] = item
+        return item
+
     def to_dict(self):
         result = {}
         for kind in ("account", "world", "bot", "egg"):

@@ -155,6 +155,8 @@ def bot_what(bot):
         abort(400, description="Unknown bot")
 
     if request.headers.get("Authorization") == BOT_TOKEN:
+        bot_data = data.reload_item("bot", bot)
         mark_available(bot)
-        
+        return jsonify(bot_data.get("do", {}))
+
     return jsonify(get_instructions(bot))

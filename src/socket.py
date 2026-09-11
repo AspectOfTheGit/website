@@ -43,11 +43,14 @@ def emit_storage_log(account, message, event, world_id=None):
     print(f"[socket.py] Emitted storage log to '{account}': {contents[1]}")
 
 def emit_log(type, contents, room, notify=False, event=None):
-    target_room = room
-    if type == "log" and room in BOTS and len(contents) > 2 and contents[2] != "chat":
-        target_room = f"debug-{room}"
-
-    socketio.emit(type, list(contents) + [room], room=target_room)
+    payload = list(contents) + [room]
+    if type == "log" and room in BOTS:
+        target_room = f"debug-{room}" if len(contents) <= 2 or contents[2] != "chat" else room
+        socketio.emit(type, payload, room=target_room)
+        if len(contents) > 2 and contents[2] == "chat":
+            socketio.emit(type, payload, room=f"debug-{room}")
+    else:
+        socketio.emit(type, payload, room=room)
     if notify:
         notify(room, contents[1], event)
     print(f"[socket.py] Emitted log to '{room}'")
