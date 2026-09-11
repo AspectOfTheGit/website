@@ -1,6 +1,6 @@
 import time
 
-from src.data import data, flush_data, save_data
+from src.data import data, save_data
 from src.config import TIMEOUT, BOTS
 from src.discord.notify import notify
 from src.socket import emit_log
@@ -137,9 +137,9 @@ def complete_instruction(bot: str, action: str):
                 del botdata["do"]["chat"][0]
             if not botdata["status"]:
                 botdata["do"]["chat"] = []
+            save_data()
             return
         botdata["do"][action] = False
-        flush_data()
         save_data()
         
 

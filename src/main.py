@@ -4,7 +4,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template
 from flask_cors import CORS
 from src.socket import socketio
-from src.data import load_data, flush_data
+from src.data import flush_data
 from src.config import CLIENT_SECRET
 from src.voice_relay.main import init_voice_relay, shutdown_voice_relay
 
@@ -35,8 +35,6 @@ def create_app():
             "https://api.aspectofthe.site",
         ]
     )
-
-    load_data()
 
     from src.bots.routes import bots
     from src.web.routes import web

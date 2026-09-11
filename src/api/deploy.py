@@ -5,7 +5,7 @@ from flask import (
     jsonify
 )
 
-from src.data import data, save_data, flush_data
+from src.data import data, save_data
 from src.discord.notify import notify
 from src.bots.manager import refresh_bot_info
 from src.utils.world_api import get_world_info
@@ -120,6 +120,4 @@ def apideploybot():
     data["account"][account]["used"] += 1
     
     save_data()
-    flush_data()
-
     return jsonify({"success": True, "value": {"name": worldname}})
