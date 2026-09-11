@@ -319,10 +319,12 @@ def _write_json_object(key: str, payload):
 
 
 def load_data():
-    global data
-
     with _lock:
-        data = DataStore()
+        data._collections.clear()
+        data._manifest.clear()
+        data._dirty_items.clear()
+        data._last_saved_signatures.clear()
+        data._load_manifest()
 
 
 def save_data():
