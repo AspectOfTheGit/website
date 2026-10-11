@@ -17,7 +17,7 @@ TURN_TOKEN_ID = os.environ.get("TURN_TOKEN_ID")
 TURN_API_TOKEN = os.environ.get("TURN_API_TOKEN")
 
 GUILD_ID = 1515347143882182786
-REDIRECT_URI = "https://aspectofthe.site/login"
+REDIRECT_URI = "https://aspectofthe.website/login"
 DATA_FILE = "/data/values.json"
 
 BOTS = ["AspectOfTheBot","AspectOfTheButt","AspectOfThePoop","AspectOfTheNuts","AspectOfTheCream","AspectOfTheSacks"] # Valid bots

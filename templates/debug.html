@@ -12,7 +12,7 @@
 <body class="debug">
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
+            <a href="https://aspectofthe.website/" class="logo">
                 <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
             </a>
             Debug
@@ -109,7 +109,7 @@
     const token = "{{ token }}";
     const abilitydefaults = {{ abilitydefaults|tojson }};
     
-    fetch(`https://api.aspectofthe.site/debug/getdata`, {
+    fetch(`https://api.aspectofthe.website/debug/getdata`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -178,7 +178,7 @@
         botOptions.addEventListener('change', updateFilters);
         messageOptions.addEventListener('change', updateFilters);
 
-        const socket = io('https://aspectofthe.site', { transports: ['websocket'] });
+        const socket = io('https://aspectofthe.website', { transports: ['websocket'] });
         Object.keys(bots).forEach(bot => socket.emit('join', `debug-${bot}`));
         socket.on('log', contents => {
             const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 50;
@@ -377,7 +377,7 @@
         deployButton.addEventListener('click', async () => {
             deployButton.disabled = true;
             try {
-                const response = await fetch('https://api.aspectofthe.site/bots/deploy', {
+                const response = await fetch('https://api.aspectofthe.website/bots/deploy', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -432,7 +432,7 @@
         saveNewData.textContent = 'Save New Data';
         saveNewData.onclick = () => {
             const newData = JSON.parse(document.getElementById('user-data-textarea').value);
-            fetch(`https://api.aspectofthe.site/debug/setaccountdata`, {
+            fetch(`https://api.aspectofthe.website/debug/setaccountdata`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -492,7 +492,7 @@
             }
             input.onchange = () => {
                 const value = info.type === "boolean" ? input.checked : parseInt(input.value);
-                fetch(`https://api.aspectofthe.site/debug/permission`, {
+                fetch(`https://api.aspectofthe.website/debug/permission`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -525,7 +525,7 @@
 
         document.getElementById('trusted-checkbox').checked = user.trusted === true;
         document.getElementById('trusted-checkbox').onchange = () => {
-            fetch(`https://api.aspectofthe.site/debug/trusted`, {
+            fetch(`https://api.aspectofthe.website/debug/trusted`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -565,7 +565,7 @@
             input.checked = value === true;
             input.onchange = () => {
                 const newValue = input.checked;
-                fetch(`https://api.aspectofthe.site/debug/setflag`, {
+                fetch(`https://api.aspectofthe.website/debug/setflag`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -607,7 +607,7 @@
             input.checked = user.man && user.man[worldUUID] === true ? user.man[worldUUID] : false;
             input.onchange = () => {
                 const value = input.checked;
-                fetch(`https://api.aspectofthe.site/debug/setman`, {
+                fetch(`https://api.aspectofthe.website/debug/setman`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

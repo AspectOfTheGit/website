@@ -19,8 +19,8 @@ def create_app():
     app.secret_key = CLIENT_SECRET
 
     app.config.update(
-        SERVER_NAME="aspectofthe.site",
-        SESSION_COOKIE_DOMAIN=".aspectofthe.site",
+        SERVER_NAME="aspectofthe.website",
+        SESSION_COOKIE_DOMAIN=".aspectofthe.website",
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_SAMESITE="None",
     )
@@ -31,8 +31,8 @@ def create_app():
         app,
         supports_credentials=True,
         origins=[
-            "https://aspectofthe.site",
-            "https://api.aspectofthe.site",
+            "https://aspectofthe.website",
+            "https://api.aspectofthe.website",
         ]
     )
 

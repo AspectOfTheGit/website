@@ -33,7 +33,7 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
+            <a href="https://aspectofthe.website/" class="logo">
                 <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" width="64" height="64">
             </a>
             Aspect Bots
@@ -56,7 +56,7 @@
         {% for bot_name, bot in bots.items() %}
         <div class="bot-card">
             <div class="bot-image">
-                <a href="https://aspectofthe.site/bots/status/{{ bot_name }}">
+                <a href="https://aspectofthe.website/bots/status/{{ bot_name }}">
                     <img src="https://mc-heads.net/head/{{ bot.uuid }}/left" alt="?">
                 </a>
                 <h2 class="bot-name">{{ bot_name }}</h2>
@@ -68,7 +68,7 @@
                 <h3 class="world-name">{{ bot.world.name }}</h3>
                 {% else %}
                 <h3 class="world-name">
-                    <a href="https://aspectofthe.site/world/{{ bot.world.uuid }}?redirectifnone=true">{{ bot.world.name | safe }}</a>
+                    <a href="https://aspectofthe.website/world/{{ bot.world.uuid }}?redirectifnone=true">{{ bot.world.name | safe }}</a>
                 </h3>
                 <p class="owner">
                     <img class="owner-head" src="https://mc-heads.net/head/{{ bot.world.owner.uuid }}/left" alt="?">

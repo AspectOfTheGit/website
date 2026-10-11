@@ -297,7 +297,7 @@ def debug_forcelogin():
     refresh_account_info(account, accountuuid)
 
     if redirect:
-        return redirect("https://aspectofthe.site/")
+        return redirect("https://aspectofthe.website/")
     else:
         return jsonify({"success": True, "account":{"name": account, "uuid": accountuuid}}), 200
 

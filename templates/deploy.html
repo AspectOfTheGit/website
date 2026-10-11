@@ -33,7 +33,7 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.site/" class="logo">
+            <a href="https://aspectofthe.website/" class="logo">
                 <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
             </a>
             Aspect Bots
@@ -129,7 +129,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`https://api.aspectofthe.site/refresh-token/${type}`, { method: 'POST', credentials: "include" });
+                    const res = await fetch(`https://api.aspectofthe.website/refresh-token/${type}`, { method: 'POST', credentials: "include" });
                     if (res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -152,7 +152,7 @@
                     canPress = false;
             
                     try {
-                        const res = await fetch('https://api.aspectofthe.site/bots/deploy', {
+                        const res = await fetch('https://api.aspectofthe.website/bots/deploy', {
                             method: 'POST',
                             credentials: "include",
                             headers: { 'Content-Type': 'application/json' },
@@ -168,7 +168,7 @@
             
                         if (res.ok) {
                             const bot = document.getElementById('bot-select').value;
-                            window.location.href = `http://aspectofthe.site/bots/status/${bot}?deployer`;
+                            window.location.href = `http://aspectofthe.website/bots/status/${bot}?deployer`;
                         } else {
                             btn.textContent = resdata.error;
                             btn.classList.add("error");
