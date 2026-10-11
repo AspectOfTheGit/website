@@ -18,7 +18,7 @@
         let text = {{ text|tojson }};
 
         function getWorldName(worldUUID) {
-            return fetch(`https://api.legiti.dev/world/${worldUUID}`)
+            return fetch(`https://api.legiti.dev/v4/worlds/${worldUUID}`)
                 .then(response => response.json())
                 .then(data => data.name)
                 .catch(error => {

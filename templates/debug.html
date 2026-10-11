@@ -366,8 +366,8 @@
         });
 
         Promise.all([
-            fetch('https://api.legiti.dev/top/0').then(response => response.json()),
-            fetch(`https://api.legiti.dev/owner/${formatUUID(accountUUID)}`).then(response => response.json())
+            fetch('https://api.legiti.dev/v4/worlds').then(response => response.json()),
+            fetch(`https://api.legiti.dev/v4/players/${formatUUID(accountUUID)}/worlds`).then(response => response.json())
         ]).then(([worlds, owned]) => {
             allWorlds = worlds;
             ownedWorlds = owned;

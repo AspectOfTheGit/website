@@ -118,7 +118,7 @@ def legitidevplayerrank(uuid):
 
     uuid = formatuuid(uuid, "hyphenated")
 
-    url = f"https://api.legiti.dev/player/{uuid}"
+    url = f"https://api.legiti.dev/v4/players/{uuid}"
     try:
         r = requests.get(url, timeout=5)
         if r.status_code == 200:
