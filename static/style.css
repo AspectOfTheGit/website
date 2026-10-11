@@ -96,6 +96,17 @@ body.debug {
     vertical-align: middle;
 }
 
+.domain-notice {
+    padding: 0.65rem 1rem;
+    background: #5a3a12;
+    color: #fff0c2;
+    font-weight: 600;
+}
+
+.domain-notice a {
+    color: #fff;
+}
+
 main {
     margin-top: 10vh;
 }

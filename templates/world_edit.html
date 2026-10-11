@@ -8,11 +8,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
 </head>
+{% include "domain_notice.html" %}
 
 <body class="world">
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.website/" class="logo">
+            <a href="/" class="logo">
                 <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
             </a>
             {{ title }}
@@ -263,7 +264,7 @@
             btn.addEventListener('click', async () => {
                 if (btn.getAttribute("id") == "view-btn") {
                     // Save, wait for response and view page
-                    window.location.href = "http://aspectofthe.website/world/{{ world_uuid }}";
+                    window.location.href = "/world/{{ world_uuid }}";
                 }
                 if (btn.getAttribute("id") == "settings-btn") {
                     // Page settings

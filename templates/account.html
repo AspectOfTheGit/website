@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icons/favicon.png') }}">
 </head>
+{% include "domain_notice.html" %}
 <footer class="site-footer">
   <div class="footer-left">
     <a href="https://store.legitimoose.com" target="_blank" rel="noopener noreferrer">
@@ -33,7 +34,7 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="https://aspectofthe.website/" class="logo">
+            <a href="/" class="logo">
                 <img src="{{ url_for('static', filename='icons/favicon.png') }}" alt="Logo" class="logo-img">
             </a>
             Aspect's Site
@@ -197,12 +198,12 @@
           <p class="plaintext">
               Example http request to write:<br>
               <code>
-                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "https://api.aspectofthe.website/storage/write" POST
+                  /http headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_WRITE_TOKEN>\",\"contents\":\"Hello World!\"}" send "{{ api_base_url }}/storage/write" POST
               </code>
               <br><br>
               Example http request to read:<br>
               <code>
-                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "https://api.aspectofthe.website/storage/read" POST
+                  /http store &lt;STORAGE> &lt;PATH> headers value {"Content-Type":"application/json"} body value "{\"account\":\"{{ mcuuid }}\",\"token\":\"&lt;YOUR_READ_TOKEN>\"}" send "{{ api_base_url }}/storage/read" POST
               </code>
           </p>
       </div>
@@ -252,7 +253,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const accountUUID = "{{ mcuuid }}"
-        const socket = io("https://aspectofthe.website", { transports: ["websocket"] });
+        const socket = io("https://{{ site_domain }}", { transports: ["websocket"] });
         const logContainer = document.getElementById("logs-output");
 
         let ownedworlds = [];
@@ -311,7 +312,7 @@
                 status.textContent = "Saving...";
     
                 try {
-                    const res = await fetch('https://api.aspectofthe.website/storage/write', {
+                    const res = await fetch('{{ api_base_url }}/storage/write', {
                         method: 'POST',
                         credentials: "include",
                         headers: { 'Content-Type': 'application/json' },
@@ -358,7 +359,7 @@
                     idsaveBtn.classList.remove('pressed');
                 }, 1000);
                 try {
-                    const res = await fetch('https://api.aspectofthe.website/set-discord', {
+                    const res = await fetch('{{ api_base_url }}/set-discord', {
                         method: 'POST',
                         credentials: "include",
                         headers: { 'Content-Type': 'application/json' },
@@ -401,7 +402,7 @@
                 }
             });
         
-            await fetch("https://api.aspectofthe.website/set-notifs", {
+            await fetch("{{ api_base_url }}/set-notifs", {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
@@ -434,7 +435,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`https://api.aspectofthe.website/refresh-token/${type}`, { method: 'POST', credentials: "include" });
+                    const res = await fetch(`{{ api_base_url }}/refresh-token/${type}`, { method: 'POST', credentials: "include" });
                     if(res.ok) {
                         const data = await res.json();
                         document.getElementById(`${type}-token`).textContent = data.token;
@@ -454,7 +455,7 @@
                 btn.disabled = true;
     
                 try {
-                    const res = await fetch(`https://api.aspectofthe.website/refresh-world-token/${type}`, {
+                    const res = await fetch(`{{ api_base_url }}/refresh-world-token/${type}`, {
                         method: 'POST',
                         credentials: "include",
                         headers: {
@@ -691,7 +692,7 @@
             });
 
             try {
-                const res = await fetch(`https://api.aspectofthe.website/world/${selected_world_uuid}/permissions`, {
+                const res = await fetch(`{{ api_base_url }}/world/${selected_world_uuid}/permissions`, {
                     method: 'POST',
                     credentials: "include",
                     headers: { 'Content-Type': 'application/json' },
@@ -706,7 +707,7 @@
 
         async function loadWorldPermissions(worldUUID) {
             try {
-                const res = await fetch(`https://api.aspectofthe.website/world/${worldUUID}/getpermissions`);
+                const res = await fetch(`{{ api_base_url }}/world/${worldUUID}/getpermissions`);
                 const perms = await res.json();
         
                 const permSet = new Set(perms.permissions);
